@@ -11,10 +11,68 @@
 ## Quick Start
 
 ```bash
-pip install mcp==1.28.1 yt-dlp youtube-transcript-api starlette uvicorn
-python3 server.py              # stdio mode (for local MCP clients)
-python3 server.py --http       # HTTP/SSE mode (for remote MCP clients)
+# 1. Install
+pip install mcp==1.28.1 yt-dlp youtube-transcript-api starlette uvicorn sqlite-vec fastembed
+
+# 2. Run (no API key needed for 12 of 16 tools)
+python3 server.py              # stdio mode (local MCP clients)
+python3 server.py --http       # HTTP/SSE mode (remote, port 8080)
+
+# 3. Connect
+# Claude Desktop / Cursor → add as MCP server:
+#   stdio: python3 /path/to/tube-bridge/server.py
+#   HTTP:  http://localhost:8080/mcp
 ```
+
+**Zero keys needed** for: search, video info, trending, channels, playlists, transcripts, languages, help, and all 5 corpus tools.
+
+## API Key (YouTube Data API v3)
+
+**Get your own key** — the bundled key is for development only. If you deploy publicly, use your own to avoid burning shared quota:
+
+```bash
+# 1. Go to https://console.cloud.google.com/apis/library/youtube.googleapis.com
+# 2. Create project → Enable YouTube Data API v3 → Credentials → API Key
+# 3. Set the key:
+export YOUTUBE_API_KEY="your-key-here"
+```
+
+With a key, 3 extra tools unlock: `youtube_get_comments`, `youtube_search_channels`, `youtube_get_channel_info`. Search and video_info also upgrade to higher-quality API v3 results.
+
+## Proxy (Recommended for Railway/cloud deployments)
+
+YouTube blocks datacenter IPs for transcript fetching. Fix: residential proxy.
+
+```bash
+# Get a proxy from IPRoyal ($7/GB pay-as-you-go, never expires)
+# → https://iproyal.com — Residential Proxies → Pay As You Go
+# You'll get a URL like: http://user:pass@geo.iproyal.com:12321
+
+export TUBE_BRIDGE_PROXY="http://user:pass@geo.iproyal.com:12321"
+```
+
+Without a proxy, transcripts may fail on Railway/AWS/GCP with "Sign in to confirm you're not a bot". All other tools (search, etc.) are unaffected — they use Data API v3 which works fine from datacenter IPs.
+
+## Full Deployment (Railway)
+
+```bash
+# 1. Clone
+git clone https://github.com/TheWhiteWater/tube-bridge
+cd tube-bridge
+
+# 2. Deploy
+railway init --name tube-bridge
+railway up --service tube-bridge --detach
+
+# 3. Set env vars in Railway dashboard → Variables:
+#    YOUTUBE_API_KEY=your-key          (optional, for comments/channels)
+#    TUBE_BRIDGE_PROXY=http://...      (recommended, for transcripts)
+#    TUBE_BRIDGE_EMBEDDING_MODEL=...   (optional, default: BAAI/bge-small-en-v1.5)
+
+# 4. Connect: https://your-app.up.railway.app/mcp
+```
+
+> ⚠️ **Important:** If you fork this repo, set your own `YOUTUBE_API_KEY` and `TUBE_BRIDGE_PROXY`. The bundled credentials have shared quotas — don't rely on them for production use.
 
 ## Tools (16)
 
