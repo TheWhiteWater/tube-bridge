@@ -1010,32 +1010,35 @@ async def main():
 
     if args.http:
         from mcp.server.sse import SseServerTransport
-        from starlette.applications import Starlette
-        from starlette.routing import Route
+        from starlette.responses import JSONResponse
         import uvicorn
 
         sse = SseServerTransport("/messages")
 
-        async def handle_sse(request):
-            async with sse.connect_sse(
-                request.scope, request.receive, request._send
-            ) as streams:
+        async def handle_sse(scope, receive, send):
+            async with sse.connect_sse(scope, receive, send) as streams:
                 await server.run(streams[0], streams[1], server.create_initialization_options())
 
-        async def handle_messages(request):
-            await sse.handle_post_message(request.scope, request.receive, request._send)
+        async def handle_messages(scope, receive, send):
+            await sse.handle_post_message(scope, receive, send)
 
-        async def health(request):
-            from starlette.responses import JSONResponse
-            return JSONResponse({"status": "ok", "server": "tube-bridge", "tools": 10})
+        async def health(scope, receive, send):
+            response = JSONResponse({"status": "ok", "server": "tube-bridge", "tools": 10})
+            await response(scope, receive, send)
 
-        app = Starlette(
-            routes=[
-                Route("/health", endpoint=health),
-                Route("/sse", endpoint=handle_sse),
-                Route("/messages", endpoint=handle_messages, methods=["POST"]),
-            ]
-        )
+        async def app(scope, receive, send):
+            if scope["type"] == "lifespan":
+                return  # no-op
+            path = scope["path"]
+            if path == "/health":
+                await health(scope, receive, send)
+            elif path == "/sse":
+                await handle_sse(scope, receive, send)
+            elif path == "/messages" and scope["method"] == "POST":
+                await handle_messages(scope, receive, send)
+            else:
+                resp = JSONResponse({"error": "not found"}, status_code=404)
+                await resp(scope, receive, send)
 
         config = uvicorn.Config(app, host=args.host, port=args.port, log_level="info")
         srv = uvicorn.Server(config)
