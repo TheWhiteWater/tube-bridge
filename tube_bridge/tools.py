@@ -3,6 +3,7 @@
 import asyncio
 import functools
 
+from . import cache
 from .youtube import client as yt
 from .youtube import api, transcript as tr
 
@@ -76,10 +77,17 @@ async def search_channels(query: str, limit: int, args: dict) -> dict:
 
 @functools.lru_cache(maxsize=64)
 def _video_info_cached(video_id: str) -> dict:
+    # Check persistent cache first
+    cached = cache.get_video_info(video_id)
+    if cached:
+        return cached
+
     # Try Data API v3 first (avoids datacenter IP bot detection)
     if api.get_api_key():
         try:
-            return api.get_video_info(video_id)
+            result = api.get_video_info(video_id)
+            cache.set_video_info(video_id, result)
+            return result
         except RuntimeError as e:
             if "QUOTA_EXCEEDED" in str(e):
                 pass
@@ -100,6 +108,7 @@ def _video_info_cached(video_id: str) -> dict:
     result = info.to_dict()
     if stderr:
         result["_ytdlp_stderr"] = stderr
+    cache.set_video_info(video_id, result)
     return result
 
 
@@ -253,7 +262,14 @@ def _playlist_sync(playlist_url: str, limit: int) -> dict:
 
 @functools.lru_cache(maxsize=32)
 def _get_transcript_cached(video_id: str, lang: str | None = None):
-    return tr.get_transcript(video_id, lang)
+    """Get transcript — persistent cache → live fetch → cache."""
+    cached = cache.get_transcript(video_id, lang)
+    if cached:
+        return cached["segments"], cached["language"], cached["is_generated"]
+
+    segments, language_code, is_generated = tr.get_transcript(video_id, lang)
+    cache.set_transcript(video_id, lang, segments, language_code, is_generated)
+    return segments, language_code, is_generated
 
 
 def _get_transcript_with_meta(video_id: str, lang: str | None = None) -> dict:
