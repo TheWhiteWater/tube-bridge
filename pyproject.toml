@@ -1,0 +1,13 @@
+[project]
+name = "yt-mcp"
+version = "1.0.0"
+description = "Full-featured YouTube MCP server — search, transcripts, discovery. No API keys, no registration."
+requires-python = ">=3.12"
+dependencies = [
+    "mcp>=1.0.0",
+    "yt-dlp>=2024.0.0",
+    "youtube-transcript-api>=1.0.0",
+]
+
+[project.scripts]
+yt-mcp = "server:main"
