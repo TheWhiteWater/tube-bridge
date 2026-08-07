@@ -1030,11 +1030,23 @@ async def main():
             if scope["type"] == "lifespan":
                 return  # no-op
             path = scope["path"]
+            method = scope["method"]
+            
+            # OAuth discovery stubs — tell clients "no auth needed"
+            if path in ("/.well-known/oauth-authorization-server", "/.well-known/oauth-protected-resource", "/.well-known/oauth-protected-resource/sse"):
+                resp = JSONResponse({"resource": f"https://{args.host}:{args.port}", "authorization_servers": []})
+                await resp(scope, receive, send)
+                return
+            if path == "/register":
+                resp = JSONResponse({"error": "no_registration_needed", "message": "This server does not require authentication"}, status_code=501)
+                await resp(scope, receive, send)
+                return
+            
             if path == "/health":
                 await health(scope, receive, send)
             elif path == "/sse":
                 await handle_sse(scope, receive, send)
-            elif path == "/messages" and scope["method"] == "POST":
+            elif path == "/messages" and method == "POST":
                 await handle_messages(scope, receive, send)
             else:
                 resp = JSONResponse({"error": "not found"}, status_code=404)
