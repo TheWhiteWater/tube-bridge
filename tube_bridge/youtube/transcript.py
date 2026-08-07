@@ -1,5 +1,6 @@
 """tube-bridge — YouTube transcript extraction (youtube-transcript-api)."""
 
+import os
 from typing import Any
 
 from youtube_transcript_api import YouTubeTranscriptApi
@@ -9,10 +10,19 @@ from youtube_transcript_api._errors import TranscriptsDisabled, NoTranscriptFoun
 _api: Any = None
 
 
+def _get_proxy() -> str | None:
+    return os.environ.get("TUBE_BRIDGE_PROXY") or os.environ.get("HTTPS_PROXY")
+
+
 def _get_api():
     global _api
     if _api is None:
-        _api = YouTubeTranscriptApi()
+        proxy_url = _get_proxy()
+        if proxy_url:
+            from youtube_transcript_api.proxies import GenericProxyConfig
+            _api = YouTubeTranscriptApi(proxy_config=GenericProxyConfig(http_url=proxy_url, https_url=proxy_url))
+        else:
+            _api = YouTubeTranscriptApi()
     return _api
 
 

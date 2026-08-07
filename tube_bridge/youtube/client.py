@@ -1,6 +1,7 @@
 """tube-bridge — yt-dlp subprocess client with retry + stderr capture."""
 
 import json
+import os
 import re
 import subprocess
 import time
@@ -8,15 +9,23 @@ import time
 from .models import VideoInfo
 
 
+def get_proxy() -> str | None:
+    """Get proxy URL from environment. Supports http://user:pass@host:port or socks5://host:port."""
+    return os.environ.get("TUBE_BRIDGE_PROXY") or os.environ.get("HTTPS_PROXY")
+
+
 def run_ytdlp(args: list[str], timeout: int = 60, retries: int = 2) -> tuple[dict | None, str]:
     """Run yt-dlp --dump-json. Returns (data, stderr_info). Retries on transient failures."""
+    cmd = ["yt-dlp", "--no-warnings", "--no-playlist"]
+    proxy = get_proxy()
+    if proxy:
+        cmd.extend(["--proxy", proxy])
+    cmd.extend(args)
+    
     last_stderr = ""
     for attempt in range(retries + 1):
         try:
-            result = subprocess.run(
-                ["yt-dlp", "--no-warnings", "--no-playlist", *args],
-                capture_output=True, text=True, timeout=timeout,
-            )
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
             if result.returncode != 0:
                 last_stderr = result.stderr.strip()[-500:]
                 if attempt < retries:
@@ -45,13 +54,16 @@ def run_ytdlp(args: list[str], timeout: int = 60, retries: int = 2) -> tuple[dic
 
 def run_ytdlp_multi(args: list[str], timeout: int = 60, retries: int = 2) -> tuple[list[dict], str]:
     """Run yt-dlp --dump-json (multi-line). Returns (items, stderr_info). Retries on transient failures."""
+    cmd = ["yt-dlp", "--no-warnings"]
+    proxy = get_proxy()
+    if proxy:
+        cmd.extend(["--proxy", proxy])
+    cmd.extend(args)
+    
     last_stderr = ""
     for attempt in range(retries + 1):
         try:
-            result = subprocess.run(
-                ["yt-dlp", "--no-warnings", *args],
-                capture_output=True, text=True, timeout=timeout,
-            )
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
             if result.returncode != 0:
                 last_stderr = result.stderr.strip()[-500:]
                 if attempt < retries:
