@@ -1,5 +1,5 @@
 """
-yt-mcp — Full-featured YouTube MCP server for AI agents.
+tube-bridge — YouTube MCP server for AI agents.
 
 Provides:
   Search — youtube_search, youtube_get_trending
@@ -220,7 +220,7 @@ def _get_transcript_with_meta(video_id: str, lang: str | None = None) -> dict:
 # MCP Server
 # ---------------------------------------------------------------------------
 
-server = Server("yt-mcp")
+server = Server("tube-bridge")
 
 
 @server.list_tools()

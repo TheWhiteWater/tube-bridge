@@ -1,6 +1,6 @@
-# AGENTS.md — yt-mcp
+# AGENTS.md — tube-bridge
 
-**Project:** YouTube MCP Server for AI Agents
+**Project:** YouTube MCP Server for AI Agents — tube-bridge
 **Stack:** Python 3.12+, MCP 1.x, yt-dlp, youtube-transcript-api
 **Transport:** stdio (JSON-RPC)
 **License:** MIT

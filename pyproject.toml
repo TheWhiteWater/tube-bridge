@@ -1,7 +1,7 @@
 [project]
-name = "yt-mcp"
+name = "tube-bridge"
 version = "1.0.0"
-description = "Full-featured YouTube MCP server — search, transcripts, discovery. No API keys, no registration."
+description = "Tube Bridge — YouTube MCP server for AI agents. Search, discovery, transcripts. Zero API keys, optional Data API v3 upgrade."
 requires-python = ">=3.12"
 dependencies = [
     "mcp>=1.0.0",
