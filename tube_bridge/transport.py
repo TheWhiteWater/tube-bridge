@@ -25,7 +25,7 @@ def create_app(server: Server, host: str, port: int):
         await streamable_http.handle_request(scope, receive, send)
 
     async def health(scope, receive, send):
-        response = JSONResponse({"status": "ok", "server": "tube-bridge", "tools": 10})
+        response = JSONResponse({"status": "ok", "server": "tube-bridge", "tools": 11})
         await response(scope, receive, send)
 
     async def app(scope, receive, send):
