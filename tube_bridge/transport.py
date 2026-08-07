@@ -1,1 +1,57 @@
-IiIidHViZS1icmlkZ2UgLSBIVFRQL1NTRSB0cmFuc3BvcnQgKHJhdyBBU0dJKS4iIiIKCmltcG9ydCBjb250ZXh0bGliCgpmcm9tIG1jcC5zZXJ2ZXIgaW1wb3J0IFNlcnZlcgpmcm9tIG1jcC5zZXJ2ZXIuc3NlIGltcG9ydCBTc2VTZXJ2ZXJUcmFuc3BvcnQKZnJvbSBtY3Auc2VydmVyLnN0cmVhbWFibGVfaHR0cF9tYW5hZ2VyIGltcG9ydCBTdHJlYW1hYmxlSFRUUFNlc3Npb25NYW5hZ2VyCmZyb20gc3RhcmxldHRlLnJlc3BvbnNlcyBpbXBvcnQgSlNPTlJlc3BvbnNlCgoKZGVmIGNyZWF0ZV9hcHAoc2VydmVyOiBTZXJ2ZXIsIGhvc3Q6IHN0ciwgcG9ydDogaW50KToKICAgICIiIkJ1aWxkIGEgcmF3IEFTR0kgYXBwIHdpdGggL21jcCAoU3RyZWFtYWJsZSBIVFRQKSwgL3NzZSAobGVnYWN5KSwgL2hlYWx0aC4iIiIKCiAgICBzc2UgPSBTc2VTZXJ2ZXJUcmFuc3BvcnQoIi9tZXNzYWdlcyIpCiAgICAjIHN0YXRlbGVzcz1UcnVlOiBubyBNY3AtU2Vzc2lvbi1JZCBzdGlja2luZXNzIG5lZWRlZCBhY3Jvc3MgcmVxdWVzdHMsCiAgICAjIHdoaWNoIG1hdHRlcnMgYmVjYXVzZSBSYWlsd2F5IGNhbiByb3V0ZSBhIGNsaWVudCdzIHJlcXVlc3RzIHRvIGFueSByZXBsaWNhLgogICAgaHR0cF9tYW5hZ2VyID0gU3RyZWFtYWJsZUhUVFBTZXNzaW9uTWFuYWdlcihhcHA9c2VydmVyLCBzdGF0ZWxlc3M9VHJ1ZSkKCiAgICBhc3luYyBkZWYgaGFuZGxlX3NzZShzY29wZSwgcmVjZWl2ZSwgc2VuZCk6CiAgICAgICAgYXN5bmMgd2l0aCBzc2UuY29ubmVjdF9zc2Uoc2NvcGUsIHJlY2VpdmUsIHNlbmQpIGFzIHN0cmVhbXM6CiAgICAgICAgICAgIGF3YWl0IHNlcnZlci5ydW4oc3RyZWFtc1swXSwgc3RyZWFtc1sxXSwgc2VydmVyLmNyZWF0ZV9pbml0aWFsaXphdGlvbl9vcHRpb25zKCkpCgogICAgYXN5bmMgZGVmIGhhbmRsZV9tZXNzYWdlcyhzY29wZSwgcmVjZWl2ZSwgc2VuZCk6CiAgICAgICAgYXdhaXQgc3NlLmhhbmRsZV9wb3N0X21lc3NhZ2Uoc2NvcGUsIHJlY2VpdmUsIHNlbmQpCgogICAgYXN5bmMgZGVmIGhlYWx0aChzY29wZSwgcmVjZWl2ZSwgc2VuZCk6CiAgICAgICAgcmVzcG9uc2UgPSBKU09OUmVzcG9uc2UoeyJzdGF0dXMiOiAib2siLCAic2VydmVyIjogInR1YmUtYnJpZGdlIiwgInRvb2xzIjogMTF9KQogICAgICAgIGF3YWl0IHJlc3BvbnNlKHNjb3BlLCByZWNlaXZlLCBzZW5kKQoKICAgIGFzeW5jIGRlZiBhcHAoc2NvcGUsIHJlY2VpdmUsIHNlbmQpOgogICAgICAgIGlmIHNjb3BlWyJ0eXBlIl0gPT0gImxpZmVzcGFuIjoKICAgICAgICAgICAgIyBEcml2ZSB0aGUgU3RyZWFtYWJsZUhUVFAgc2Vzc2lvbiBtYW5hZ2VyJ3MgbGlmZWN5Y2xlIGZyb20gQVNHSQogICAgICAgICAgICAjIGxpZmVzcGFuIGV2ZW50cyBzaW5jZSBpdCBuZWVkcyBhbiBhY3RpdmUgdGFzayBncm91cCB0byBzZXJ2ZSByZXF1ZXN0cy4KICAgICAgICAgICAgYXN5bmMgd2l0aCBjb250ZXh0bGliLkFzeW5jRXhpdFN0YWNrKCkgYXMgc3RhY2s6CiAgICAgICAgICAgICAgICB3aGlsZSBUcnVlOgogICAgICAgICAgICAgICAgICAgIG1lc3NhZ2UgPSBhd2FpdCByZWNlaXZlKCkKICAgICAgICAgICAgICAgICAgICBpZiBtZXNzYWdlWyJ0eXBlIl0gPT0gImxpZmVzcGFuLnN0YXJ0dXAiOgogICAgICAgICAgICAgICAgICAgICAgICB0cnk6CiAgICAgICAgICAgICAgICAgICAgICAgICAgICBhd2FpdCBzdGFjay5lbnRlcl9hc3luY19jb250ZXh0KGh0dHBfbWFuYWdlci5ydW4oKSkKICAgICAgICAgICAgICAgICAgICAgICAgZXhjZXB0IEV4Y2VwdGlvbiBhcyBleGM6CiAgICAgICAgICAgICAgICAgICAgICAgICAgICBhd2FpdCBzZW5kKHsidHlwZSI6ICJsaWZlc3Bhbi5zdGFydHVwLmZhaWxlZCIsICJtZXNzYWdlIjogc3RyKGV4Yyl9KQogICAgICAgICAgICAgICAgICAgICAgICAgICAgcmV0dXJuCiAgICAgICAgICAgICAgICAgICAgICAgIGF3YWl0IHNlbmQoeyJ0eXBlIjogImxpZmVzcGFuLnN0YXJ0dXAuY29tcGxldGUifSkKICAgICAgICAgICAgICAgICAgICBlbGlmIG1lc3NhZ2VbInR5cGUiXSA9PSAibGlmZXNwYW4uc2h1dGRvd24iOgogICAgICAgICAgICAgICAgICAgICAgICBhd2FpdCBzZW5kKHsidHlwZSI6ICJsaWZlc3Bhbi5zaHV0ZG93bi5jb21wbGV0ZSJ9KQogICAgICAgICAgICAgICAgICAgICAgICByZXR1cm4KICAgICAgICAgICAgcmV0dXJuCgogICAgICAgIHBhdGggPSBzY29wZVsicGF0aCJdCiAgICAgICAgbWV0aG9kID0gc2NvcGVbIm1ldGhvZCJdCgogICAgICAgICMgTm8gYXV0aDogaW50ZW50aW9uYWxseSA0MDQgb24gT0F1dGggZGlzY292ZXJ5IHNvIGNsaWVudHMgdHJlYXQKICAgICAgICAjIHRoaXMgc2VydmVyIGFzIGFub255bW91cyBpbnN0ZWFkIG9mIGF0dGVtcHRpbmcgYSBicm9rZW4gYXV0aCBmbG93LgogICAgICAgIGlmIHBhdGggPT0gIi9oZWFsdGgiOgogICAgICAgICAgICBhd2FpdCBoZWFsdGgoc2NvcGUsIHJlY2VpdmUsIHNlbmQpCiAgICAgICAgZWxpZiBwYXRoIGluICgiL21jcCIsICIvbWNwLyIpOgogICAgICAgICAgICBhd2FpdCBodHRwX21hbmFnZXIuaGFuZGxlX3JlcXVlc3Qoc2NvcGUsIHJlY2VpdmUsIHNlbmQpCiAgICAgICAgZWxpZiBwYXRoID09ICIvc3NlIjoKICAgICAgICAgICAgYXdhaXQgaGFuZGxlX3NzZShzY29wZSwgcmVjZWl2ZSwgc2VuZCkKICAgICAgICBlbGlmIHBhdGggPT0gIi9tZXNzYWdlcyIgYW5kIG1ldGhvZCA9PSAiUE9TVCI6CiAgICAgICAgICAgIGF3YWl0IGhhbmRsZV9tZXNzYWdlcyhzY29wZSwgcmVjZWl2ZSwgc2VuZCkKICAgICAgICBlbHNlOgogICAgICAgICAgICByZXNwID0gSlNPTlJlc3BvbnNlKHsiZXJyb3IiOiAibm90IGZvdW5kIn0sIHN0YXR1c19jb2RlPTQwNCkKICAgICAgICAgICAgYXdhaXQgcmVzcChzY29wZSwgcmVjZWl2ZSwgc2VuZCkKCiAgICByZXR1cm4gYXBw
+"""tube-bridge — HTTP/SSE transport with StreamableHTTPSessionManager."""
+
+import contextlib
+
+from mcp.server import Server
+from mcp.server.sse import SseServerTransport
+from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
+from starlette.responses import JSONResponse
+
+
+def create_app(server: Server, host: str, port: int):
+    """Build a raw ASGI app with /mcp (Streamable HTTP), /sse (legacy), /health."""
+
+    sse = SseServerTransport("/messages")
+    # stateless=True: no Mcp-Session-Id stickiness needed across requests,
+    # which matters because Railway can route a client's requests to any replica.
+    http_manager = StreamableHTTPSessionManager(app=server, stateless=True)
+
+    async def handle_sse(scope, receive, send):
+        async with sse.connect_sse(scope, receive, send) as streams:
+            await server.run(streams[0], streams[1], server.create_initialization_options())
+
+    async def handle_messages(scope, receive, send):
+        await sse.handle_post_message(scope, receive, send)
+
+    async def health(scope, receive, send):
+        response = JSONResponse({"status": "ok", "server": "tube-bridge", "tools": 11})
+        await response(scope, receive, send)
+
+    async def app(scope, receive, send):
+        if scope["type"] == "lifespan":
+            async with contextlib.AsyncExitStack() as stack:
+                await stack.enter_async_context(http_manager.run())
+                await send({"type": "lifespan.startup.complete"})
+                while True:
+                    message = await receive()
+                    if message["type"] == "lifespan.shutdown":
+                        await send({"type": "lifespan.shutdown.complete"})
+                        return
+            return
+
+        path = scope["path"]
+        method = scope["method"]
+
+        if path == "/health":
+            await health(scope, receive, send)
+        elif path == "/mcp":
+            await http_manager.handle_request(scope, receive, send)
+        elif path == "/sse":
+            await handle_sse(scope, receive, send)
+        elif path == "/messages" and method == "POST":
+            await handle_messages(scope, receive, send)
+        else:
+            resp = JSONResponse({"error": "not found"}, status_code=404)
+            await resp(scope, receive, send)
+
+    return app
