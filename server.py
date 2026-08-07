@@ -12,11 +12,13 @@ YouTube Data API v3 for comments (optional, zero keys needed for everything else
 """
 
 import asyncio
+import functools
 import json
 import os
 import re
 import subprocess
 import sys
+import time
 import urllib.request
 import urllib.parse
 from dataclasses import dataclass
@@ -55,45 +57,78 @@ class VideoInfo:
 # ---------------------------------------------------------------------------
 
 
-def _run_ytdlp(args: list[str], timeout: int = 60) -> dict | None:
-    """Run yt-dlp --dump-json and parse output."""
-    try:
-        result = subprocess.run(
-            ["yt-dlp", "--no-warnings", "--no-playlist", *args],
-            capture_output=True, text=True, timeout=timeout,
-        )
-        if result.returncode != 0:
-            return None
-        # yt-dlp with --dump-json prints one JSON per line
-        lines = [l.strip() for l in result.stdout.splitlines() if l.strip()]
-        if not lines:
-            return None
-        data = json.loads(lines[0])
-        return data
-    except Exception:
-        return None
-
-
-def _run_ytdlp_multi(args: list[str], timeout: int = 60) -> list[dict]:
-    """Run yt-dlp --dump-json and parse all output lines."""
-    try:
-        result = subprocess.run(
-            ["yt-dlp", "--no-warnings", *args],
-            capture_output=True, text=True, timeout=timeout,
-        )
-        if result.returncode != 0:
-            return []
-        items = []
-        for line in result.stdout.splitlines():
-            line = line.strip()
-            if line:
-                try:
-                    items.append(json.loads(line))
-                except json.JSONDecodeError:
+def _run_ytdlp(args: list[str], timeout: int = 60, retries: int = 2) -> tuple[dict | None, str]:
+    """Run yt-dlp --dump-json. Returns (data, stderr_info). Retries on transient failures."""
+    last_stderr = ""
+    for attempt in range(retries + 1):
+        try:
+            result = subprocess.run(
+                ["yt-dlp", "--no-warnings", "--no-playlist", *args],
+                capture_output=True, text=True, timeout=timeout,
+            )
+            if result.returncode != 0:
+                last_stderr = result.stderr.strip()[-500:]
+                if attempt < retries:
+                    time.sleep(1.5 ** attempt)
                     continue
-        return items
-    except Exception:
-        return []
+                return None, last_stderr
+            lines = [l.strip() for l in result.stdout.splitlines() if l.strip()]
+            if not lines:
+                return None, "yt-dlp returned empty output"
+            data = json.loads(lines[0])
+            return data, ""
+        except subprocess.TimeoutExpired:
+            last_stderr = f"yt-dlp timed out after {timeout}s"
+            if attempt < retries:
+                time.sleep(1.5 ** attempt)
+                continue
+            return None, last_stderr
+        except Exception as e:
+            last_stderr = str(e)[-500:]
+            if attempt < retries:
+                time.sleep(1.5 ** attempt)
+                continue
+            return None, last_stderr
+    return None, last_stderr
+
+
+def _run_ytdlp_multi(args: list[str], timeout: int = 60, retries: int = 2) -> tuple[list[dict], str]:
+    """Run yt-dlp --dump-json (multi-line). Returns (items, stderr_info). Retries on transient failures."""
+    last_stderr = ""
+    for attempt in range(retries + 1):
+        try:
+            result = subprocess.run(
+                ["yt-dlp", "--no-warnings", *args],
+                capture_output=True, text=True, timeout=timeout,
+            )
+            if result.returncode != 0:
+                last_stderr = result.stderr.strip()[-500:]
+                if attempt < retries:
+                    time.sleep(1.5 ** attempt)
+                    continue
+                return [], last_stderr
+            items = []
+            for line in result.stdout.splitlines():
+                line = line.strip()
+                if line:
+                    try:
+                        items.append(json.loads(line))
+                    except json.JSONDecodeError:
+                        continue
+            return items, ""
+        except subprocess.TimeoutExpired:
+            last_stderr = f"yt-dlp timed out after {timeout}s"
+            if attempt < retries:
+                time.sleep(1.5 ** attempt)
+                continue
+            return [], last_stderr
+        except Exception as e:
+            last_stderr = str(e)[-500:]
+            if attempt < retries:
+                time.sleep(1.5 ** attempt)
+                continue
+            return [], last_stderr
+    return [], last_stderr
 
 
 def _extract_video_id(url_or_id: str) -> str:
@@ -462,7 +497,7 @@ async def _handle_tool(name: str, args: dict) -> Any:
 async def _search(query: str, limit: int) -> dict:
     """Search YouTube using yt-dlp's built-in search."""
     limit = min(limit, 50)
-    items = _run_ytdlp_multi([
+    items, stderr = _run_ytdlp_multi([
         f"ytsearch{limit}:{query}",
         "--dump-json",
         "--flat-playlist",
@@ -483,34 +518,45 @@ async def _search(query: str, limit: int) -> dict:
             "upload_date": data.get("upload_date"),
         })
 
-    return {
+    result = {
         "query": query,
         "total_results": len(videos),
         "videos": videos,
     }
+    if stderr and not videos:
+        result["_warning"] = stderr
+    return result
 
 
-async def _video_info(video_id: str) -> dict:
-    """Get rich metadata for a video."""
+@functools.lru_cache(maxsize=64)
+def _video_info_cached(video_id: str) -> dict:
+    """Cached version — avoids re-fetching same video metadata."""
     url = f"https://youtube.com/watch?v={video_id}"
-    data = _run_ytdlp([
+    data, stderr = _run_ytdlp([
         url,
         "--dump-json",
         "--extractor-args", "youtube:max_comments=0",
     ], timeout=30)
 
     if not data:
-        raise RuntimeError(f"Could not fetch info for video {video_id}")
+        raise RuntimeError(f"Could not fetch info for video {video_id}" + (f": {stderr}" if stderr else ""))
 
     info = _parse_video_info(data)
-    return info.to_dict()
+    result = info.to_dict()
+    if stderr:
+        result["_ytdlp_stderr"] = stderr
+    return result
+
+
+async def _video_info(video_id: str) -> dict:
+    """Get rich metadata for a video (cached)."""
+    return _video_info_cached(video_id)
 
 
 async def _trending(limit: int) -> dict:
     """Get trending videos (geo-dependent based on server IP)."""
     limit = min(limit, 30)
-    # Use YouTube's trending results page
-    items = _run_ytdlp_multi([
+    items, stderr = _run_ytdlp_multi([
         "https://www.youtube.com/results?search_query=trending&sp=CAMSBAgEEAE%253D",
         "--dump-json",
         "--flat-playlist",
@@ -529,11 +575,14 @@ async def _trending(limit: int) -> dict:
             "channel": data.get("channel") or data.get("uploader"),
         })
 
-    return {
+    result = {
         "source": "YouTube Trending",
         "total_results": len(videos),
         "videos": videos,
     }
+    if stderr and not videos:
+        result["_warning"] = stderr
+    return result
 
 
 async def _channel_videos(channel_url: str, limit: int) -> dict:
@@ -547,7 +596,7 @@ async def _channel_videos(channel_url: str, limit: int) -> dict:
         else:
             channel_url = f"https://youtube.com/@{channel_url}"
 
-    items = _run_ytdlp_multi([
+    items, stderr = _run_ytdlp_multi([
         f"{channel_url}/videos",
         "--dump-json",
         "--flat-playlist",
@@ -569,18 +618,23 @@ async def _channel_videos(channel_url: str, limit: int) -> dict:
             "upload_date": data.get("upload_date"),
         })
 
-    return {
+    result = {
         "channel": channel_name,
         "channel_url": channel_url,
         "total_videos": len(videos),
         "videos": videos,
     }
+    if stderr and not videos:
+        result["_warning"] = stderr
+    elif not videos and not stderr:
+        result["_warning"] = "No videos found — channel may not exist or has no uploads"
+    return result
 
 
 async def _playlist(playlist_url: str, limit: int) -> dict:
     """Get videos in a playlist."""
     limit = min(limit, 100)
-    items = _run_ytdlp_multi([
+    items, stderr = _run_ytdlp_multi([
         playlist_url,
         "--dump-json",
         "--flat-playlist",
@@ -601,17 +655,36 @@ async def _playlist(playlist_url: str, limit: int) -> dict:
             "channel": data.get("channel") or data.get("uploader"),
         })
 
-    return {
+    result = {
         "playlist_title": playlist_title,
         "playlist_url": playlist_url,
         "total_videos": len(videos),
         "videos": videos,
     }
+    if stderr and not videos:
+        result["_warning"] = stderr
+    return result
+
+
+@functools.lru_cache(maxsize=32)
+def _get_transcript_cached(video_id: str, lang: str | None = None) -> tuple:
+    """Cached transcript fetch — avoids re-fetching same video."""
+    return _get_transcript(video_id, lang)
+
+
+def _get_transcript_with_meta_cached(video_id: str, lang: str | None = None) -> dict:
+    """Cached transcript + metadata."""
+    segments, language_code, is_generated = _get_transcript_cached(video_id, lang)
+    return {
+        "segments": segments,
+        "language": language_code,
+        "is_generated": is_generated,
+    }
 
 
 async def _transcript(video_id: str, lang: str | None, with_timestamps: bool = False) -> dict:
     """Get transcript — plain text or with [MM:SS] timestamps."""
-    result = await asyncio.to_thread(_get_transcript_with_meta, video_id, lang)
+    result = await asyncio.to_thread(_get_transcript_with_meta_cached, video_id, lang)
     segments = result["segments"]
 
     if with_timestamps:
