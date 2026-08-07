@@ -1025,8 +1025,13 @@ async def main():
         async def handle_messages(request):
             await sse.handle_post_message(request.scope, request.receive, request._send)
 
+        async def health(request):
+            from starlette.responses import JSONResponse
+            return JSONResponse({"status": "ok", "server": "tube-bridge", "tools": 10})
+
         app = Starlette(
             routes=[
+                Route("/health", endpoint=health),
                 Route("/sse", endpoint=handle_sse),
                 Route("/messages", endpoint=handle_messages, methods=["POST"]),
             ]
