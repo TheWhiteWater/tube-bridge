@@ -4,16 +4,21 @@ tube-bridge — YouTube MCP server for AI agents.
 Provides:
   Search — youtube_search, youtube_get_trending
   Discovery — youtube_get_video_info, youtube_get_channel_videos, youtube_get_playlist
-  Transcripts — youtube_get_transcript, youtube_get_timed_transcript, youtube_get_available_languages
+  Transcripts — youtube_get_transcript, youtube_get_available_languages
+  Comments — youtube_get_comments (requires YOUTUBE_API_KEY env var)
 
-Zero registration. Zero API keys. Powered by yt-dlp + youtube-transcript-api.
+yt-dlp for search/discovery. youtube-transcript-api for transcripts.
+YouTube Data API v3 for comments (optional, zero keys needed for everything else).
 """
 
 import asyncio
 import json
+import os
 import re
 import subprocess
 import sys
+import urllib.request
+import urllib.parse
 from dataclasses import dataclass
 from typing import Any
 
@@ -120,6 +125,50 @@ def _parse_video_info(data: dict) -> VideoInfo:
         categories=data.get("categories"),
         tags=data.get("tags", [])[:20] if data.get("tags") else None,
     )
+
+
+# ---------------------------------------------------------------------------
+# YouTube Data API v3 helpers (optional — requires YOUTUBE_API_KEY)
+# ---------------------------------------------------------------------------
+
+
+def _api_key() -> str | None:
+    """Get YouTube Data API key from environment."""
+    return os.environ.get("YOUTUBE_API_KEY")
+
+
+def _api_call(endpoint: str, params: dict) -> dict:
+    """Make a YouTube Data API v3 request. Returns parsed JSON."""
+    key = _api_key()
+    if not key:
+        raise RuntimeError("YOUTUBE_API_KEY not set. Comments require a YouTube Data API v3 key.")
+    params["key"] = key
+    url = f"https://www.googleapis.com/youtube/v3/{endpoint}?{urllib.parse.urlencode(params)}"
+    req = urllib.request.Request(url, headers={"Accept": "application/json"})
+    with urllib.request.urlopen(req, timeout=15) as resp:
+        return json.loads(resp.read())
+
+
+def _get_comments_api(video_id: str, max_results: int = 20) -> list[dict]:
+    """Get top-level comments for a video via Data API v3."""
+    data = _api_call("commentThreads", {
+        "part": "snippet",
+        "videoId": video_id,
+        "maxResults": min(max_results, 100),
+        "order": "relevance",
+        "textFormat": "plainText",
+    })
+    comments = []
+    for item in data.get("items", []):
+        snippet = item["snippet"]["topLevelComment"]["snippet"]
+        comments.append({
+            "author": snippet.get("authorDisplayName", ""),
+            "text": snippet.get("textDisplay", ""),
+            "likes": snippet.get("likeCount", 0),
+            "published_at": snippet.get("publishedAt", ""),
+            "reply_count": item["snippet"].get("totalReplyCount", 0),
+        })
+    return comments
 
 
 # ---------------------------------------------------------------------------
@@ -336,6 +385,22 @@ async def list_tools() -> list[Tool]:
                 "required": ["url"],
             },
         ),
+        Tool(
+            name="youtube_get_comments",
+            description="Get comments for a YouTube video. Requires YOUTUBE_API_KEY environment variable (YouTube Data API v3). Returns author, text, likes, and reply count for each top-level comment.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "url": {"type": "string", "description": "YouTube video URL or ID"},
+                    "max_results": {
+                        "type": "integer",
+                        "description": "Max comments (default 20, max 100)",
+                        "default": 20,
+                    },
+                },
+                "required": ["url"],
+            },
+        ),
     ]
 
 
@@ -380,6 +445,10 @@ async def _handle_tool(name: str, args: dict) -> Any:
         case "youtube_get_available_languages":
             video_id = _extract_video_id(args["url"])
             return await _available_languages(video_id)
+
+        case "youtube_get_comments":
+            video_id = _extract_video_id(args["url"])
+            return await _comments(video_id, args.get("max_results", 20))
 
         case _:
             raise ValueError(f"Unknown tool: {name}")
@@ -575,6 +644,16 @@ async def _available_languages(video_id: str) -> dict:
         "video_id": video_id,
         "total_languages": len(langs),
         "languages": langs,
+    }
+
+
+async def _comments(video_id: str, max_results: int) -> dict:
+    """Get video comments via YouTube Data API v3."""
+    comments = await asyncio.to_thread(_get_comments_api, video_id, max_results)
+    return {
+        "video_id": video_id,
+        "total_comments": len(comments),
+        "comments": comments,
     }
 
 
