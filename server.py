@@ -173,15 +173,33 @@ def _api_key() -> str | None:
 
 
 def _api_call(endpoint: str, params: dict) -> dict:
-    """Make a YouTube Data API v3 request. Returns parsed JSON."""
+    """Make a YouTube Data API v3 request. Raises RuntimeError with specific error codes."""
     key = _api_key()
     if not key:
-        raise RuntimeError("YOUTUBE_API_KEY not set. Comments require a YouTube Data API v3 key.")
+        raise RuntimeError("YOUTUBE_API_KEY not set. Set it to enable API-powered features.")
     params["key"] = key
     url = f"https://www.googleapis.com/youtube/v3/{endpoint}?{urllib.parse.urlencode(params)}"
     req = urllib.request.Request(url, headers={"Accept": "application/json"})
-    with urllib.request.urlopen(req, timeout=15) as resp:
-        return json.loads(resp.read())
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read())
+            if "error" in data:
+                err = data["error"]
+                code = err.get("code", 0)
+                reason = err.get("errors", [{}])[0].get("reason", "")
+                if code == 403 and reason == "quotaExceeded":
+                    raise RuntimeError("QUOTA_EXCEEDED: YouTube Data API daily quota exhausted. Try again tomorrow or use yt-dlp fallback for search.")
+                raise RuntimeError(f"API_ERROR_{code}: {err.get('message', str(err))}")
+            return data
+    except urllib.error.HTTPError as e:
+        body = e.read().decode() if e.fp else ""
+        if "quotaExceeded" in body:
+            raise RuntimeError("QUOTA_EXCEEDED: YouTube Data API daily quota exhausted.")
+        raise RuntimeError(f"HTTP_{e.code}: {body[:200]}")
+    except RuntimeError:
+        raise
+    except Exception as e:
+        raise RuntimeError(f"NETWORK_ERROR: {e}")
 
 
 def _get_comments_api(video_id: str, max_results: int = 20) -> list[dict]:
@@ -758,7 +776,43 @@ async def _trending(limit: int) -> dict:
 
 
 def _trending_sync(limit: int) -> dict:
+    """Get trending videos — Data API v3 when key present, yt-dlp fallback."""
     limit = min(limit, 30)
+
+    # Try Data API v3 first (stable, region-independent)
+    if _api_key():
+        try:
+            data = _api_call("videos", {
+                "part": "snippet",
+                "chart": "mostPopular",
+                "maxResults": limit,
+                "regionCode": "US",
+            })
+            videos = []
+            for item in data.get("items", []):
+                sn = item.get("snippet", {})
+                vid = item["id"]
+                videos.append({
+                    "id": vid,
+                    "title": sn.get("title", ""),
+                    "url": f"https://youtube.com/watch?v={vid}",
+                    "channel": sn.get("channelTitle", ""),
+                    "channel_id": sn.get("channelId", ""),
+                    "published_at": sn.get("publishedAt", ""),
+                    "thumbnail": sn.get("thumbnails", {}).get("default", {}).get("url"),
+                })
+            return {
+                "source": "YouTube Data API v3 (mostPopular, US)",
+                "total_results": len(videos),
+                "videos": videos,
+            }
+        except RuntimeError as e:
+            if "QUOTA_EXCEEDED" in str(e):
+                pass  # Fall through to yt-dlp
+            else:
+                raise
+
+    # Fallback: yt-dlp (fragile URL, geo-dependent)
     items, stderr = _run_ytdlp_multi([
         "https://www.youtube.com/results?search_query=trending&sp=CAMSBAgEEAE%253D",
         "--dump-json",
@@ -779,7 +833,7 @@ def _trending_sync(limit: int) -> dict:
         })
 
     result = {
-        "source": "YouTube Trending",
+        "source": "yt-dlp (trending page)",
         "total_results": len(videos),
         "videos": videos,
     }
