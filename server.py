@@ -684,19 +684,23 @@ async def _handle_tool(name: str, args: dict) -> Any:
 
 
 async def _search(query: str, limit: int, args: dict) -> dict:
-    """Search YouTube — uses Data API v3 when key is present, yt-dlp as fallback."""
-    # Check if API key is available and rich filters requested
+    """Search YouTube — Data API v3 primary when key present, yt-dlp as fallback."""
     has_api = bool(_api_key())
-    has_filters = any(args.get(k) for k in ["order", "published_after", "published_before", "channel_id", "video_duration"])
 
-    if has_api and has_filters:
-        # Use Data API v3 with rich filters
+    if has_api:
+        # Always prefer Data API v3 — yt-dlp anonymous search is degraded by YouTube
         filters = {k: v for k, v in args.items()
                    if k in ("order", "published_after", "published_before", "channel_id", "video_duration", "video_definition", "safe_search")
                    and v is not None}
-        return await asyncio.to_thread(_search_videos_api, query, limit, **filters)
+        try:
+            return await asyncio.to_thread(_search_videos_api, query, limit, **filters)
+        except RuntimeError as e:
+            if "QUOTA_EXCEEDED" in str(e):
+                pass  # Fall through to yt-dlp
+            else:
+                raise
 
-    # Fallback: yt-dlp (works without key, fewer filters)
+    # Fallback: yt-dlp (no key, or quota exceeded)
     limit = min(limit, 50)
     items, stderr = _run_ytdlp_multi([
         f"ytsearch{limit}:{query}",
@@ -727,8 +731,6 @@ async def _search(query: str, limit: int, args: dict) -> dict:
     }
     if stderr and not videos:
         result["_warning"] = stderr
-    if has_api and not has_filters:
-        result["_hint"] = "YOUTUBE_API_KEY is set but no rich filters used. Add order/published_after/channel_id for API-powered search."
     return result
 
 
