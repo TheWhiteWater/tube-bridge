@@ -1010,10 +1010,12 @@ async def main():
 
     if args.http:
         from mcp.server.sse import SseServerTransport
+        from mcp.server.streamable_http import StreamableHTTPServerTransport
         from starlette.responses import JSONResponse
         import uvicorn
 
         sse = SseServerTransport("/messages")
+        streamable_http = StreamableHTTPServerTransport(None)
 
         async def handle_sse(scope, receive, send):
             async with sse.connect_sse(scope, receive, send) as streams:
@@ -1022,28 +1024,35 @@ async def main():
         async def handle_messages(scope, receive, send):
             await sse.handle_post_message(scope, receive, send)
 
+        async def handle_mcp(scope, receive, send):
+            await streamable_http.handle_request(scope, receive, send)
+
         async def health(scope, receive, send):
             response = JSONResponse({"status": "ok", "server": "tube-bridge", "tools": 10})
             await response(scope, receive, send)
 
         async def app(scope, receive, send):
             if scope["type"] == "lifespan":
-                return  # no-op
+                while True:
+                    message = await receive()
+                    if message["type"] == "lifespan.startup":
+                        # Start MCP server for Streamable HTTP transport
+                        async def run():
+                            async with streamable_http.connect() as (read, write):
+                                await server.run(read, write, server.create_initialization_options())
+                        asyncio.create_task(run())
+                        await send({"type": "lifespan.startup.complete"})
+                    elif message["type"] == "lifespan.shutdown":
+                        await send({"type": "lifespan.shutdown.complete"})
+                        return
+                return
             path = scope["path"]
             method = scope["method"]
-            
-            # OAuth discovery stubs — tell clients "no auth needed"
-            if path in ("/.well-known/oauth-authorization-server", "/.well-known/oauth-protected-resource", "/.well-known/oauth-protected-resource/sse"):
-                resp = JSONResponse({"resource": f"https://{args.host}:{args.port}", "authorization_servers": []})
-                await resp(scope, receive, send)
-                return
-            if path == "/register":
-                resp = JSONResponse({"error": "no_registration_needed", "message": "This server does not require authentication"}, status_code=501)
-                await resp(scope, receive, send)
-                return
-            
+
             if path == "/health":
                 await health(scope, receive, send)
+            elif path == "/mcp":
+                await handle_mcp(scope, receive, send)
             elif path == "/sse":
                 await handle_sse(scope, receive, send)
             elif path == "/messages" and method == "POST":
