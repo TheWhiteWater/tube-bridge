@@ -348,7 +348,7 @@ async def corpus_create(corpus_id: str, label: str | None = None) -> dict:
 
 async def corpus_add(corpus_id: str, video_id: str, force_reembed: bool = False) -> dict:
     """Add a video's transcript to a corpus. Fetches transcript, chunks, embeds automatically."""
-    result = _get_transcript_with_meta(video_id, None)
+    result = await asyncio.to_thread(_get_transcript_with_meta, video_id, None)
     segments = result["segments"]
     from . import corpus
     return await asyncio.to_thread(corpus.corpus_add, corpus_id, video_id, segments, force_reembed)
