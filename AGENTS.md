@@ -66,9 +66,9 @@ python3 test_tools.py  # Smoke test all tools against real YouTube data
 
 ```yaml
 mcp_servers:
-  yt-mcp:
+  tube-bridge:
     command: python3
-    args: [/home/ali/Workspace/yt-mcp/server.py]
+    args: [/home/ali/Workspace/BrainOps/Projects/tube-bridge/server.py]
     timeout: 120
 ```
 
