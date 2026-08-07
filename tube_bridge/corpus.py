@@ -201,6 +201,13 @@ def corpus_search(corpus_id: str, query: str, top_k: int = 10) -> dict:
     if not row:
         raise RuntimeError(f"Corpus '{corpus_id}' not found.")
 
+    # Check model match
+    current_model = os.environ.get("TUBE_BRIDGE_EMBEDDING_MODEL", "BAAI/bge-small-en-v1.5")
+    corpus_model = conn.execute("SELECT embedding_model FROM corpora WHERE corpus_id=?", (corpus_id,)).fetchone()[0]
+    if corpus_model != current_model:
+        raise RuntimeError(f"Corpus '{corpus_id}' uses '{corpus_model}' but current model is '{current_model}'. "
+                           f"Delete and recreate the corpus with the new model.")
+
     # Embed query
     emb = _embed([query])[0]
     vec_table = _vec_table(corpus_id)  # safe: corpus_id validated above
