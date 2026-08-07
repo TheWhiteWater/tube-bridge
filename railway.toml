@@ -1,0 +1,11 @@
+[build]
+  builder = "DOCKERFILE"
+
+[service]
+  name = "tube-bridge"
+  port = 8080
+
+[deploy]
+  numReplicas = 1
+
+# Set in Railway dashboard or via: railway variables set YOUTUBE_API_KEY=...
