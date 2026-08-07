@@ -1,0 +1,197 @@
+"""tube-bridge — MCP server wiring: tool registration + dispatch."""
+
+import json
+
+from mcp.server import Server
+from mcp.types import Tool, TextContent
+
+from .tools import (
+    search, search_channels,
+    video_info, trending, channel_videos, playlist,
+    transcript, available_languages,
+    comments, channel_info,
+)
+from .youtube.client import extract_video_id
+
+
+server = Server("tube-bridge")
+
+
+@server.list_tools()
+async def list_tools() -> list[Tool]:
+    return [
+        Tool(
+            name="youtube_search",
+            description="Search YouTube videos. Uses Data API v3 when YOUTUBE_API_KEY is set, falls back to yt-dlp. Filters: date range, channel, duration, order.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "Search query"},
+                    "limit": {"type": "integer", "description": "Max results (default 10, max 50)", "default": 10},
+                    "order": {"type": "string", "description": "Sort: date, rating, relevance, viewCount, title (API only)"},
+                    "published_after": {"type": "string", "description": "ISO 8601 date filter (API only)"},
+                    "published_before": {"type": "string", "description": "ISO 8601 date filter (API only)"},
+                    "channel_id": {"type": "string", "description": "Restrict to channel ID (API only)"},
+                    "video_duration": {"type": "string", "description": "short, medium, long (API only)"},
+                },
+                "required": ["query"],
+            },
+        ),
+        Tool(
+            name="youtube_search_channels",
+            description="Search YouTube channels by name/topic. Returns subscriber counts, video counts, country. Requires YOUTUBE_API_KEY.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "Channel name or topic"},
+                    "limit": {"type": "integer", "description": "Max results (default 10)", "default": 10},
+                    "min_subscribers": {"type": "integer", "description": "Minimum subscriber filter"},
+                    "max_subscribers": {"type": "integer", "description": "Maximum subscriber filter"},
+                    "order": {"type": "string", "description": "relevance, date"},
+                },
+                "required": ["query"],
+            },
+        ),
+        Tool(
+            name="youtube_get_channel_info",
+            description="Detailed channel metadata: subscribers, views, videos, country, keywords. Requires YOUTUBE_API_KEY.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "channel_id": {"type": "string", "description": "YouTube channel ID (starts with UC...)"},
+                },
+                "required": ["channel_id"],
+            },
+        ),
+        Tool(
+            name="youtube_get_video_info",
+            description="Detailed metadata for a YouTube video: title, duration, views, channel, description, tags.",
+            inputSchema={
+                "type": "object",
+                "properties": {"url": {"type": "string", "description": "YouTube video URL or ID"}},
+                "required": ["url"],
+            },
+        ),
+        Tool(
+            name="youtube_get_trending",
+            description="Currently trending YouTube videos. Uses Data API v3 when key present, yt-dlp fallback.",
+            inputSchema={
+                "type": "object",
+                "properties": {"limit": {"type": "integer", "description": "Max results (default 10)", "default": 10}},
+            },
+        ),
+        Tool(
+            name="youtube_get_channel_videos",
+            description="Recent uploads from a YouTube channel.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "channel_url": {"type": "string", "description": "Channel URL or @handle"},
+                    "limit": {"type": "integer", "description": "Max videos (default 10)", "default": 10},
+                },
+                "required": ["channel_url"],
+            },
+        ),
+        Tool(
+            name="youtube_get_playlist",
+            description="All videos in a YouTube playlist.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "playlist_url": {"type": "string", "description": "Playlist URL"},
+                    "limit": {"type": "integer", "description": "Max videos (default 20)", "default": 20},
+                },
+                "required": ["playlist_url"],
+            },
+        ),
+        Tool(
+            name="youtube_get_transcript",
+            description="Transcript/subtitles of a YouTube video. Plain text or timestamped. Manual > ASR priority.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "url": {"type": "string", "description": "YouTube video URL or ID"},
+                    "lang": {"type": "string", "description": "Language code (e.g. en, ru). Auto-detect if not specified."},
+                    "with_timestamps": {"type": "boolean", "description": "Include [MM:SS] timestamps (default: false)", "default": False},
+                },
+                "required": ["url"],
+            },
+        ),
+        Tool(
+            name="youtube_get_available_languages",
+            description="Available subtitle languages for a video. Shows manual vs auto-generated.",
+            inputSchema={
+                "type": "object",
+                "properties": {"url": {"type": "string", "description": "YouTube video URL or ID"}},
+                "required": ["url"],
+            },
+        ),
+        Tool(
+            name="youtube_get_comments",
+            description="Comments for a YouTube video. Requires YOUTUBE_API_KEY.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "url": {"type": "string", "description": "YouTube video URL or ID"},
+                    "max_results": {"type": "integer", "description": "Max comments (default 20)", "default": 20},
+                },
+                "required": ["url"],
+            },
+        ),
+    ]
+
+
+@server.call_tool()
+async def call_tool(name: str, arguments: dict) -> list[TextContent]:
+    try:
+        result = await _handle_tool(name, arguments)
+        return [TextContent(type="text", text=json.dumps(result, ensure_ascii=False, indent=2))]
+    except ValueError as e:
+        return [TextContent(type="text", text=json.dumps({"error": str(e)}, ensure_ascii=False))]
+    except RuntimeError as e:
+        return [TextContent(type="text", text=json.dumps({"error": str(e)}, ensure_ascii=False))]
+    except Exception as e:
+        return [TextContent(
+            type="text",
+            text=json.dumps({"error": f"Unexpected error: {e}"}, ensure_ascii=False),
+        )]
+
+
+async def _handle_tool(name: str, args: dict):
+    match name:
+        case "youtube_search":
+            return await search(args["query"], args.get("limit", 10), args)
+
+        case "youtube_search_channels":
+            return await search_channels(args["query"], args.get("limit", 10), args)
+
+        case "youtube_get_channel_info":
+            return await channel_info(args["channel_id"])
+
+        case "youtube_get_video_info":
+            return await video_info(extract_video_id(args["url"]))
+
+        case "youtube_get_trending":
+            return await trending(args.get("limit", 10))
+
+        case "youtube_get_channel_videos":
+            return await channel_videos(args["channel_url"], args.get("limit", 10))
+
+        case "youtube_get_playlist":
+            return await playlist(args["playlist_url"], args.get("limit", 20))
+
+        case "youtube_get_transcript":
+            return await transcript(
+                extract_video_id(args["url"]),
+                args.get("lang"),
+                args.get("with_timestamps", False),
+            )
+
+        case "youtube_get_available_languages":
+            return await available_languages(extract_video_id(args["url"]))
+
+        case "youtube_get_comments":
+            return await comments(extract_video_id(args["url"]), args.get("max_results", 20))
+
+        case _:
+            raise ValueError(f"Unknown tool: {name}")
