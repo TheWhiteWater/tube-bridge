@@ -95,7 +95,30 @@ railway up --service tube-bridge --detach
 | `corpus_list` | ❌ | List all corpora with counts |
 | `corpus_delete` | ❌ | Delete a corpus permanently |
 
-**7 YouTube tools work with zero configuration.** 3 upgrade with an API key. 5 corpus tools use local embeddings (no key needed).
+## Auth (Optional)
+
+When deployed publicly, protect your endpoint with an API key:
+
+```bash
+export TUBE_BRIDGE_AUTH_KEY="your-secret-key"
+```
+
+All `/mcp` and `/sse` requests then require `Authorization: Bearer your-secret-key`. `/health` remains open. If not set, open access (for local dev).
+
+MCP client config with auth:
+```json
+{
+  "mcpServers": {
+    "tube-bridge": {
+      "type": "http",
+      "url": "https://your-app.up.railway.app/mcp",
+      "headers": {
+        "Authorization": "Bearer your-secret-key"
+      }
+    }
+  }
+}
+```
 
 ## Architecture
 
