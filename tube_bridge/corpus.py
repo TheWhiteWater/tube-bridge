@@ -2,6 +2,7 @@
 
 import json
 import os
+import re
 import sqlite3
 import time
 from pathlib import Path
@@ -12,6 +13,21 @@ import sqlite_vec
 from .cache import CACHE_DIR
 
 DB_PATH = CACHE_DIR / "corpus.db"
+
+_CORPUS_ID_RE = re.compile(r"^[A-Za-z0-9_-]{1,128}$")
+
+
+def _validate_corpus_id(corpus_id: str) -> None:
+    """corpus_id ends up interpolated into SQL identifiers (vec table names) —
+    it must be restricted to a safe charset before it ever reaches a query string."""
+    if not _CORPUS_ID_RE.match(corpus_id or ""):
+        raise ValueError(
+            f"Invalid corpus_id {corpus_id!r}: must match ^[A-Za-z0-9_-]{{1,128}}$"
+        )
+
+
+def _vec_table(corpus_id: str) -> str:
+    return f"vec_{corpus_id.replace('-', '_')}"
 
 
 def _get_conn() -> sqlite3.Connection:
@@ -86,6 +102,13 @@ def _chunk_transcript(segments: list[dict], window_sec: int = 80, overlap_sec: i
                 cutoff = buffer[-1]["start"] - overlap_sec
                 buffer = [s for s in buffer if s["start"] >= cutoff]
             window_end = buffer[0]["start"] + window_sec if buffer else seg["start"] + window_sec
+            # Guarantee forward progress: a caption gap larger than window_sec can leave
+            # window_end short of seg's start even after the buffer trim above, which would
+            # never admit seg and spin forever re-emitting the same chunk. Force the window
+            # to at least cover the segment we're stuck on.
+            if window_end < seg["start"]:
+                buffer = []
+                window_end = seg["start"] + window_sec
     if buffer:
         text = " ".join(s["text"] for s in buffer)
         chunks.append({"start_ts": buffer[0]["start"], "end_ts": buffer[-1]["start"] + buffer[-1].get("duration", 0), "text": text})
@@ -98,6 +121,7 @@ def _chunk_transcript(segments: list[dict], window_sec: int = 80, overlap_sec: i
 
 def corpus_create(corpus_id: str, label: str | None = None) -> dict:
     """Create a named corpus."""
+    _validate_corpus_id(corpus_id)
     conn = _get_conn()
     model, _ = _get_embedding_model()
     model_name = os.environ.get("TUBE_BRIDGE_EMBEDDING_MODEL", "BAAI/bge-small-en-v1.5")
@@ -112,6 +136,7 @@ def corpus_create(corpus_id: str, label: str | None = None) -> dict:
 
 def corpus_add(corpus_id: str, video_id: str, segments: list[dict], force_reembed: bool = False) -> dict:
     """Add a video's transcript to a corpus. Chunks and embeds automatically. Idempotent."""
+    _validate_corpus_id(corpus_id)
     conn = _get_conn()
 
     # Check corpus exists
@@ -146,13 +171,15 @@ def corpus_add(corpus_id: str, video_id: str, segments: list[dict], force_reembe
     embeddings = _embed(texts)
 
     # Store chunks
+    vec_table = _vec_table(corpus_id)
     for chunk, emb in zip(chunks, embeddings):
         conn.execute("INSERT INTO corpus_chunks (corpus_id, video_id, start_ts, end_ts, text, added_at) VALUES (?,?,?,?,?,?)",
                      (corpus_id, video_id, chunk["start_ts"], chunk["end_ts"], chunk["text"], time.time()))
         chunk_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
 
-        # Store vector in sqlite-vec virtual table — create per-corpus
-        vec_table = f"vec_{corpus_id.replace('-', '_')}"
+        # Store vector in sqlite-vec virtual table — one per corpus.
+        # vec_table is safe to interpolate here: _validate_corpus_id() above
+        # restricts corpus_id (and therefore vec_table) to [A-Za-z0-9_-]+.
         conn.execute(f"CREATE VIRTUAL TABLE IF NOT EXISTS {vec_table} USING vec0(embedding float[{len(emb)}])")
         conn.execute(f"INSERT INTO {vec_table} (rowid, embedding) VALUES (?, ?)",
                      (chunk_id, json.dumps(emb)))
@@ -166,6 +193,7 @@ def corpus_add(corpus_id: str, video_id: str, segments: list[dict], force_reembe
 
 def corpus_search(corpus_id: str, query: str, top_k: int = 10) -> dict:
     """Semantic search within a corpus. Returns chunks with scores, timestamps, video IDs."""
+    _validate_corpus_id(corpus_id)
     conn = _get_conn()
 
     # Check corpus exists
@@ -175,7 +203,7 @@ def corpus_search(corpus_id: str, query: str, top_k: int = 10) -> dict:
 
     # Embed query
     emb = _embed([query])[0]
-    vec_table = f"vec_{corpus_id.replace('-', '_')}"
+    vec_table = _vec_table(corpus_id)  # safe: corpus_id validated above
     dim = len(emb)
 
     # Ensure vec table exists
@@ -236,8 +264,9 @@ def corpus_list() -> dict:
 
 def corpus_delete(corpus_id: str) -> dict:
     """Delete a corpus and all its chunks/vectors."""
+    _validate_corpus_id(corpus_id)
     conn = _get_conn()
-    vec_table = f"vec_{corpus_id.replace('-', '_')}"
+    vec_table = _vec_table(corpus_id)  # safe: corpus_id validated above
     conn.execute(f"DROP TABLE IF EXISTS {vec_table}")
     conn.execute("DELETE FROM corpus_chunks WHERE corpus_id=?", (corpus_id,))
     conn.execute("DELETE FROM corpus_added_videos WHERE corpus_id=?", (corpus_id,))
