@@ -2,3 +2,11 @@ __pycache__/
 *.pyc
 .brainops/
 .tme/
+.env
+.env.*
+.venv/
+venv/
+*.db
+dist/
+*.egg-info/
+.cache/

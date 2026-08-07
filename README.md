@@ -24,7 +24,7 @@ python3 server.py --http       # HTTP/SSE mode (remote, port 8080)
 #   HTTP:  http://localhost:8080/mcp
 ```
 
-**Zero keys needed** for: search, video info, trending, channels, playlists, transcripts, languages, help, and all 5 corpus tools.
+**16 tools: 13 without API key, 3 with optional key. 5 corpus tools use local embeddings (zero network).**
 
 ## API Key (YouTube Data API v3)
 
@@ -135,17 +135,11 @@ corpus_delete("ai-agents")                             # Archive/clean
 - **Chunking:** by transcript segments, 60-90s windows with overlap
 - **Embeddings:** fastembed (BGE-small-en-v1.5, 384-dim, offline, zero API keys)
 - **Storage:** sqlite-vec — same file as cache, no separate server
-- **Isolation:** named corpora, embedding_model per corpus, corpus_id filter before ANN
+**13 of 16 tools work with zero API keys.** 3 tools unlock with a YouTube Data API key. All 5 corpus tools use local embeddings (no key, no network).
 
-## API Key (Optional)
+## API Key (YouTube Data API v3)
 
-Core features work without any key. For API-powered features, set the environment variable:
-
-```bash
-export YOUTUBE_API_KEY="your-key-here"
-```
-
-> ⚠️ **Important:** The bundled API key is for development/testing only. If you clone this repo, **get your own key** from [Google Cloud Console](https://console.cloud.google.com/apis/library/youtube.googleapis.com) to avoid burning through our quota. The key has 10,000 units/day — enough for ~100 searches.
+For comments, channel search, channel info, and higher-quality search results, get your own YouTube Data API key:
 
 ## MCP Client Config
 

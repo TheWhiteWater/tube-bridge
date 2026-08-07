@@ -1,56 +1,43 @@
-# Project Vision — yt-mcp
+# Project Vision — tube-bridge
 
-**Last updated:** 2026-08-07
-**Author:** W-1020 (Architect)
-**Status:** active
+**Last updated:** 2026-08-08
+**Status:** Public release
 
 ## North Star
 
-Every AI agent can interact with YouTube as naturally as a human — search, discover, extract knowledge — without API keys, registration, or vendor lock-in.
+Every AI agent can interact with YouTube as naturally as a human — search, discover, extract knowledge, and build research corpora — without API keys, registration, or vendor lock-in.
 
 ## Development Path
 
-### Phase 1 — Core MVP (DONE)
-7 tools: search, video info, trending, channels, playlists, transcript (plain/timed), languages. Zero keys. Single-file stdio server. Tested on real YouTube data.
+### Phase 1 — Core MVP ✅ DONE
+11 tools: search, video info, trending, channels, playlists, transcript (plain/timed), languages, comments, channel search, channel info, help. Zero keys for 8, 3 with optional API key. Dual-source architecture (API v3 → yt-dlp). Modular codebase (8 files).
 
-### Phase 2 — Discovery Layer (NEXT)
-- Comment extraction via Data API v3 (optional key)
-- Dual-source architecture: yt-dlp primary, API v3 as upgrade path
-- ADR-001: formalize discovery layer strategy
+### Phase 2 — Discovery Layer ✅ DONE
+Comment extraction via Data API v3. Channel search with subscriber enrichment. Persistent SQLite cache. IPRoyal residential proxy for datacenter IP bot-detection workaround. Streamable HTTP (/mcp) transport.
 
-### Phase 3 — Production
-- GitHub repo with AGENTS.md
-- CI pipeline (smoke tests against known videos)
-- PyPI package (`pip install yt-mcp`)
-- MCP registry submission
+### Phase 3 — Bridge Corpus ✅ DONE
+Semantic search over YouTube transcripts via sqlite-vec + fastembed. Named corpora, chunking by transcript segments, embedding model per corpus. 5 new tools: corpus_create/add/search/list/delete.
 
-### Phase 4 — Intelligence
-- Semantic search across transcripts (ChromaDB)
-- Frame/screenshot extraction
-- Channel analytics
+### Phase 4 — Production ✅ DONE
+GitHub repo (public), AGENTS.md, Railway deployment, README with self-hosting guide, MIT license, CI smoke tests.
+
+### Phase 5 — Next
+- PyPI package (`pip install tube-bridge`)
+- Railway persistent volume for corpus DB
+- Auth layer for public /mcp endpoint
+- Graph layer: entity extraction from corpus → FOR/AGAINST signals (NEXUS-aligned)
 
 ## Project Spirit
 
-- **Agent-first, not human-first** — tools return structured JSON, not pretty text
+- **Agent-first, not human-first** — tools return structured JSON
 - **Zero friction forever** — core functionality never requires API keys
-- **Library, not service** — one Python file, one process, stdio transport
-- **Open source from day one** — MIT license, community contributions welcome
+- **Library, not service** — one Python package, no external servers
+- **Open source from day one** — MIT license
 
 ## Alignment Check
 
-When evaluating whether work is on-vector, ask:
-1. Does it work without API keys? (If no — is it in the optional upgrade path?)
+When evaluating whether work is on-vector:
+1. Does it work without API keys? (If no — is it clearly optional?)
 2. Is the output optimized for LLM consumption?
-3. Does it keep the single-file simplicity?
+3. Does it keep the zero-external-services simplicity?
 4. Could an agent accomplish something useful in <3 tool calls?
-
-## Roadmap
-
-| Milestone | Status | Target |
-|-----------|--------|--------|
-| 7 core tools | ✅ DONE | 2026-08-07 |
-| GitHub + AGENTS.md | 🔄 IN PROGRESS | 2026-08-07 |
-| Project Genesis gate PASS | 🔄 IN PROGRESS | 2026-08-07 |
-| ADR-001: Discovery layer | 📋 PLANNED | 2026-08-10 |
-| Comments tool (Data API v3) | 📋 PLANNED | 2026-08-14 |
-| PyPI package | 📋 PLANNED | 2026-08-21 |
