@@ -126,6 +126,11 @@ docker run -p 8080:8080 -e YOUTUBE_API_KEY=... tube-bridge
 | Streamable HTTP + SSE | ✅ | ❌ | SSE |
 | Python (single package) | ✅ | ❌ (npm) | ✅ |
 
-## License
+## Known Limitations
+
+- **Datacenter IPs (Railway, AWS, etc.):** YouTube may block anonymous requests from cloud IP ranges. When deployed on Railway:
+  - `youtube_search` + `youtube_get_video_info` → unaffected (use Data API v3 with key)
+  - `youtube_get_transcript` → may fail with bot detection. Uses `youtube-transcript-api` which has no API v3 alternative. Mitigation: residential proxy, cookies, or accept periodic unavailability.
+- **yt-dlp anonymous search:** degraded by YouTube in recent months. Always prefer Data API v3 when available.
 
 MIT

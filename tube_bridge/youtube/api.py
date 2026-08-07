@@ -226,3 +226,46 @@ def get_trending(limit: int = 10) -> dict:
         "total_results": len(videos),
         "videos": videos,
     }
+
+
+def get_video_info(video_id: str) -> dict:
+    """Get video metadata via Data API v3."""
+    data = api_call("videos", {
+        "part": "snippet,statistics,contentDetails",
+        "id": video_id,
+    })
+    items = data.get("items", [])
+    if not items:
+        raise RuntimeError(f"Video not found: {video_id}")
+    v = items[0]
+    sn = v.get("snippet", {})
+    st = v.get("statistics", {})
+    cd = v.get("contentDetails", {})
+    # Parse ISO 8601 duration to seconds
+    dur = cd.get("duration", "PT0S").replace("PT", "").replace("H", ":").replace("M", ":").replace("S", "")
+    try:
+        parts = dur.split(":")
+        if len(parts) == 3:
+            duration = int(parts[0]) * 3600 + int(parts[1]) * 60 + int(parts[2])
+        elif len(parts) == 2:
+            duration = int(parts[0]) * 60 + int(parts[1])
+        else:
+            duration = int(parts[0]) if parts[0] else 0
+    except (ValueError, IndexError):
+        duration = None
+
+    return {
+        "id": video_id,
+        "title": sn.get("title", ""),
+        "url": f"https://youtube.com/watch?v={video_id}",
+        "duration": duration,
+        "view_count": int(st.get("viewCount", 0)) if st.get("viewCount") else None,
+        "channel": sn.get("channelTitle", ""),
+        "channel_id": sn.get("channelId", ""),
+        "channel_url": f"https://youtube.com/channel/{sn.get('channelId', '')}",
+        "upload_date": (sn.get("publishedAt", "")[:10]).replace("-", ""),
+        "description": (sn.get("description", "") or "")[:500],
+        "thumbnail": sn.get("thumbnails", {}).get("default", {}).get("url"),
+        "tags": sn.get("tags", [])[:20] if sn.get("tags") else None,
+        "source": "YouTube Data API v3",
+    }

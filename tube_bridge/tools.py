@@ -70,12 +70,23 @@ async def search_channels(query: str, limit: int, args: dict) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# Video info (cached)
+# Video info (cached, dual-source: API v3 → yt-dlp fallback)
 # ---------------------------------------------------------------------------
 
 
 @functools.lru_cache(maxsize=64)
 def _video_info_cached(video_id: str) -> dict:
+    # Try Data API v3 first (avoids datacenter IP bot detection)
+    if api.get_api_key():
+        try:
+            return api.get_video_info(video_id)
+        except RuntimeError as e:
+            if "QUOTA_EXCEEDED" in str(e):
+                pass
+            else:
+                raise
+
+    # Fallback: yt-dlp
     url = f"https://youtube.com/watch?v={video_id}"
     data, stderr = yt.run_ytdlp([
         url, "--dump-json",
