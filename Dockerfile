@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Install Python deps
 RUN pip install --no-cache-dir \
-    mcp \
+    mcp==1.28.1 \
     yt-dlp \
     youtube-transcript-api \
     starlette \
