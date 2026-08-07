@@ -24,7 +24,7 @@ def create_app(server: Server, host: str, port: int):
         await sse.handle_post_message(scope, receive, send)
 
     async def health(scope, receive, send):
-        response = JSONResponse({"status": "ok", "server": "tube-bridge", "tools": 11})
+        response = JSONResponse({"status": "ok", "server": "tube-bridge", "tools": 16})
         await response(scope, receive, send)
 
     async def app(scope, receive, send):

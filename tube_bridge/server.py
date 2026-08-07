@@ -10,6 +10,7 @@ from .tools import (
     video_info, trending, channel_videos, playlist,
     transcript, available_languages,
     comments, channel_info,
+    corpus_create, corpus_add, corpus_search, corpus_list, corpus_delete,
 )
 from .youtube.client import extract_video_id
 
@@ -183,6 +184,60 @@ async def list_tools() -> list[Tool]:
             },
         ),
         Tool(
+            name="corpus_create",
+            description="Create a named corpus for semantic search over transcripts. Each corpus uses a fixed embedding model.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "corpus_id": {"type": "string", "description": "Unique corpus ID (e.g. 'iran-hormuz-2026')"},
+                    "label": {"type": "string", "description": "Human-readable label (optional)"},
+                },
+                "required": ["corpus_id"],
+            },
+        ),
+        Tool(
+            name="corpus_add",
+            description="Add a video transcript to a corpus. Auto-fetches transcript, chunks, and embeds. Idempotent: skip if already added.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "corpus_id": {"type": "string", "description": "Corpus ID to add to"},
+                    "url": {"type": "string", "description": "YouTube video URL or ID"},
+                    "force_reembed": {"type": "boolean", "description": "Re-embed even if already indexed", "default": False},
+                },
+                "required": ["corpus_id", "url"],
+            },
+        ),
+        Tool(
+            name="corpus_search",
+            description="Semantic search within a corpus. Returns relevant transcript chunks with scores, timestamps, and video IDs.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "corpus_id": {"type": "string", "description": "Corpus ID to search in"},
+                    "query": {"type": "string", "description": "Natural language search query"},
+                    "top_k": {"type": "integer", "description": "Max results (default 10)", "default": 10},
+                },
+                "required": ["corpus_id", "query"],
+            },
+        ),
+        Tool(
+            name="corpus_list",
+            description="List all available corpora with chunk and video counts.",
+            inputSchema={"type": "object", "properties": {}},
+        ),
+        Tool(
+            name="corpus_delete",
+            description="Delete a corpus and all its chunks/vectors permanently.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "corpus_id": {"type": "string", "description": "Corpus ID to delete"},
+                },
+                "required": ["corpus_id"],
+            },
+        ),
+        Tool(
             name="tube_bridge_help",
             description="Get tube-bridge documentation: available tools, architecture, known limitations, API key setup.",
             inputSchema={
@@ -247,6 +302,17 @@ async def _handle_tool(name: str, args: dict):
 
         case "tube_bridge_help":
             return HELP_TEXT
+
+        case "corpus_create":
+            return await corpus_create(args["corpus_id"], args.get("label"))
+        case "corpus_add":
+            return await corpus_add(args["corpus_id"], extract_video_id(args["url"]), args.get("force_reembed", False))
+        case "corpus_search":
+            return await corpus_search(args["corpus_id"], args["query"], args.get("top_k", 10))
+        case "corpus_list":
+            return await corpus_list()
+        case "corpus_delete":
+            return await corpus_delete(args["corpus_id"])
 
         case _:
             raise ValueError(f"Unknown tool: {name}")

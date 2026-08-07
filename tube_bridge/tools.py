@@ -334,3 +334,36 @@ async def comments(video_id: str, max_results: int) -> dict:
 
 async def channel_info(channel_id: str) -> dict:
     return await asyncio.to_thread(api.channel_info, channel_id)
+
+
+# ---------------------------------------------------------------------------
+# Bridge Corpus — semantic search over transcripts
+# ---------------------------------------------------------------------------
+
+
+async def corpus_create(corpus_id: str, label: str | None = None) -> dict:
+    from . import corpus
+    return await asyncio.to_thread(corpus.corpus_create, corpus_id, label)
+
+
+async def corpus_add(corpus_id: str, video_id: str, force_reembed: bool = False) -> dict:
+    """Add a video's transcript to a corpus. Fetches transcript, chunks, embeds automatically."""
+    result = _get_transcript_with_meta(video_id, None)
+    segments = result["segments"]
+    from . import corpus
+    return await asyncio.to_thread(corpus.corpus_add, corpus_id, video_id, segments, force_reembed)
+
+
+async def corpus_search(corpus_id: str, query: str, top_k: int = 10) -> dict:
+    from . import corpus
+    return await asyncio.to_thread(corpus.corpus_search, corpus_id, query, top_k)
+
+
+async def corpus_list() -> dict:
+    from . import corpus
+    return await asyncio.to_thread(corpus.corpus_list)
+
+
+async def corpus_delete(corpus_id: str) -> dict:
+    from . import corpus
+    return await asyncio.to_thread(corpus.corpus_delete, corpus_id)
