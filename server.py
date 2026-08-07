@@ -1000,9 +1000,44 @@ async def _comments(video_id: str, max_results: int) -> dict:
 
 
 async def main():
-    """Run the MCP server via stdio."""
-    async with stdio_server() as (read_stream, write_stream):
-        await server.run(read_stream, write_stream, server.create_initialization_options())
+    """Run the MCP server via stdio or HTTP (SSE)."""
+    import argparse
+    parser = argparse.ArgumentParser(description="tube-bridge MCP server")
+    parser.add_argument("--http", action="store_true", help="Run as HTTP/SSE server instead of stdio")
+    parser.add_argument("--port", type=int, default=8080, help="HTTP port (default: 8080)")
+    parser.add_argument("--host", default="0.0.0.0", help="HTTP host (default: 0.0.0.0)")
+    args = parser.parse_args()
+
+    if args.http:
+        from mcp.server.sse import SseServerTransport
+        from starlette.applications import Starlette
+        from starlette.routing import Route
+        import uvicorn
+
+        sse = SseServerTransport("/messages")
+
+        async def handle_sse(request):
+            async with sse.connect_sse(
+                request.scope, request.receive, request._send
+            ) as streams:
+                await server.run(streams[0], streams[1], server.create_initialization_options())
+
+        async def handle_messages(request):
+            await sse.handle_post_message(request.scope, request.receive, request._send)
+
+        app = Starlette(
+            routes=[
+                Route("/sse", endpoint=handle_sse),
+                Route("/messages", endpoint=handle_messages, methods=["POST"]),
+            ]
+        )
+
+        config = uvicorn.Config(app, host=args.host, port=args.port, log_level="info")
+        srv = uvicorn.Server(config)
+        await srv.serve()
+    else:
+        async with stdio_server() as (read_stream, write_stream):
+            await server.run(read_stream, write_stream, server.create_initialization_options())
 
 
 if __name__ == "__main__":
