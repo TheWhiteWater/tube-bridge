@@ -749,11 +749,15 @@ def _video_info_cached(video_id: str) -> dict:
 
 async def _video_info(video_id: str) -> dict:
     """Get rich metadata for a video (cached)."""
-    return _video_info_cached(video_id)
+    return await asyncio.to_thread(_video_info_cached, video_id)
 
 
 async def _trending(limit: int) -> dict:
     """Get trending videos (geo-dependent based on server IP)."""
+    return await asyncio.to_thread(_trending_sync, limit)
+
+
+def _trending_sync(limit: int) -> dict:
     limit = min(limit, 30)
     items, stderr = _run_ytdlp_multi([
         "https://www.youtube.com/results?search_query=trending&sp=CAMSBAgEEAE%253D",
@@ -786,9 +790,12 @@ async def _trending(limit: int) -> dict:
 
 async def _channel_videos(channel_url: str, limit: int) -> dict:
     """Get recent videos from a channel."""
+    return await asyncio.to_thread(_channel_videos_sync, channel_url, limit)
+
+
+def _channel_videos_sync(channel_url: str, limit: int) -> dict:
     limit = min(limit, 50)
 
-    # Handle @handle format
     if not channel_url.startswith("http"):
         if channel_url.startswith("@"):
             channel_url = f"https://youtube.com/{channel_url}"
@@ -832,6 +839,10 @@ async def _channel_videos(channel_url: str, limit: int) -> dict:
 
 async def _playlist(playlist_url: str, limit: int) -> dict:
     """Get videos in a playlist."""
+    return await asyncio.to_thread(_playlist_sync, playlist_url, limit)
+
+
+def _playlist_sync(playlist_url: str, limit: int) -> dict:
     limit = min(limit, 100)
     items, stderr = _run_ytdlp_multi([
         playlist_url,

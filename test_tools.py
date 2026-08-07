@@ -13,7 +13,7 @@ async def test():
 
     print("=" * 60)
     print("1. SEARCH: 'python tutorial'")
-    result = await _search("python tutorial", limit=3)
+    result = await _search("python tutorial", limit=3, args={})
     print(f"   Found: {result['total_results']} videos")
     for v in result["videos"]:
         print(f"   - {v['title'][:60]} | {v['channel']} | {v['view_count']:,} views")
