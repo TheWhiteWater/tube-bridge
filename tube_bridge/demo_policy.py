@@ -12,6 +12,12 @@ from typing import Iterator
 
 DEMO_DATA_API_LIMIT = 5
 DEMO_CORPUS_TTL_SECONDS = 600
+_SINGLE_VALUE_IDENTITY_HEADERS = frozenset({
+    "x-real-ip",
+    "cf-connecting-ip",
+    "true-client-ip",
+    "x-client-ip",
+})
 
 _current_client_ip: ContextVar[str | None] = ContextVar(
     "tube_bridge_demo_client_ip", default=None,
@@ -73,6 +79,17 @@ def _headers(scope) -> dict[str, str]:
     return result
 
 
+def _header_values(scope, name: str) -> list[str]:
+    values: list[str] = []
+    for raw_name, raw_value in scope.get("headers", []):
+        try:
+            if raw_name.decode("latin-1").lower() == name:
+                values.append(raw_value.decode("latin-1"))
+        except (AttributeError, UnicodeDecodeError):
+            continue
+    return values
+
+
 def extract_client_ip(scope) -> str | None:
     """Extract one normalized observed address from an ASGI request scope.
 
@@ -80,19 +97,29 @@ def extract_client_ip(scope) -> str | None:
     from the right so an untrusted prefix cannot create fresh identities.
     """
     if os.environ.get("TUBE_BRIDGE_TRUST_PROXY_HEADERS") == "1":
-        forwarded = _headers(scope).get("x-forwarded-for")
-        if not forwarded:
+        selected = os.environ.get(
+            "TUBE_BRIDGE_CLIENT_IP_HEADER", "x-forwarded-for",
+        ).strip().lower()
+        if selected == "x-forwarded-for":
+            forwarded = _headers(scope).get("x-forwarded-for")
+            if not forwarded:
+                return None
+            try:
+                trusted_hops = int(os.environ.get("TUBE_BRIDGE_TRUSTED_PROXY_HOPS", "1"))
+            except ValueError:
+                return None
+            if trusted_hops < 1:
+                return None
+            chain = [item.strip() for item in forwarded.split(",") if item.strip()]
+            if len(chain) < trusted_hops:
+                return None
+            return _normalize_client_ip(chain[-trusted_hops])
+        if selected not in _SINGLE_VALUE_IDENTITY_HEADERS:
             return None
-        try:
-            trusted_hops = int(os.environ.get("TUBE_BRIDGE_TRUSTED_PROXY_HOPS", "1"))
-        except ValueError:
+        values = _header_values(scope, selected)
+        if len(values) != 1 or "," in values[0]:
             return None
-        if trusted_hops < 1:
-            return None
-        chain = [item.strip() for item in forwarded.split(",") if item.strip()]
-        if len(chain) < trusted_hops:
-            return None
-        return _normalize_client_ip(chain[-trusted_hops])
+        return _normalize_client_ip(values[0])
 
     client = scope.get("client")
     if not client or not isinstance(client, (tuple, list)) or not client:
