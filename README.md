@@ -213,7 +213,7 @@ The self-hosted core is fully published through GitHub Release, PyPI, and GHCR. 
 ### What tube-bridge Is NOT
 - Not a SaaS or managed transcript-hosting product.
 - No commercial extension, product gateway, billing, entitlement, or managed higher-quota tier.
-- Grabbit is a completely separate MCP. No connector, dependency, shared service, bundled workflow, code integration, or implementation roadmap exists between tube-bridge and Grabbit. An example agent usage sequence may show the agent uses tube-bridge and then separately uses Grabbit to save links.
+- [Grabbit MCP](https://grabbitapp.com) is a completely separate companion MCP ([live endpoint](https://mcp.grabbitapp.com/api/mcp)). There is no connector, dependency, shared service, bundled workflow, or code integration: an agent may use tube-bridge to find videos and independently use Grabbit to save links.
 - Browser extension is outside this project's release gate and must not be architected here.
 
 ### Decision Sources

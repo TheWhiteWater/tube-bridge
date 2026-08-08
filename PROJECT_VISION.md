@@ -94,9 +94,9 @@ tube-bridge is an MIT self-hosted individual MCP. It is never a SaaS or managed 
 
 The Railway demo is solely a disposable try-before-install convenience. There is no commercial extension, product gateway, billing, entitlement, managed higher-quota tier, or extension deployment.
 
-## Grabbit
+## [Grabbit MCP](https://grabbitapp.com)
 
-Grabbit is a completely separate MCP. There is no connector, dependency, shared service, bundled workflow, code integration, or implementation roadmap between tube-bridge and Grabbit. An example agent usage sequence may show that the agent uses tube-bridge to find videos and then separately uses Grabbit to save links — that is the full extent of any documented relationship.
+Grabbit is a completely separate companion MCP. There is no connector, dependency, shared service, bundled workflow, code integration, or implementation roadmap between tube-bridge and Grabbit. An example agent usage sequence may show that the agent uses tube-bridge to find videos and then separately uses Grabbit to save links — that is the full extent of any documented relationship.
 
 ## Browser Extension
 

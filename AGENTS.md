@@ -108,7 +108,7 @@ python3 test_tools.py          # live smoke script only
 ### Core vs Demo vs Grabbit Boundary
 - **Core (MIT):** All 16 tools, all transports, cache/corpus logic — open source, zero registration for 13 tools.
 - **Demo (Railway, disposable):** Try-before-install only. The accepted target is exactly 5 Data API operations per observed client IP plus corpus deletion within 10 minutes and no durable storage/accounts; WI-00029 implementation and verification remain open. Never present these controls as active yet.
-- **Grabbit (separate MCP):** Completely separate MCP. No connector, dependency, shared service, code integration, or implementation roadmap exists. An example agent usage sequence may show the agent using tube-bridge to find videos and then separately using Grabbit to save links — that is the full extent of any documented relationship.
+- **[Grabbit MCP](https://grabbitapp.com) (separate companion; endpoint `https://mcp.grabbitapp.com/api/mcp`):** Completely separate MCP. No connector, dependency, shared service, code integration, or implementation roadmap exists. An example agent usage sequence may show the agent using tube-bridge to find videos and then separately using Grabbit to save links — that is the full extent of any documented relationship.
 
 ### Source/Test Changes
 - Source and test changes require corresponding tests and independent acceptance.
