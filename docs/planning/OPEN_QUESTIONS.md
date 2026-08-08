@@ -7,7 +7,7 @@ Unresolved questions and blocking decisions. Resolved historical questions recor
 ### Q1: Dual-source architecture (yt-dlp + Data API v3)
 **Status:** Resolved — ADR-001 (2026-08-08).
 **Resolution:** Dual-source architecture confirmed as the direction. Data API v3 is primary for search, video_info, and trending when `YOUTUBE_API_KEY` is present; yt-dlp is the fallback for quota-exhausted or key-absent paths. Source: `tube_bridge/tools.py` implements dual-source dispatch in `search()`, `video_info()`, `trending()`.
-**Evidence:** `tube_bridge/tools.py` lines 16–62, 78–117, 125–163; ADR-001.
+**Evidence:** `search()`, `video_info()` and `trending()` in `tube_bridge/tools.py`; ADR-001.
 
 ### Q2: Comments — Data API v3 only
 **Status:** Resolved — ADR-001 (2026-08-08).
@@ -26,8 +26,8 @@ Unresolved questions and blocking decisions. Resolved historical questions recor
 
 ### Q5: Deployment — local stdio plus Railway HTTP
 **Status:** Resolved — ADR-001 (2026-08-08).
-**Resolution:** tube-bridge supports both local stdio (child-process MCP transport) and Railway-hosted HTTP (`tube-bridge-production.up.railway.app`) with Streamable HTTP `/mcp` and optional Bearer auth. Stdio mode opens no inbound socket; tools use outbound network (yt-dlp subprocess, Data API v3 HTTPS). Public hardening (5-operation limit enforcement, 10-minute corpus TTL) remains pending implementation for the demo endpoint. No third deployment target is required.
-**Evidence:** `server.py` transport dispatch; `tube_bridge/transport.py`; Railway endpoint deployed; ADR-001.
+**Resolution:** tube-bridge supports local stdio and Railway-hosted HTTP (`tube-bridge-production.up.railway.app`) with Streamable HTTP `/mcp` and Bearer auth. Stdio opens no inbound socket and explicit demo mode fails closed on stdio. Railway demo hardening is active: overwritten `X-Real-IP`, 5 attempted Data API operations/IP/process, memory-only counters, and 10-minute corpus deadlines. No third deployment target is required.
+**Evidence:** `server.py`; `tube_bridge/transport.py`; `tube_bridge/demo_policy.py`; `tube_bridge/demo_ttl.py`; Railway live probes; ADR-001.
 
 ### Q6: Channel search
 **Status:** Resolved — shipped in source.
@@ -38,31 +38,31 @@ Unresolved questions and blocking decisions. Resolved historical questions recor
 
 ## Blocking Questions (Resolved)
 
-All four blocking questions are resolved per ADR-001 (accepted 2026-08-08). Implementation remains open. No blocking decisions remain.
+All four blocking questions are resolved per ADR-001. WI-00028 accepted core publication and WI-00029 accepted demo implementation/live controls. No blocking decisions remain.
 
 ### B1: Consumer identity and usage budgets
-**Status:** Decision Resolved / Implementation Open.
+**Status:** Resolved and Implemented.
 **Owner:** Operator.
-**Resolution:** ADR-001 decision #1 and #2: Isolated Google Cloud project completely separate from Operator personal/development configuration. Exactly 5 official YouTube Data API v3 operations per observed client IP during the current demo-process lifetime. Identity is IP-only with no accounts or sessions. The counter is memory-only, has no time reset, resets when the disposable process restarts, and is never written to durable storage.
-**Exit evidence:** Isolated GCP project provisioned (D1); memory-only IP counter and 5-operation limit enforced and tested (D2) — both implementation open.
+**Resolution:** Isolated server-side demo configuration. Exactly 5 attempted Data API v3 network operations per Railway-overwritten `X-Real-IP` during the current process lifetime. No accounts/sessions; salted-HMAC bucket is memory-only, has no time reset, resets on process restart, and is never durably stored.
+**Exit evidence:** Frozen Data API-boundary/identity tests; live six-value spoof probe yielded one bucket, five allows and sixth rejection; live restart reset aggregates to zero.
 
 ### B2: Hosted corpus exposure, persistence, and retention
-**Status:** Decision Resolved / Implementation Open.
+**Status:** Resolved and Implemented.
 **Owner:** Operator.
-**Resolution:** ADR-001 decision #3 and #6: Every corpus created on the demo is automatically deleted 10 minutes after creation. No persistent volume, backups, accounts, or durable transcript/corpus hosting. Self-hosted instances have full persistent corpus storage under `~/.tube_bridge`. Tube-bridge is an MIT self-hosted MCP, never a SaaS or managed hosting product.
-**Exit evidence:** 10-minute corpus TTL enforced and observable (D5). No persistent volume or accounts required.
+**Resolution:** Every demo corpus has a persisted 600-second deadline and is transactionally deleted by a nearest-deadline/reconciliation worker. No Railway volume, backups, accounts, or durable hosting. Self-hosted storage under `~/.tube_bridge` remains persistent.
+**Exit evidence:** Frozen deadline/restart/rollback/race/worker tests; Railway manifest has no volume; non-invasive filesystem probe observed complete relational/vector deletion at the deadline sampling boundary.
 
 ### B3: Copyright, privacy, deletion, and compliance policy
-**Status:** Decision Resolved / Implementation Open.
+**Status:** Resolved and Implemented.
 **Owner:** Operator.
-**Resolution:** ADR-001 decision #3 and #6: No persistent hosted corpus, no durable transcripts, no user accounts, no SaaS/managed hosting. Corpora auto-delete 10 minutes after creation. Self-hosted boundary means users bring their own storage and keys. The demo needs a concise data-handling and deletion notice; the transient model does not waive applicable privacy, copyright, or YouTube policy obligations.
-**Exit evidence:** Published demo data-handling and deletion notice (D4), plus evidence that no user data persists beyond the 10-minute corpus TTL.
+**Resolution:** No persistent hosted corpus, durable hosting promise, user accounts, SaaS or managed service. Raw client IP is not persisted or emitted by application access logs; corpora delete at 10 minutes. The transient model does not waive applicable privacy, copyright, or YouTube policy obligations.
+**Exit evidence:** Published README data-handling/deletion notice, privacy tests, known-probe-IP application-log check, no-volume manifest and TTL deletion evidence.
 
 ### B4: Release evidence target
 **Status:** Core Publication Resolved.
 **Owner:** Operator/Architect.
-**Resolution:** ADR-001 decision #7 is complete for the self-hosted core: GitHub Release, PyPI package, and public GHCR image are published. Disposable-demo controls remain a separate gate.
-**Exit evidence:** Frozen 125-test suite, hosted Python 3.12/3.13 CI, PyPI install/CLI, wheel+sdist/twine, exact dependency lock, public GHCR pull and authenticated MCP handshake, SQLite cleanup, and GitHub Release assets pass.
+**Resolution:** ADR-001 decision #7 is complete for both independent surfaces: GitHub Release, PyPI and public GHCR for self-hosted core; controlled Railway deployment for the disposable demo.
+**Exit evidence:** Core 125-test freeze, package/registry receipts, cumulative 209-test hosted CI, demo lifecycle/audits, and live Railway identity/quota/restart/TTL receipts pass.
 
 ---
 

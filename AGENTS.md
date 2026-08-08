@@ -20,7 +20,8 @@ python3 test_tools.py          # live smoke test (not an automated suite)
 tube_bridge/
 ├── server.py          # MCP wiring: 16-tool registration (list_tools) + dispatch (call_tool)
 ├── tools.py           # All tool implementations (async, cached, dual-source)
-├── transport.py       # Streamable HTTP (/mcp) + SSE (/sse, legacy) + stdio + optional Bearer auth
+├── cli.py             # Argument parsing and stdio-vs-HTTP runtime selection
+├── transport.py       # Streamable HTTP/SSE ASGI routes + Bearer auth + identity + health
 ├── cache.py           # Persistent SQLite cache (cache.db) — transcript + video metadata tables
 ├── corpus.py          # Semantic search (corpus.db) — sqlite-vec vectors + fastembed (local)
 └── youtube/
@@ -32,7 +33,7 @@ tube_bridge/
 
 ## Tools (16)
 
-Registered in `tube_bridge/server.py` `list_tools()` (lines 67–248). Confirmed from source.
+Registered from `TOOL_CATALOG` by `tube_bridge/server.py` `list_tools()`. Confirmed from source.
 
 | # | Tool | API Key | Notes |
 |---|------|:---:|-------|
@@ -74,7 +75,7 @@ Both databases live under the same configurable directory but are distinct files
 - **Streamable HTTP** (`/mcp`) — recommended for remote deployments.
 - **SSE** (`/sse`) — legacy, deprecated in favor of Streamable HTTP.
 - **`/health`** — always open, returns tool count and auth status.
-- **Optional Bearer auth** — `TUBE_BRIDGE_AUTH_KEY` env var protects all remote routes except `/health` (/mcp, /sse, /messages). Sourced at `tube_bridge/transport.py` line 66.
+- **Optional Bearer auth** — `TUBE_BRIDGE_AUTH_KEY` env var protects all remote routes except `/health` (`/mcp`, `/sse`, `/messages`). Sourced by `_get_auth_key()` in `tube_bridge/transport.py`.
 
 ## Conventions
 
@@ -91,14 +92,14 @@ Both databases live under the same configurable directory but are distinct files
 python3 test_tools.py          # live smoke script only
 ```
 
-`test_tools.py` remains an optional live smoke. The acceptance suite is the frozen `tests/` tree: 125 deterministic tests covering all 16 tools, package/install, SQLite lifecycle, real MCP transport, and Docker. `.github/workflows/ci.yml` is configured; hosted evidence requires an authorized push.
+`test_tools.py` remains an optional live smoke. The original core freeze is 125 tests; the cumulative acceptance tree is 209 deterministic tests covering all 16 tools, package/install, SQLite lifecycle/races, demo identity/quota/TTL, real MCP transport, and Docker. `.github/workflows/ci.yml` passes on Python 3.12 and 3.13.
 
 ## Operational Guardrails
 
 ### Decision Sources
 - `PROJECT_VISION.md` — product boundaries, tool baseline, open-core scope.
-- `docs/planning/PUBLICATION_READINESS.md` — per-surface readiness checklist; core publication is accepted, disposable-demo hardening remains separate.
-- `docs/adr/001-demo-api-quota-and-product-boundary.md` — architecture direction for demo access, quota management, and product separation.
+- `docs/planning/PUBLICATION_READINESS.md` — per-surface readiness checklist; core publication and disposable-demo P0 controls are independently accepted.
+- `docs/adr/001-demo-api-quota-and-product-boundary.md` — accepted architecture and implementation outcome for demo access, quota/TTL, and product separation.
 
 ### No Direct Client-Side Upstream Access Material
 - tube-bridge obtains optional API keys, tokens, and proxy URLs from environment variables at runtime.
@@ -107,7 +108,7 @@ python3 test_tools.py          # live smoke script only
 
 ### Core vs Demo vs Grabbit Boundary
 - **Core (MIT):** All 16 tools, all transports, cache/corpus logic — open source, zero registration for 13 tools.
-- **Demo (Railway, disposable):** Try-before-install only. The accepted target is exactly 5 Data API operations per observed client IP plus corpus deletion within 10 minutes and no durable storage/accounts; WI-00029 implementation and verification remain open. Never present these controls as active yet.
+- **Demo (Railway, disposable):** Controlled try-before-install only. Active WI-00029 controls are exactly 5 attempted Data API operations per Railway-overwritten `X-Real-IP`/process, memory-only privacy-preserving counters, 10-minute transactional corpus deletion, and no durable storage/accounts/volume/backups. Never present this as SaaS, an SLA, or managed hosting.
 - **[Grabbit MCP](https://grabbitapp.com) (separate companion; endpoint `https://mcp.grabbitapp.com/api/mcp`):** Completely separate MCP. No connector, dependency, shared service, code integration, or implementation roadmap exists. An example agent usage sequence may show the agent using tube-bridge to find videos and then separately using Grabbit to save links — that is the full extent of any documented relationship.
 
 ### Source/Test Changes
@@ -117,15 +118,15 @@ python3 test_tools.py          # live smoke script only
 
 ### Publication Readiness
 - **Core publication is accepted:** GitHub Release, PyPI, public GHCR, hosted CI, external install and container MCP checks are recorded.
-- Do not extend this claim to disposable-demo controls, production SLA, legal compliance, or one-click managed hosting.
-- Remaining demo P0/P1/P2 items are tracked in `docs/planning/PUBLICATION_READINESS.md`.
+- **Disposable-demo P0 is independently accepted:** frozen-TDD, hosted CI and live Railway identity/quota/restart/TTL evidence are recorded.
+- Do not extend either claim to a production SLA, legal conclusion, durable managed hosting, or one-click service promise. Conditional demo P1/P2 items remain tracked in `docs/planning/PUBLICATION_READINESS.md`.
 
 ## Core Release-Candidate State
 
 1. `TOOL_CATALOG` is the single runtime source for 16 registered tools and derived HELP metadata.
 2. Package documentation states 16 tools.
 3. The installed synchronous entrypoint is `tube_bridge.cli:main`; isolated wheel install and MCP runtime are verified.
-4. Frozen suite, build/twine, hosted CI, PyPI install, public GHCR pull/MCP handshake, and GitHub Release are verified. Demo hardening remains separately gated.
+4. Frozen suite, build/twine, hosted CI, PyPI install, public GHCR pull/MCP handshake, and GitHub Release are verified. Separately, demo quota/privacy/TTL controls pass their source and live gates.
 
 ## Key Docs
 

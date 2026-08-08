@@ -47,11 +47,11 @@ Grabbit is a completely separate MCP. There is no connector, dependency, shared 
 
 The following are **not promised** until their respective readiness gates are passed (tracked in `docs/planning/PUBLICATION_READINESS.md`):
 
-- **Unlimited public demo access** — the hosted demo endpoint exists for development and testing. Controlled public access (budgets, abuse controls, observability) is proposed but not yet implemented.
+- **Unlimited public demo access** — explicitly excluded. The active disposable demo is bounded to 5 attempted Data API operations per Railway-observed IP/process, uses Bearer transport auth, and makes no availability promise.
 - **YouTube Data API quota beyond default allocation** — no additional allocation beyond the default has been documented as requested or granted. YouTube's official docs identify the audit/extension process; no purchasable quota tier was identified.
 - **Legal clearance** — no legal review, copyright compliance assessment, or terms-of-service analysis has been completed. Users are responsible for their own compliance.
 - **Proxy reliability** — the `TUBE_BRIDGE_PROXY` feature is operational, but no uptime SLA, throughput guarantee, or reliability promise is made for any specific proxy service.
-- **Durable hosted corpus storage** — it is outside the accepted demo design. WI-00029 must still implement and verify deletion within 10 minutes and absence of persistent volumes/backups; do not claim the current endpoint already enforces this. Self-hosted instances have persistent corpus storage.
+- **Durable hosted corpus storage** — outside the accepted demo design. WI-00029 verified persisted 10-minute deadlines, transactional deletion and absence of Railway volume/backups. Self-hosted instances have persistent corpus storage.
 
 ---
 
@@ -62,7 +62,7 @@ The following **is in scope** for the open-core:
 - **Metadata caching** — `cache.db` stores transcripts and video metadata persistently. This is a performance optimization, not a long-term archive. Safe to delete and regenerate.
 - **Corpus storage** — `corpus.db` stores user-created semantic search corpora with chunks and vectors. This is user-managed, persistent, and explicitly created/deleted by the user.
 
-**Policy/retention decisions** (how long to keep cached data, whether to auto-expire, data deletion procedures) are **still readiness decisions** for the Operator. The storage mechanism exists; the governance around it does not yet.
+**Policy/retention boundary:** self-hosted cache/corpus retention remains the deploying user's decision. The separate Railway demo has a fixed accepted boundary: ephemeral deployment storage, no account/backup/volume promise, and corpus deletion at 10 minutes.
 
 ---
 

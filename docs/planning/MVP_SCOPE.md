@@ -1,6 +1,6 @@
 # MVP Scope — tube-bridge
 
-> **Status:** Self-hosted core implementation, runtime acceptance, and publication are complete. Disposable-demo quota/retention implementation remains open under WI-00029. This is a retrospective scope document grounded in shipped code. No commercial extension, product gateway, or Grabbit connector.
+> **Status:** Self-hosted core implementation/publication and the separately gated disposable-demo P0 controls are complete. This is a retrospective scope document grounded in shipped code and live evidence. No commercial extension, product gateway, or Grabbit connector.
 
 ## What the Implementation Baseline Contains
 
@@ -61,7 +61,7 @@ Total tools registered in `tube_bridge/server.py` `list_tools()`: **10 YouTube i
 
 ### Deployment
 
-- **Railway demo endpoint deployed:** `tube-bridge-production.up.railway.app`. For development and limited testing; not advertised as a public service.
+- **Railway disposable demo deployed:** `tube-bridge-production.up.railway.app`. Controlled try-before-install surface; not a SaaS, durable corpus host, or managed service.
 
 ## Evidence Status (Honest Assessment)
 
@@ -70,16 +70,16 @@ Total tools registered in `tube_bridge/server.py` `list_tools()`: **10 YouTube i
 | 16 tools registered | **Shipped** | `tube_bridge/server.py` `list_tools()` registers exactly 16 `Tool()` objects (source-verified) |
 | 13 keyless / 3 API-key | **Shipped** | Verified against `list_tools()` + tool implementations in `tube_bridge/tools.py` (source-verified) |
 | Dual-source search/video/trending | **Shipped** | `tube_bridge/tools.py` `search()`, `video_info()`, `trending()` implement dual-source dispatch (source-verified) |
-| All 3 transports + /messages + health | **Shipped** | `tube_bridge/transport.py` wires stdio/HTTP/SSE; `/messages` POST handler at line 77–78; health endpoint at line 43–48 (source-verified) |
-| Separate cache.db / corpus.db | **Shipped** | `tube_bridge/cache.py` line 13, `tube_bridge/corpus.py` line 15 (source-verified) |
+| All 3 transports + /messages + health | **Shipped** | `tube_bridge.cli` owns stdio-vs-HTTP selection; `tube_bridge.transport` wires HTTP/SSE, `/messages`, `/health`, auth and identity (source-verified) |
+| Separate cache.db / corpus.db | **Shipped** | Distinct `tube_bridge.cache.DB_PATH` and `tube_bridge.corpus.DB_PATH` authorities (source-verified) |
 | Local embedding inference | **Shipped** | `tube_bridge/corpus.py` uses fastembed; inference code present in source (source-verified; formal runtime acceptance open) |
 | Railway demo exists | **Deployed** | Confirmed endpoint deployed |
-| Automated test suite / CI | **Verified** | Core C2: 125 frozen deterministic tests and hosted Python 3.12/3.13 CI pass. `test_tools.py` remains optional live smoke |
+| Automated test suite / CI | **Verified** | Core C2 retains its 125-test freeze; cumulative source/demo suite is 209 deterministic tests with hosted Python 3.12/3.13 CI PASS. `test_tools.py` remains optional live smoke |
 | PyPI / install / entrypoint verification | **Published and verified** | Core C3: PyPI install, packaged `tube_bridge.cli:main`, installed MCP runtime, wheel+sdist/twine, and public GHCR runtime pass |
-| Demo public access controls | **Decision resolved, not implemented** | Demo D1–D2 P0. Per ADR-001: dedicated GCP project, exactly 5 Data API ops per client/IP. Enforcement not deployed |
-| Observability and monitoring | **Decision resolved, not implemented** | Demo D3 P0. Counters/errors for 5-op limit and 10-min TTL. Not deployed |
-| Policy / privacy / retention | **Decision resolved, implementation open** | Demo D4 P0. Per ADR-001: no persistent volume, accounts, backups, or durable transcript/corpus hosting. A concise demo data-handling/deletion notice is required; the transient model does not waive applicable privacy, copyright, or YouTube policy obligations |
-| Corpus exposure and persistence mode | **Decision resolved, not implemented** | Demo D5 P0. Per ADR-001: every corpus auto-deleted 10 minutes after creation. Self-hosted instances have full persistent corpus storage |
+| Demo public access controls | **Accepted** | Dedicated server-side config; Railway-overwritten `X-Real-IP`; one bucket across spoof attempts; exactly 5 allows and structured sixth rejection; restart reset |
+| Observability and monitoring | **Accepted** | Aggregate `/health` counters, structured policy errors, no raw identity persistence, application access log disabled; known probe identities absent from Railway application logs |
+| Policy / privacy / retention | **Accepted** | README data-handling notice; no persistent volume, accounts, backups, or durable hosting promise. Transient operation does not waive external policy obligations |
+| Corpus exposure and persistence mode | **Accepted** | Persisted 600-second deadline, nearest-deadline/reconciliation worker, transactional relational/vector deletion, deterministic race coverage, and live non-invasive deletion observation. Self-hosted storage remains persistent |
 
 ## Excluded from MVP Scope
 
@@ -87,7 +87,7 @@ Total tools registered in `tube_bridge/server.py` `list_tools()`: **10 YouTube i
 |---------|--------|--------|
 | Bulk scraping / scheduled harvests | Non-goal per 05_NON_GOALS.md | Excluded |
 | Video download or mutation | Read-only tools only per 00_MISSION.md | Excluded |
-| Unlimited public demo access | Per ADR-001: exactly 5 Data API ops per client/IP; enforcement not yet implemented (D2 P0) | Blocked (Demo D2 P0) |
+| Unlimited public demo access | Contrary to ADR-001 and the accepted exactly-5 process-lifetime allowance | Excluded; bounded demo is active |
 | Browser extension | Outside project scope and release gate per ADR-001 | Excluded |
 | Grabbit connector or integration | Grabbit is a completely separate MCP per ADR-001; companion MCP example only, no tube-bridge implementation | Excluded |
 | Commercial extension / product gateway | No commercial extension, gateway, billing, or managed hosting planned per ADR-001 | Excluded |
@@ -97,7 +97,7 @@ Total tools registered in `tube_bridge/server.py` `list_tools()`: **10 YouTube i
 
 ### Implementation Baseline (Shipped in Source)
 
-The following core items are verified against source, frozen tests, installed artifacts, hosted CI, PyPI, and the public registry image. Live upstream availability and disposable-demo controls remain separately bounded.
+The following core items are verified against source, frozen tests, installed artifacts, hosted CI, PyPI, and the public registry image. Disposable-demo controls are separately verified; live upstream availability remains an operational limitation.
 
 - [x] 16 MCP tools registered in source (`list_tools()` returns exactly 16 `Tool()` objects)
 - [x] 13 tools work without API key; 3 with optional `YOUTUBE_API_KEY` (source-verified)
@@ -105,7 +105,7 @@ The following core items are verified against source, frozen tests, installed ar
 - [x] All 3 transports (stdio, `/mcp` Streamable HTTP, `/sse` legacy) plus `/messages` handler and `/health` route (source-verified)
 - [x] Separate `cache.db` and `corpus.db` implemented in source
 - [x] Local embedding inference (fastembed) implemented in source; formal runtime acceptance open
-- [x] Optional Bearer auth on every remote route except `/health` (source-verified in `tube_bridge/transport.py` line 66)
+- [x] Optional Bearer auth on every remote route except `/health` (source-verified via `_get_auth_key()`/`_check_auth()` in `tube_bridge.transport`)
 - [x] Railway demo endpoint deployed
 - [x] MIT license; open-core source on GitHub
 
@@ -121,18 +121,19 @@ Core publication acceptance (Surface 1) has complete C1–C5 evidence plus GitHu
 
 ### Disposable Demo Acceptance Gate (Independent of Core)
 
-Disposable demo acceptance (Surface 2) requires D1–D5 P0 evidence. D6 and X1–X3 are triaged/conditional. The demo can be withheld while core remains available. All demo decisions are resolved per ADR-001 (accepted 2026-08-08); implementation remains open.
+Disposable demo acceptance (Surface 2) has D1–D5 P0 evidence. D6 and X1–X2 remain triaged with event-based review triggers; X3 is N/A while no volume is attached. The demo can still be withheld independently while core remains available.
 
-- [ ] D1: Dedicated Google Cloud project and server-side upstream setup, isolated from Operator personal/development configuration (P0)
-- [ ] D2: Exactly 5 official YouTube Data API v3 operations per client/IP enforced (P0)
-- [ ] D3: Counters/errors observability sufficient to enforce the 5-operation limit and 10-minute corpus TTL (P0)
-- [ ] D4: Self-hosted boundary and disposable demo disclosure documented — no persistent volume, accounts, backups, or durable transcript/corpus hosting (P0, decision resolved per ADR-001)
-- [ ] D5: 10-minute corpus auto-deletion implemented — every corpus created on the demo is deleted 10 minutes after creation; self-hosted instances have full persistent storage (P0, decision resolved per ADR-001)
-- [ ] D6: YouTube API Services audit/quota-extension path (P1 conditional; becomes P0 if demo usage hits default quota ceiling before extension complete)
-- [ ] X1–X3: Quota extension, proxy reliability, Railway persistence — triaged conditional (P1); not blocking without threshold breach
+- [x] D1: Dedicated Google Cloud project and server-side upstream setup, isolated from Operator personal/development configuration (P0)
+- [x] D2: Exactly 5 attempted official YouTube Data API v3 operations per Railway-observed client IP/process enforced and live-probed (P0)
+- [x] D3: Aggregate counters/structured errors enforce the allowance and expose TTL configuration without raw identity (P0)
+- [x] D4: Self-hosted boundary and disposable demo data-handling disclosure documented; no volume/accounts/backups/durable hosting (P0)
+- [x] D5: Persisted 10-minute corpus deadline with transactional auto-deletion deterministically and live verified; self-hosted storage remains persistent (P0)
+- [ ] D6/X1: YouTube audit/quota-extension path (P1 conditional); review before broad announcement and when demand approaches default allocation; becomes P0 if the ceiling is hit first
+- [ ] X2: Proxy reliability (P1 conditional); review before broad announcement and on an Operator-observed availability-threshold breach
+- [x] X3: Railway persistence/backups N/A for the accepted no-volume, non-durable demo
 
 ### Publication Scope
 
-Only two surfaces have acceptance gates: published self-hosted Core and Disposable Demo. Core publication/runtime acceptance is complete; demo quota/retention implementation remains open. There is no commercial extension, product gateway, Grabbit connector, or browser-extension surface.
+Only two surfaces have acceptance gates: published self-hosted Core and Disposable Demo. Both P0 gates are complete and remain independent. There is no commercial extension, product gateway, Grabbit connector, or browser-extension surface.
 
-**Core implementation and publication are accepted. Disposable-demo acceptance is not.**
+**Core implementation/publication and disposable-demo P0 controls are accepted independently.**

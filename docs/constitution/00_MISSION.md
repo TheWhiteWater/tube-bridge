@@ -27,9 +27,9 @@ Build the **most complete, zero-friction YouTube MCP server** — covering searc
 - Users bring their own `YOUTUBE_API_KEY` for the 3 API-dependent tools (comments, channel search, channel info).
 
 **Hosted demo endpoint (Railway, disposable):**
-- Reachable try-before-install endpoint: `tube-bridge-production.up.railway.app`; not a SaaS or managed service.
-- WI-00029 target: isolated server-side upstream configuration, exactly 5 Data API operations per observed client IP, corpus deletion within 10 minutes, and no persistent volume/backups/accounts/durable corpus.
-- Those demo controls are decisions, not accepted current behavior; implementation and deterministic verification remain open.
+- Controlled try-before-install endpoint: `tube-bridge-production.up.railway.app`; not a SaaS or managed service.
+- WI-00029 accepted controls: isolated server-side configuration, exactly 5 attempted Data API operations per Railway-overwritten `X-Real-IP`/process, memory-only privacy-preserving counters, transactional corpus deletion at 10 minutes, and no volume/backups/accounts/durable corpus.
+- These controls have frozen deterministic, hosted-CI and live Railway evidence; self-hosted behavior is unaffected.
 
 **Grabbit (separate MCP):**
 - Completely separate MCP. No connector, dependency, shared service, code integration, or implementation roadmap exists between tube-bridge and Grabbit.
@@ -37,7 +37,7 @@ Build the **most complete, zero-friction YouTube MCP server** — covering searc
 
 ## Tool Baseline
 
-16 MCP tools registered in `tube_bridge/server.py` `list_tools()` (source: lines 67–248):
+16 MCP tools registered from `TOOL_CATALOG` by `tube_bridge/server.py` `list_tools()`:
 
 - **10 YouTube interaction tools:** `youtube_search`, `youtube_search_channels`, `youtube_get_channel_info`, `youtube_get_video_info`, `youtube_get_trending`, `youtube_get_channel_videos`, `youtube_get_playlist`, `youtube_get_transcript`, `youtube_get_available_languages`, `youtube_get_comments`.
 - **5 corpus tools:** `corpus_create`, `corpus_add`, `corpus_search`, `corpus_list`, `corpus_delete`.
@@ -56,8 +56,8 @@ Search, video_info, and trending upgrade to higher-quality Data API v3 results w
 - 16 tools available via stdio, Streamable HTTP, and SSE MCP transports.
 - 13 tools work with zero API keys; 3 unlock with an optional Data API v3 key.
 - Semantic corpus search over transcripts using local embeddings (fastembed + sqlite-vec), with embedding inference done locally after model assets are available; initial model acquisition/cache may require network. `corpus_add` fetches transcripts over the network.
-- Open-core library published on GitHub under MIT license; hosted demo endpoint deployed for development/testing (Railway).
-- Publication readiness gating: self-hosted core publication is accepted; disposable-demo readiness remains separately tracked in `docs/planning/PUBLICATION_READINESS.md`.
+- Open-core library published on GitHub under MIT license; controlled disposable demo deployed on Railway.
+- Publication readiness gating: self-hosted core and disposable-demo P0 controls are independently accepted in `docs/planning/PUBLICATION_READINESS.md`.
 
 ## Anti-Goals (what success is NOT)
 
@@ -65,4 +65,4 @@ Search, video_info, and trending upgrade to higher-quality Data API v3 results w
 - NOT a video player or UI.
 - NOT a replacement for YouTube Data API — a complementary, agent-first alternative.
 - NOT a scraping service at scale — designed for agent use, not bulk harvesting.
-- NOT a public production service — the Railway endpoint is only a try-before-install demo; its separate WI-00029 quota/retention gates have not passed.
+- NOT a public production service or SLA-backed managed host — the Railway endpoint is only a controlled, non-durable try-before-install demo despite its accepted quota/retention controls.

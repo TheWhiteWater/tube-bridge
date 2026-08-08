@@ -1,7 +1,8 @@
 # ADR-001: Demo API Access, Quota Boundary, and Self-Hosted Product Boundary
 
-**Status:** Accepted (architecture direction; not launch approval)
+**Status:** Accepted and implemented (core and disposable-demo gates remain independent)
 **Date:** 2026-08-08
+**Implementation accepted:** 2026-08-09
 **Authority:** Operator/Architect
 
 ## Context
@@ -12,10 +13,10 @@ A Railway-hosted disposable demo endpoint exists at `tube-bridge-production.up.r
 
 ### Key constraints
 
-1. Source code obtains optional Data API access configuration from environment variables at runtime. No API key, token, or secret is bundled, embedded, committed, or shipped in the repository (source: `tube_bridge/tools.py` line 18 `api.get_api_key()`; `tube_bridge/transport.py` line 14 `os.environ.get("TUBE_BRIDGE_AUTH_KEY")`).
+1. Source code obtains optional Data API/auth configuration from environment variables at runtime. No API key, token, or secret is bundled, embedded, committed, or shipped (source authorities: `api.get_api_key()` and transport `_get_auth_key()`).
 2. YouTube Data API v3 does not provide transcript text. Transcript reliability is a separate `youtube-transcript-api`/proxy concern.
 3. Google documents default allocation as 100 search.list calls/day, 100 videos.insert calls/day, and 10,000 units/day combined for other endpoints, subject to change. Additional quota uses the YouTube API Services audit/quota-extension process. No purchasable quota tier was identified in official documentation.
-4. At ADR acceptance time, full-publication readiness was not accepted. Subsequent WI-00028 evidence now accepts the self-hosted core publication; demo acceptance remains separate.
+4. At ADR acceptance time, full-publication readiness was not accepted. WI-00028 subsequently accepted the self-hosted core publication; WI-00029 independently accepted the deployed disposable-demo P0 controls.
 
 ## Decision
 
@@ -27,7 +28,7 @@ The demo's Data API access uses a dedicated Google Cloud project with isolated s
 
 ### 2. Fixed 5-operation limit per client/IP
 
-The demo enforces exactly 5 official YouTube Data API v3 operations per observed client IP during the lifetime of the current demo process. Identity is IP-only: there are no user accounts or sessions. The counter is held only in process memory, has no time-based reset, and resets when the disposable demo process restarts. The IP counter is not written to corpus storage or another durable store. Exhaustion affects only the disposable demo — self-hosted users bring their own keys and are unaffected.
+The demo enforces exactly 5 attempted official YouTube Data API v3 operations per observed client IP during the lifetime of the current demo process. Identity is IP-only: there are no user accounts or sessions. On Railway, the application explicitly trusts the platform-overwritten single-value `X-Real-IP` header; client-controlled XFF is not selected. The counter is keyed by a process-random salted HMAC digest, held only in process memory, has no time-based reset, and resets when the disposable demo process restarts. Raw IPs and counters are not written to corpus storage or another durable store. Exhaustion affects only the disposable demo — self-hosted users bring their own keys and are unaffected.
 
 **Rationale:** This is the simplest literal implementation of the fixed per-client/IP allowance. It prevents one client from exhausting shared demo quota without accounts, persistent identity, complex budgets, or an anomaly-detection platform. Process restarts may restore the allowance because the demo provides no continuity guarantee.
 
@@ -58,7 +59,7 @@ tube-bridge is an MIT self-hosted individual MCP, never a SaaS or managed transc
 
 ### 7. Full-publication scope
 
-Full open-source core distribution means GitHub Release, PyPI package, and public container image, with the demo documented as a separate surface. WI-00028 subsequently completed source/test/package verification and external publication; WI-00029 demo controls remain open.
+Full open-source core distribution means GitHub Release, PyPI package, and public container image, with the demo documented as a separate surface. WI-00028 completed source/test/package verification and external publication. WI-00029 separately completed frozen-TDD implementation, Railway configuration, adversarial identity/quota probes, restart-reset verification, and non-invasive 10-minute TTL verification.
 
 ### 8. Grabbit separation
 
@@ -88,7 +89,7 @@ A browser extension is outside this project's scope and release gate. It must no
 - Open-core library remains zero-friction: 13 tools work without any setup.
 - Demo users get a functional hosted endpoint without obtaining their own API key.
 - Fixed 5-operation limit is transparent and simple — no complex budget/enforcement infrastructure needed.
-- 10-minute corpus TTL eliminates data retention, privacy, and compliance overhead on the demo.
+- 10-minute corpus TTL reduces the demo's retention surface and avoids durable hosted-data operations; it does not eliminate applicable privacy, copyright, platform-policy, or other compliance obligations.
 - Self-hosted users are unaffected by demo limits; they bring their own keys and have full persistent storage.
 - Clean product boundary: no extension, no gateway, no billing, no Grabbit coupling.
 
@@ -99,10 +100,13 @@ A browser extension is outside this project's scope and release gate. It must no
 - YouTube audit/quota-extension process has no guaranteed timeline or outcome.
 - Transcript pipeline depends on a third-party proxy service (IPRoyal) for datacenter deployments.
 
-## Open Implementation Details
+## Implementation Outcome
 
-1. **10-minute TTL mechanism** — background cleanup loop, per-corpus timer, or lazy expiry checks may be chosen during implementation, provided every demo corpus becomes inaccessible and is deleted no later than 10 minutes after creation.
-2. **Full-publication verification** — subsequently completed by WI-00028: frozen deterministic tests, hosted CI, PyPI install, public GHCR runtime, and GitHub Release receipts are present.
+1. **Quota boundary** — every attempted official Data API request is counted immediately before network I/O. Keyless operations do not consume the allowance. Structured policy errors distinguish exhausted allowance from unavailable identity.
+2. **Trusted Railway identity** — proxy trust is explicit and production selects Railway-overwritten `X-Real-IP`. Header selection is allowlisted and fail-closed for missing, malformed, duplicate, chained, or unknown values. A live spoof probe produced one bucket, five allows, and a sixth rejection.
+3. **10-minute TTL** — `expires_at` is persisted per demo corpus. A nearest-deadline process worker wakes on new corpora, reconciles startup state, retries transient SQLite errors, and transactionally removes relational and vector data. Lazy purge is defense in depth, not the sole mechanism. Live filesystem inspection observed deletion 1.577 seconds after the persisted deadline without a corpus API call.
+4. **Isolation** — demo mode is explicit and HTTP-only; self-hosted mode has no allowance or TTL restriction. Railway has no volume mount, account storage, or backup contract.
+5. **Full-publication verification** — WI-00028 receipts cover frozen deterministic tests, hosted CI, PyPI install, public GHCR runtime, and GitHub Release.
 
 ## Exit Criteria
 
@@ -110,12 +114,12 @@ This ADR is considered **accepted as architecture direction** when:
 - Operator/Architect review confirms the direction is sound.
 - No blocking concerns are raised that would invalidate the self-hosted boundary.
 
-This ADR alone is **NOT** launch acceptance. Subsequent WI-00028 receipts satisfy the self-hosted core P0 gate; WI-00029 must independently satisfy the disposable-demo P0 gate.
+This ADR alone was **not** launch acceptance. Subsequent WI-00028 receipts satisfy the self-hosted core P0 gate, and separate WI-00029 frozen-TDD, hosted-CI, Railway quota/identity/restart, no-volume, logging-privacy, and TTL receipts satisfy the disposable-demo P0 gate.
 
 ## Sources
 
-- `tube_bridge/server.py` — 16-tool registration (lines 67–248)
-- `tube_bridge/youtube/api.py` — urllib-based Data API v3 client (lines 1–7 imports)
+- `tube_bridge/server.py` — 16-entry `TOOL_CATALOG`, registration, HELP derivation and dispatch
+- `tube_bridge/youtube/api.py` — urllib-based Data API v3 client and demo accounting boundary
 - `tube_bridge/tools.py` — tool implementations, dual-source fallback
 - `tube_bridge/transport.py` — auth model, env var sourcing
 - `tube_bridge/cache.py` — cache.db storage

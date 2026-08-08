@@ -13,7 +13,7 @@ Agent (Claude / Codex / Hermes)
    ▼
 server.py                       — Source-checkout compatibility wrapper
 tube_bridge/cli.py              — Canonical synchronous installed CLI: stdio or HTTP
-tube_bridge/server.py           — Single 16-tool catalog, MCP wiring, HELP derivation + dispatch
+tube_bridge/server.py           — 16-tool catalog, MCP wiring, HELP derivation, and separately verified dispatch
 tube_bridge/tools.py            — 15 operational tool implementations (async, cached, dual-source); tube_bridge_help is handled directly in server.py
 tube_bridge/transport.py        — HTTP/SSE ASGI app builder + session manager + Bearer auth + /health
 tube_bridge/cache.py            — cache.db: persistent SQLite for transcripts + video metadata
@@ -32,7 +32,7 @@ tube_bridge/youtube/
 - Parses `--http`, `--port`, `--host`; selects MCP stdio or uvicorn HTTP.
 - Root `server.py` imports and delegates to this same entrypoint for source-checkout compatibility.
 
-**Transport builder** (`tube_bridge/transport.py`, 83 lines):
+**Transport builder** (`tube_bridge/transport.py`):
 - Builds a raw ASGI app routing `/mcp`, `/sse`, `/messages`, `/health`.
 - `/mcp`: `StreamableHTTPSessionManager` (stateless) — recommended for remote deployments.
 - `/sse`: `SseServerTransport` with `/messages` POST handler — legacy, deprecated.
@@ -44,20 +44,20 @@ tube_bridge/youtube/
 ## Tool Registration & Dispatch
 
 **Tool registration** (`tube_bridge/server.py`):
-- `TOOL_CATALOG` is the single authority for exactly 16 tool names, descriptions, handlers and JSON input schemas; `list_tools()` materializes MCP `Tool` objects from it.
+- `TOOL_CATALOG` is the single authority for exactly 16 registered names, descriptions and JSON input schemas; `list_tools()` returns its MCP `Tool` objects.
 - 10 YouTube interaction tools + 5 corpus tools + 1 help tool.
 - Each tool schema declares required parameters, optional parameters with defaults, and type constraints. Not every schema contains enum constraints; schemas use standard JSON Schema `type` declarations (`string`, `integer`, `boolean`, `object`).
 
-**Tool dispatch** (`tube_bridge/server.py` `call_tool()` + `_handle_tool()`, lines 251–318):
+**Tool dispatch** (`tube_bridge/server.py` `call_tool()` + `_handle_tool()`):
 - `call_tool()` wraps the result in `TextContent` with JSON serialization.
-- Errors are caught at three levels: `ValueError`, `RuntimeError`, and generic `Exception`.
-- `_handle_tool()` is a `match`/`case` block routing tool names to async implementation functions in `tube_bridge/tools.py`.
+- Errors have explicit branches for `DemoPolicyError`, `ValueError`, `RuntimeError`, and generic `Exception`; demo-policy failures use stable structured payloads.
+- `_handle_tool()` is a separate `match`/`case` dispatcher routing tool names to async implementation functions in `tube_bridge/tools.py`.
 
-`HELP_TEXT` is derived from the same `TOOL_CATALOG`, so registration, dispatch and help cannot drift independently. Frozen schema/help/dispatch contracts validate all 16 entries.
+`HELP_TEXT` is derived from `TOOL_CATALOG`. Dispatch remains separate; frozen catalog/help/schema/dispatch tests enforce exactly the same 16-name set.
 
 ## Tool Implementation Patterns
 
-15 operational tool implementations are delegated to `tube_bridge/tools.py` (369 lines); `tube_bridge_help` is handled directly in `tube_bridge/server.py` by returning `HELP_TEXT` (line 304):
+Fifteen operational tool implementations are delegated to `tube_bridge/tools.py`; `tube_bridge_help` is handled directly in `tube_bridge/server.py` by returning `HELP_TEXT`:
 
 ### Dual-Source Pattern (search, video_info, trending)
 
@@ -67,7 +67,7 @@ Tools that work with or without an API key follow the same pattern:
 3. On other RuntimeErrors, propagate the error.
 4. If no key is set, go directly to the yt-dlp path.
 
-Source: `tube_bridge/tools.py` lines 16–62 (search), 78–117 (video_info), 125–163 (trending).
+Source: `tube_bridge/tools.py` functions `search()`, `video_info()`, and `trending()`.
 
 ### Async-to-Thread Boundaries
 
@@ -83,7 +83,7 @@ CPU-bound and I/O-bound synchronous code is wrapped with `asyncio.to_thread()`:
 ### Caching Strategy
 
 Two-layer cache for transcripts and video metadata:
-1. **Persistent SQLite cache** (`tube_bridge/cache.py`, 63 lines):
+1. **Persistent SQLite cache** (`tube_bridge/cache.py`):
    - `cache.db` under `TUBE_BRIDGE_CACHE` directory (default: `~/.tube_bridge`).
    - Tables: `transcripts` (video_id, lang, segments JSON, language, is_generated, cached_at), `video_info` (video_id, data JSON, cached_at).
    - WAL journal mode for concurrent read safety.
@@ -94,7 +94,7 @@ Two-layer cache for transcripts and video metadata:
 
 ### Transcript Priority
 
-`tube_bridge/youtube/transcript.py` (85 lines) implements manual > ASR priority:
+`tube_bridge/youtube/transcript.py` implements manual > ASR priority:
 1. List available transcripts via `youtube-transcript-api`.
 2. Segregate into manual (`not t.is_generated`) and auto-generated (`t.is_generated`).
 3. If a language code is specified, filter both lists.
@@ -103,7 +103,7 @@ Two-layer cache for transcripts and video metadata:
 
 ### Retry & Resilience
 
-`tube_bridge/youtube/client.py` (125 lines):
+`tube_bridge/youtube/client.py`:
 - `run_ytdlp()` and `run_ytdlp_multi()` both implement 2 retries with exponential backoff (`1.5 ** attempt` seconds).
 - Timeout is configurable per call (default 30–60s depending on operation).
 - `TUBE_BRIDGE_PROXY` env var is applied to all yt-dlp subprocess calls.
@@ -113,23 +113,23 @@ Two-layer cache for transcripts and video metadata:
 
 - ytdlp helper functions (`run_ytdlp`, `run_ytdlp_multi`) return stderr as a string (second element of the tuple).
 - Individual tool functions expose `_warning` on the result dict mainly when list results are empty (e.g., `if stderr and not videos: result["_warning"] = stderr`). This pattern appears in `search`, `trending`, `channel_videos`, and `playlist`.
-- `video_info` may set `_ytdlp_stderr` on the result dict when stderr is present (`if stderr: result["_ytdlp_stderr"] = stderr` at tools.py lines 109–110).
+- `video_info` may set `_ytdlp_stderr` on the result dict when stderr is present.
 
 ## Data API Client
 
-`tube_bridge/youtube/api.py` (271 lines):
+`tube_bridge/youtube/api.py`:
 - Uses Python stdlib `urllib.request` for all Data API v3 calls — no `google-api-python-client` dependency.
-- `get_api_key()` reads `YOUTUBE_API_KEY` from environment at runtime (line 12).
+- `get_api_key()` reads `YOUTUBE_API_KEY` from environment at runtime.
 - `api_call()` is the central request function: builds URL, makes GET request, handles HTTP errors and quota-exceeded with structured `RuntimeError` messages.
 - Provides: `search_videos()`, `search_channels()`, `channel_info()`, `get_comments()`, `get_trending()`, `get_video_info()`.
 
 ## Corpus Engine
 
-`tube_bridge/corpus.py` (282 lines) provides semantic search over YouTube transcripts:
+`tube_bridge/corpus.py` provides semantic search over YouTube transcripts:
 
 **Storage:**
 - `corpus.db` — separate SQLite database from `cache.db`, same configurable directory.
-- Tables: `corpora` (corpus_id, label, embedding_model, created_at), `corpus_chunks` (id, corpus_id, video_id, start_ts, end_ts, text, added_at), `corpus_added_videos` (corpus_id, video_id, added_at).
+- Tables: `corpora` (corpus_id, label, embedding_model, created_at, nullable expires_at), `corpus_chunks` (id, corpus_id, video_id, start_ts, end_ts, text, added_at), `corpus_added_videos` (corpus_id, video_id, added_at).
 - Per-corpus sqlite-vec virtual tables: `vec_{corpus_id}` with float embedding columns.
 
 **Embedding:**
@@ -165,17 +165,18 @@ Two-layer cache for transcripts and video metadata:
 - MIT-licensed; installable from source. No SaaS, accounts, billing, or managed hosting.
 
 ### Disposable Try-Before-Install Demo
-- Railway endpoint exists at `tube-bridge-production.up.railway.app`; reachability is not demo-control acceptance.
-- WI-00029 target architecture: isolated upstream configuration, exactly 5 official Data API operations per observed client IP, deletion of each demo corpus within 10 minutes, and no persistent volume/backups/accounts/durable hosted corpus.
-- These controls remain unimplemented/unverified for the current demo. Self-hosted users bring their own keys and persistent storage.
+- Controlled Railway endpoint: `tube-bridge-production.up.railway.app`; it is not an SLA-backed service.
+- Explicit demo mode is HTTP-only. Request identity propagates through MCP/SSE/threads and production selects Railway-overwritten single-value `X-Real-IP`; malformed, duplicate, missing or unknown trusted-header configuration fails closed.
+- Data API accounting occurs immediately before each attempted official network request: 5 operations per observed IP/process, then structured rejection. Salted HMAC buckets and aggregate health metrics are memory-only; restart resets them.
+- Demo corpora persist `expires_at`; deterministic clocks prove transactional deletion at the 600-second deadline, while non-invasive live sampling first observed complete absence at +1.577 seconds. The startup-reconciling nearest-deadline worker retries transient SQLite errors. Railway has no persistent volume/backups/accounts. Self-hosted users retain their own keys and persistent storage.
 
 ## Release-Candidate Readiness
 
-1. One catalog defines all 16 registered tools, dispatch handlers and HELP metadata.
+1. One catalog defines all 16 registered tool schemas and HELP metadata; a separate dispatcher is contract-tested against the same 16-name set.
 2. Package documentation and the synchronous installed `tube_bridge.cli:main` entrypoint are verified from an isolated wheel.
-3. Ten frozen Python files produce 125 passing tests; CI is configured and `test_tools.py` remains optional live smoke.
-4. Wheel+sdist/twine, exact dependency lock, Docker MCP handshake and SQLite lifecycle contracts pass locally.
-5. GitHub Release, PyPI and public GHCR publication are complete and externally verified; disposable-demo hardening remains separate.
+3. The core freeze remains 125 tests; cumulative core/demo frozen contracts produce 209 passing deterministic tests. `test_tools.py` remains optional live smoke.
+4. Wheel+sdist/twine, exact dependency lock, Docker MCP handshake, SQLite lifecycle/race contracts and hosted Python 3.12/3.13 CI pass.
+5. GitHub Release, PyPI and public GHCR publication are complete; separate live Railway identity/quota/restart/TTL gates pass.
 
 ## Design Decisions
 

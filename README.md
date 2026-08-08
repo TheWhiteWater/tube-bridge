@@ -109,7 +109,8 @@ corpus_delete("ai-agents")                             # Delete permanently
 tube_bridge/
 ├── server.py          # MCP wiring: tool registration + dispatch
 ├── tools.py           # All tool implementations (async, cached, retry)
-├── transport.py       # Streamable HTTP + SSE + stdio transport
+├── cli.py             # Runtime selection: stdio or HTTP
+├── transport.py       # Streamable HTTP + SSE ASGI routes, auth, identity, health
 ├── cache.py           # Persistent SQLite cache (cache.db) for transcripts + video metadata
 ├── corpus.py          # Semantic search (corpus.db, sqlite-vec + fastembed)
 └── youtube/
@@ -143,9 +144,14 @@ railway up --service tube-bridge --detach
 #   YOUTUBE_API_KEY  (uses isolated demo GCP project, separate from Operator keys)
 #   TUBE_BRIDGE_PROXY (recommended for transcripts from datacenter IPs)
 #   TUBE_BRIDGE_AUTH_KEY (optional, protects all remote routes except /health)
+#   TUBE_BRIDGE_DEMO_MODE=1
+#   TUBE_BRIDGE_TRUST_PROXY_HEADERS=1
+#   TUBE_BRIDGE_CLIENT_IP_HEADER=x-real-ip
 ```
 
-**Demo hardening target (not yet accepted):** exactly 5 Data API v3 operations per observed client IP and deletion of every demo corpus within 10 minutes. WI-00029 still owns implementation and verification; do not rely on these controls on the current endpoint yet.
+**Active demo controls:** exactly 5 attempted Data API v3 operations per observed client IP for the current process lifetime; the sixth receives a structured rejection. Keyless operations do not consume the allowance. Railway's overwritten `X-Real-IP` is the trusted identity source; client-supplied `X-Forwarded-For` is not trusted on the production demo. Counters are salted/HMAC-keyed and memory-only, with no time reset; a process restart resets them.
+
+**Demo data handling:** the application does not write raw client IPs to its SQLite files or application access logs, and `/health` exposes aggregate counters only. There are no accounts, persistent volumes, or backups. Corpus content and vectors are stored only on ephemeral deployment storage. Frozen clocks prove transactional deletion at the persisted 600-second deadline; non-invasive live sampling first observed complete absence 1.577 seconds after that deadline. Self-hosted mode is unchanged and persistent by default.
 
 ### Docker
 
@@ -203,12 +209,12 @@ python3 server.py --http --port 8080 --host 0.0.0.0
 
 ### Current State
 - **MIT self-hosted library** — 16 MCP tools, all transports, cache/corpus logic. Available on GitHub.
-- **Disposable Railway demo** — `tube-bridge-production.up.railway.app` is a try-before-install demo only. Not a SaaS or managed product.
-- **Disposable-demo controls are planned, not yet accepted.** WI-00029 must implement and verify isolated upstream configuration, exactly 5 Data API operations per observed client IP, deletion of each demo corpus within 10 minutes, and no durable hosted storage. Do not treat the current Railway endpoint as evidence that these controls are active.
-- **Published self-hosted core.** GitHub Release, PyPI package, and public GHCR image are live. Frozen 125-test, clean install, installed CLI/MCP, Docker handshake, wheel+sdist, twine, and hosted CI checks pass.
+- **Disposable Railway demo** — `tube-bridge-production.up.railway.app` is a controlled try-before-install demo only. Not a SaaS or managed product.
+- **Disposable-demo P0 controls are active and accepted.** The production deployment enforces the 5-operation process-lifetime allowance from Railway-overwritten `X-Real-IP`, uses privacy-preserving memory-only counters, has no volume/backups/accounts, and uses a persisted 600-second corpus deadline with deterministic deadline deletion and live absence observed at the first +1.577-second sample.
+- **Published self-hosted core.** GitHub Release, PyPI package, and public GHCR image are live. Frozen 125-test core acceptance, clean install, installed CLI/MCP, Docker handshake, wheel+sdist, twine, and hosted CI checks pass.
 
 ### Full Publication Scope
-The self-hosted core is fully published through GitHub Release, PyPI, and GHCR. Disposable Railway demo controls and retention guarantees remain a separate acceptance surface.
+The self-hosted core is fully published through GitHub Release, PyPI, and GHCR. The separately gated disposable Railway demo now has accepted quota, privacy, restart-reset, and corpus-retention controls. Neither surface carries an SLA or managed-hosting promise. Conditional quota-extension and proxy-reliability work is reviewed before broad announcement and at its documented usage/availability triggers; Railway persistence/backups is N/A while the demo remains no-volume and non-durable.
 
 ### What tube-bridge Is NOT
 - Not a SaaS or managed transcript-hosting product.
@@ -227,12 +233,12 @@ The self-hosted core is fully published through GitHub Release, PyPI, and GHCR. 
 python3 test_tools.py
 ```
 
-This remains an optional live smoke against YouTube. Formal acceptance uses `python3 -m pytest tests -q`; the frozen suite contains 125 deterministic tests. Hosted GitHub Actions CI passes on Python 3.12 and 3.13.
+This remains an optional live smoke against YouTube. Formal acceptance uses `python3 -m pytest tests -q`; the current frozen suite contains 209 deterministic tests. Hosted GitHub Actions CI passes on Python 3.12 and 3.13.
 
 ## Known Limitations
 
 - **Datacenter IPs (Railway, AWS, etc.):** YouTube may block anonymous requests from cloud IP ranges. `youtube_search` and `youtube_get_video_info` are unaffected with a Data API v3 key. `youtube_get_transcript` may fail with bot detection — set `TUBE_BRIDGE_PROXY` to a residential proxy to work around this.
-- **Demo retention hardening pending:** the accepted target is deletion within 10 minutes with no persistent volume or backups, but WI-00029 implementation/verification remains open. Self-hosted instances retain corpora under `~/.tube_bridge`.
+- **Disposable demo retention:** demo corpora are deliberately non-durable. The worker is scheduled for the persisted 10-minute deadline (deterministic tests), and live sampling first observed absence 1.577 seconds later; a restart may remove data sooner because Railway has no attached volume. Self-hosted instances retain corpora under `~/.tube_bridge`.
 - **yt-dlp anonymous search:** degraded by YouTube in recent months. Prefer Data API v3 when available.
 
 ## License

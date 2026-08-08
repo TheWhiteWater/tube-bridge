@@ -1,7 +1,7 @@
 # Project Vision — tube-bridge
 
-**Last updated:** 2026-08-08
-**Status:** MIT self-hosted individual MCP. Core v1 is published on GitHub, PyPI, and GHCR; disposable-demo hardening remains separately gated.
+**Last updated:** 2026-08-09
+**Status:** MIT self-hosted individual MCP. Core v1 is published on GitHub, PyPI, and GHCR; the separately gated disposable-demo P0 controls are deployed and accepted.
 
 ## North Star
 
@@ -11,7 +11,7 @@ Every AI agent can interact with YouTube as naturally as a human — search, dis
 
 ### Tool baseline: 16 MCP tools
 
-The MCP server registers exactly 16 tools (source: `tube_bridge/server.py` `list_tools()`, lines 67–248):
+The MCP server registers exactly 16 tools from `TOOL_CATALOG` via `tube_bridge/server.py` `list_tools()`:
 
 | # | Tool | API Key Required | Notes |
 |---|------|:---:|-------|
@@ -47,18 +47,18 @@ The MCP server registers exactly 16 tools (source: `tube_bridge/server.py` `list
 
 - `TUBE_BRIDGE_AUTH_KEY` env var enables Bearer-token protection on all remote routes except `/health` (/mcp, /sse, /messages).
 - If not set, open access (for local dev).
-- Source: `tube_bridge/transport.py` line 66.
+- Source: `_get_auth_key()` and `_check_auth()` in `tube_bridge/transport.py`.
 
 ### Data API Client
 
 - YouTube Data API v3 calls use Python stdlib `urllib` direct REST (`tube_bridge/youtube/api.py`).
 - No `google-api-python-client` dependency exists in the codebase.
-- `YOUTUBE_API_KEY` is read from the environment at runtime (`tube_bridge/youtube/api.py` line 12).
+- `YOUTUBE_API_KEY` is read from the environment at runtime by `get_api_key()` in `tube_bridge/youtube/api.py`.
 
 ### Cache and Corpus Storage
 
-- **Cache:** `cache.db` under `TUBE_BRIDGE_CACHE` directory (default `~/.tube_bridge`). Stores transcripts and video metadata. Source: `tube_bridge/cache.py` line 12.
-- **Corpus:** `corpus.db` under the same configured directory. Separate database file. Stores named corpora, chunks, and sqlite-vec vectors. Source: `tube_bridge/corpus.py` line 15.
+- **Cache:** `cache.db` under `TUBE_BRIDGE_CACHE` (default `~/.tube_bridge`). Stores transcripts and video metadata; source authority is `tube_bridge.cache.DB_PATH`.
+- **Corpus:** separate `corpus.db` under the same configured directory. Stores named corpora, chunks, deadlines and sqlite-vec vectors; source authority is `tube_bridge.corpus.DB_PATH`.
 
 ### Security Model
 
@@ -68,11 +68,12 @@ The MCP server registers exactly 16 tools (source: `tube_bridge/server.py` `list
 
 ## Demo Endpoint
 
-- **Railway-hosted disposable demo:** `tube-bridge-production.up.railway.app`. This is solely a try-before-install demo, never a SaaS or managed transcript-hosting product.
-- **Accepted target, implementation open:** WI-00029 must provide isolated server-side upstream configuration, exactly 5 official Data API operations per observed client IP, deletion of each demo corpus within 10 minutes, and no persistent volume/backups/accounts/durable hosted corpus.
-- **Current evidence boundary:** the deployed endpoint proves reachability only; it does not yet prove those quota and retention controls. Self-hosted users remain unaffected and bring their own keys/storage.
+- **Railway-hosted disposable demo:** `tube-bridge-production.up.railway.app`. This is solely a controlled try-before-install demo, never a SaaS or managed transcript-hosting product.
+- **Accepted controls:** exactly 5 attempted official Data API operations per Railway-observed client IP for the current process lifetime; memory-only salted/HMAC buckets; structured sixth-operation rejection; restart reset; persisted 600-second corpus deadlines with exact deterministic deletion and first live absence observation at +1.577 seconds.
+- **Trusted identity:** production uses Railway-overwritten `X-Real-IP`. A live adversarial probe varied both client-supplied `X-Real-IP` and `X-Forwarded-For`; all requests remained one observed bucket. Production does not trust client-controlled XFF.
+- **Retention/privacy:** no persistent volume, backups, accounts, or durable hosted corpus. Raw IPs are not stored in SQLite or application logs; `/health` exposes aggregate counters only. Self-hosted users remain unaffected and bring their own keys/storage.
 - **No shared upstream access material** may be distributed to consumers.
-- IPRoyal residential proxy (`TUBE_BRIDGE_PROXY` env var, pay-as-you-go) is the planned transcript bot-detection workaround for the demo.
+- IPRoyal residential proxy (`TUBE_BRIDGE_PROXY` env var, pay-as-you-go) is configured as the transcript bot-detection workaround; reliability remains a conditional operational concern rather than a durability promise.
 
 ## Quota Facts (Verified 2026-08-08)
 
@@ -110,9 +111,18 @@ A browser extension is outside this project's scope and release gate. It must no
 - Isolated wheel install, installed CLI/MCP handshake, wheel+sdist, `twine check`, SHA-256 dependency lock, and actual Docker authenticated MCP handshake pass.
 - Verification: `.brainops/methodology/verification/verification-WI-00028-python-local.json`; Station lifecycle hash/gate/persistence receipts are complete. Final independent conformance is recorded separately and must not be inferred from intermediate audit receipts.
 
+## Disposable Demo Acceptance Evidence
+
+- Frozen-TDD source cycles cover allowance accounting at the Data API boundary, async/thread/MCP/SSE identity propagation, trusted-header fail-closed behavior, privacy, restart reconciliation, nearest-deadline cleanup, rollback, deadline-crossing races, worker recovery, and atomic expiry selection.
+- Current deterministic suite: 209 passing tests; hosted CI passes on Python 3.12 and 3.13.
+- Live Railway probe: five operations allowed, structured sixth rejection, one bucket despite six spoofed `X-Real-IP`/XFF values; process restart reset all aggregate counters to zero.
+- Live non-invasive TTL probe: persisted deadline delta was exactly 600 seconds; Railway filesystem inspection first observed complete relational/vector deletion 1.577 seconds after the deadline without invoking a corpus API.
+- Railway deployment manifest shows no volume mount; application logs contained none of the known probe IP values.
+
 ## Publication Readiness
 
 - **Self-hosted core publication is accepted.** GitHub Release, PyPI package, public GHCR image, hosted CI, and post-publication install/container receipts are present.
-- **Disposable demo acceptance remains separate.** The 5-operation allowance and 10-minute corpus deletion controls belong to WI-00029 and are not implied by core publication.
-- Architecture direction recorded in `docs/adr/001-demo-api-quota-and-product-boundary.md`.
-- No production-ready promise, no coverage percentage, no SLA, no pricing, no launch venue, no legal conclusion is asserted.
+- **Disposable demo P0 acceptance is separately complete.** It does not change the self-hosted core contract and provides no SLA, account continuity, durable storage, or managed-hosting promise.
+- **Conditional operations remain explicit:** D6/X1 quota-extension work is reviewed before broad announcement and when demand approaches default allocation; X2 proxy reliability is reviewed before broad announcement and on an Operator-observed availability-threshold breach; X3 persistence/backups is N/A while the demo remains no-volume and non-durable.
+- Architecture and implementation outcome are recorded in `docs/adr/001-demo-api-quota-and-product-boundary.md`.
+- No coverage percentage, SLA, pricing, launch venue, or legal conclusion is asserted.

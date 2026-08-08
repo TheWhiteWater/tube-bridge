@@ -23,7 +23,7 @@ class VideoInfo:
 
 `extract_video_id()` in `tube_bridge/youtube/client.py` expects 11-char IDs via `[A-Za-z0-9_-]{11}`; the dataclass does not enforce length.
 
-Source: `tube_bridge/youtube/models.py` (22 lines), `tube_bridge/youtube/client.py` (97–107).
+Source authorities: `VideoInfo` in `tube_bridge/youtube/models.py` and `extract_video_id()` in `tube_bridge/youtube/client.py`.
 
 ---
 
@@ -191,9 +191,9 @@ API-only. Subscriber enrichment via separate `channels.list` call. Client-side `
 
 ### tube_bridge_help
 
-Returns `HELP_TEXT`, which is derived from the same 16-entry `TOOL_CATALOG` used by MCP registration and dispatch (10 YouTube interaction + 5 corpus + 1 help). The response includes an authoritative numeric count and complete tool metadata without duplicate keys.
+Returns `HELP_TEXT`, derived from the same 16-entry `TOOL_CATALOG` used by MCP registration (10 YouTube interaction + 5 corpus + 1 help). Dispatch is separate and frozen tests enforce the same 16-name set. The response includes an authoritative numeric count and complete tool metadata without duplicate keys.
 
-Source: `server.py` 17–59, 67–248.
+Source authority: `TOOL_CATALOG`, `HELP_TEXT`, `list_tools()` and `_handle_tool()` in `tube_bridge/server.py`.
 
 ### corpus_create
 ```json
@@ -248,9 +248,9 @@ WAL mode. `$TUBE_BRIDGE_CACHE/corpus.db`.
 
 | Table | Columns | Notes |
 |-------|---------|-------|
-| corpora | corpus_id TEXT PK, label TEXT, embedding_model TEXT, created_at REAL | ID validated: `^[A-Za-z0-9_-]{1,128}$` |
+| corpora | corpus_id TEXT PK, label TEXT, embedding_model TEXT, created_at REAL, expires_at REAL nullable | ID validated: `^[A-Za-z0-9_-]{1,128}$`; demo stores `created_at + 600`, self-hosted stores NULL |
 | corpus_chunks | id INTEGER PK, corpus_id TEXT, video_id TEXT, start_ts REAL, end_ts REAL, text TEXT, added_at REAL | UNIQUE(corpus_id, video_id, start_ts) |
-| corpus_added_videos | corpus_id TEXT, video_id TEXT | Composite PK |
+| corpus_added_videos | corpus_id TEXT, video_id TEXT, added_at REAL | Composite PK |
 | vec_{corpus_id} | VIRTUAL (sqlite-vec: `vec0(embedding float[dim])`) | Joined via rowid=id. Dim=384 (BGE-small) |
 
 ID validation protects SQL identifiers; dashes replaced with underscores for table names.
@@ -290,8 +290,9 @@ Regex: `^[A-Za-z0-9_-]{1,128}$`. Rejected IDs raise `ValueError`. Protects SQL i
 
 - Separate files in `$TUBE_BRIDGE_CACHE`. Distinct schemas/lifecycles.
 - cache.db: transient cache (safe to delete/regenerate).
-- corpus.db: user-managed (deletion permanent, user-initiated).
-- Both use WAL journal mode.
+- corpus.db in self-hosted mode: user-managed; deletion is permanent and user-initiated.
+- corpus.db in explicit demo mode: each corpus has a persisted 600-second deadline; relational rows and its `vec_{id}` table are transactionally deleted by the worker/lazy defense. No raw client identity or allowance bucket is stored in either database.
+- Both use WAL journal mode. Railway attaches no persistent volume, so a process/deployment replacement may remove demo data earlier.
 
 ---
 

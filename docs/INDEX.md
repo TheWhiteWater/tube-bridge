@@ -23,7 +23,7 @@
 
 ## Tool Inventory
 
-10 YouTube interaction + 5 corpus + 1 help = **16 tools** registered in `tube_bridge/server.py` `list_tools()` (lines 67–248).
+10 YouTube interaction + 5 corpus + 1 help = **16 tools** registered from `TOOL_CATALOG` by `tube_bridge/server.py` `list_tools()`.
 
 - **13 tools callable without API key** (zero-setup): `youtube_search` (yt-dlp fallback), `youtube_get_video_info`, `youtube_get_trending`, `youtube_get_channel_videos`, `youtube_get_playlist`, `youtube_get_transcript`, `youtube_get_available_languages`, `corpus_create`, `corpus_add`, `corpus_search`, `corpus_list`, `corpus_delete`, `tube_bridge_help`.
 - **3 tools require YouTube Data API v3 key:** `youtube_get_comments`, `youtube_search_channels`, `youtube_get_channel_info`.
@@ -32,9 +32,9 @@ Search, video_info, and trending upgrade to higher-quality Data API v3 results w
 
 ## State
 
-- **Architecture direction:** ADR-001 accepted (2026-08-08) — demo API access, quota boundary, and self-hosted product boundary. Not launch approval.
-- **Current WorkItems:** WI-00027 documentation synchronization is ready for gate; WI-00028 core publication hardening is complete; WI-00029 disposable-demo hardening remains draft.
+- **Architecture:** ADR-001 accepted and implemented — demo API identity/quota, 10-minute corpus boundary, and self-hosted product separation.
+- **Current WorkItems:** WI-00027 documentation synchronization, WI-00028 core publication, and WI-00029 disposable-demo hardening are complete.
 - **Active TME direction:** DIR-004-publication-productization
 - **Core publication:** Accepted and externally verified through GitHub Release, PyPI, public GHCR, hosted CI, clean install, and registry-image MCP checks.
-- **Disposable demo:** Separate WI-00029 gate; quota and retention decisions are documented but implementation/verification remain open. No commercial extension, product gateway, Grabbit connector, or browser-extension roadmap exists.
-- **Last updated:** 2026-08-08
+- **Disposable demo:** Independently accepted D1–D5 P0 controls: Railway-overwritten identity, 5 attempted Data API operations/IP/process, aggregate privacy-preserving observability, no durable storage, and transactional 10-minute corpus deletion. Conditional P1 operations remain triaged. No commercial extension, product gateway, Grabbit connector, or browser-extension roadmap exists.
+- **Last updated:** 2026-08-09
