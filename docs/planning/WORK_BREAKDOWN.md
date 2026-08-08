@@ -49,7 +49,7 @@
 - [x] Bearer auth implemented in source: protects every remote route except `/health` (transport.py line 66)
 - [x] Railway demo endpoint deployed
 - [ ] Source installation and entrypoint verification: `pip install .` from source checkout and console entrypoint `tube-bridge = "server:main"` not yet verified (C3, P0)
-- [ ] Public hardening: demo quota/abuse controls (D1–D5, P0) not yet implemented
+- [ ] Public hardening: 5-operation limit enforcement and 10-minute corpus TTL not yet implemented (D1–D5, P0)
 
 **Test Hash:** — *(no hash — tests not written)*
 
@@ -73,7 +73,7 @@
 - [x] All 5 corpus tools registered in source (`list_tools()`)
 - [x] Separate `corpus.db` from `cache.db` (source-verified)
 - [x] Local embedding inference (fastembed) implemented in source; formal runtime acceptance open
-- [ ] Railway persistence: `corpus.db` ephemeral without volume mount; persistence mode gated by D5 and X3 (conditional, P0 only when persistent hosted corpus is selected/advertised)
+- [ ] Demo corpus TTL: corpora auto-delete 10 minutes after creation on demo (D5, P0). Self-hosted instances have full persistent storage
 - [ ] Corpus acceptance: automated corpus tests not written
 
 **Test Hash:** — *(no hash — tests not written)*
@@ -82,9 +82,9 @@
 
 ### Block D: Documentation and Station Synchronization
 
-**Status:** Documentation synchronization and Station/TME reconciliation complete; Operator launch decisions remain pending
+**Status:** Complete — documentation synchronized, Station/TME reconciled, and corrected-model Codex audit passed
 
-**What:** Governance, planning, and station-aligned documentation synchronized with the current product and readiness state. Includes ADR rules, MVP scope, work breakdown, and publication readiness checklist.
+**What:** Governance, planning, and station-aligned documentation synchronized with the current product and readiness state. Includes ADR rules, MVP scope, work breakdown, and publication readiness checklist. Commercial extension and Grabbit connector surfaces removed per ADR-001.
 
 **Implementation:**
 - `docs/constitution/06_ADR_RULES.md` — ADR governance
@@ -95,17 +95,18 @@
 
 **Depends on:** Blocks A, B, C (documents describe shipped state)
 
-**Evidence:** Active Station WorkItem tracks documentation synchronization. The previous `docs/INDEX.md` has been replaced. Current `docs/INDEX.md` and `docs/planning/OPEN_QUESTIONS.md` use only role-based owners (Operator, Architect) and current WorkItem identifiers; no stale project identifiers or agent IDs remain.
+**Evidence:** Active Station WorkItem tracks documentation synchronization. Commercial extension (E1–E4) and Grabbit connector (G1–G2) surfaces removed from planning docs per ADR-001. Demo decisions resolved: isolated Google project, 5 ops/IP, 10-min corpus TTL, no persistence/accounts. Current `docs/INDEX.md` and `docs/planning/OPEN_QUESTIONS.md` use only role-based owners (Operator, Architect) and current WorkItem identifiers; no stale project identifiers or agent IDs remain.
 
 **Exit Criteria:**
 - [x] ADR-001 accepted and documented as active architecture direction
 - [x] MVP scope grounded in shipped code, not forward-looking speculation
-- [x] Work breakdown blocks A–H defined with evidence-based statuses
+- [x] Work breakdown blocks A–F defined with evidence-based statuses
 - [x] Station references corrected — INDEX.md and OPEN_QUESTIONS use only role-based owners and current WorkItem identifiers; no stale project identifiers or agent IDs remain
-- [x] checklist classified/triaged by launch surface
-- [ ] four B1-B4 Operator/Architect decisions and associated implementation/evidence remain unresolved
+- [x] Checklist classified/triaged by launch surface
+- [x] B1–B4 Operator/Architect decisions resolved per ADR-001; implementation remains open
+- [x] Corrected product model re-audited: current Station Codex receipt is PASS
 
-**Docs Audit:** Independent audit report exists at `docs/audits/2026-08-08-publication-document-audit.md` (verdict: PASS WITH FINDINGS). Documentation-audit remediation packs applied: P1/P2 imprecisions resolved across PROJECT_VISION.md, README.md, AGENTS.md, and this file. Classification/triage of documentation issues is complete. **Official Station Codex document audit at `.brainops/methodology/audits/2026-08-08T05-16-06-772Z-64150819-codex/station-codex-audit.json` returned PASS: all planning ID/priority contradictions resolved.** C4 documentation coherence is now resolved. Prior FAIL receipt (`.brainops/methodology/audits/2026-08-08T05-04-04-265Z-2951ec8e-codex/station-codex-audit.json`) was remediated and is retained as audit trail. Documentation audit/reconciliation exit is complete; this does not close publication gates or mark implementation complete. Four decision blockers B1-B4 (from OPEN_QUESTIONS.md) remain unresolved. Operator launch decisions (D1-D6) remain pending.
+**Docs Audit:** Current corrected-model PASS receipt: `.brainops/methodology/audits/2026-08-08T06-30-02-732Z-f614f821-codex/station-codex-audit.json`. It verifies continuation-safe documentation coherence only and does not accept source, tests, package, demo implementation, or publication. Two intermediate FAIL receipts (`2026-08-08T06-24-15-276Z-76db5398` and `2026-08-08T06-26-29-240Z-6941e798`) were remediated and retained. The older independent report at `docs/audits/2026-08-08-publication-document-audit.md` is explicitly marked historical/superseded. B1–B4 decisions are resolved per ADR-001; implementation remains open.
 
 **Test Hash:** — *(no hash — documentation, not testable code)*
 
@@ -115,13 +116,13 @@
 
 **Status:** Open
 
-**What:** Automated test suite, CI pipeline, and source-install/entrypoint verification for the open-core library.
+**What:** Automated test suite, CI pipeline, and source-install/entrypoint verification for the open-core library. Full publication targets GitHub release, PyPI package, Docker image, and documented demo.
 
 **Current State:**
 - `test_tools.py` is a 4-unique-tool live smoke script (exercises `youtube_search`, `youtube_get_video_info`, `youtube_get_trending`, `youtube_get_transcript`) against real YouTube. It is network-dependent and NOT suitable as a deterministic PR CI gate.
 - No CI pipeline is configured.
 - No coverage metrics exist.
-- `pyproject.toml` exists with console entrypoint `tube-bridge = "server:main"`; source installation and entrypoint are unverified. Package-registry route (PyPI vs source-only vs both) requires an Operator/Architect decision, then verification of the chosen route.
+- `pyproject.toml` exists with console entrypoint `tube-bridge = "server:main"`; source installation, entrypoint, PyPI build/metadata/upload, and clean-environment installation are unverified. PyPI is already part of the fixed full-publication target.
 
 **Depends on:** Blocks A, B, C
 
@@ -130,74 +131,32 @@
 - [ ] CI pipeline running deterministic tests on PRs (C2, P0)
 - [ ] Existing `test_tools.py` 4-tool live smoke retained as optional/manual integration evidence or separately scheduled; not the sole CI gate
 - [ ] Full tool coverage test suite (current 4/16 tools exercised in smoke; remainder untested)
-- [ ] Source installation and entrypoint verification: `pip install .` from source checkout, console entrypoint `tube-bridge` verified, and Operator/Architect registry-route decision recorded (source-only, PyPI, or both) (C3, P0)
+- [ ] Source installation and entrypoint verification: `pip install .` from source checkout, console entrypoint `tube-bridge` verified, then PyPI build/metadata/upload and clean-environment installation verified (C3, P0)
 - [ ] No invented coverage percentages, SLAs, or CI claims
 
 **Test Hash:** — *(no hash — automated test suite not yet written)*
 
 ---
 
-### Block F: Demo Quota, Security, and Policy Gate
+### Block F: Disposable Demo Implementation
 
-**Status:** Blocked on operator decisions and implementation
+**Status:** Blocked on implementation
 
-**What:** Controlled public demo access: dedicated GCP project (D1, P0), per-user/IP and global daily budgets with abuse controls and access controls (D2, P0), observability and monitoring (D3, P0), policy/legal decisions covering privacy, copyright, retention, and deletion (D4, P0), corpus persistence and retention mode choice (D5, P0), and YouTube API Services audit/quota-extension path (D6, conditional P1).
+**What:** Disposable try-before-install demo endpoint with: isolated Google Cloud project upstream configuration separate from personal use (D1, P0), exactly 5 Data API operations per client/IP enforcement (D2, P0), counters/errors observability sufficient to enforce the limit and TTL (D3, P0), self-hosted boundary and disposable demo disclosure (D4, P0), and 10-minute corpus auto-deletion (D5, P0). YouTube API Services audit/quota-extension path (D6, conditional P1). No persistent volume, accounts, backups, durable transcripts, SaaS, or managed hosting.
 
 **Depends on:** Blocks A, B, C (demo endpoint exists)
 
-**Evidence:** ADR-001 defines the architecture direction. `PUBLICATION_READINESS.md` P0 items D1–D5 and conditional P1 item D6 require operator decision or implementation. None are yet resolved.
+**Evidence:** ADR-001 (accepted 2026-08-08) defines all demo decisions: isolated GCP project, 5 ops/IP, 10-min corpus TTL, no persistence. `PUBLICATION_READINESS.md` P0 items D1–D5 are Decision Resolved / Implementation Open.
 
 **Exit Criteria:**
-- [ ] Dedicated Google Cloud project provisioned for demo (P0, D1)
-- [ ] Per-user/IP and global daily budgets, rate limits, abuse controls, and access controls set and enforced (P0, D2)
-- [ ] Monitoring and observability deployed — structured logging, metrics, alerting (P0, D3)
-- [ ] Policy/privacy/copyright/retention/deletion documented (P0, D4)
-- [ ] Corpus exposure, persistence, and retention mode chosen — ephemeral, persistent, or disabled (P0, D5)
+- [ ] Isolated Google Cloud project provisioned with server-side upstream config (P0, D1)
+- [ ] 5 Data API operations per client/IP enforced and tested (P0, D2)
+- [ ] Counters/errors observability for limit enforcement and TTL (P0, D3)
+- [ ] Self-hosted boundary and disposable demo nature documented (P0, D4)
+- [ ] 10-minute corpus auto-deletion implemented and tested (P0, D5)
 - [ ] YouTube API Services audit/quota-extension path initiated or documented with timeline (P1 conditional, D6)
 
-**Note:** Product gateway (E1) and CWS compliance (E3) belong to extension Block G, not this block. See Block G exit criteria.
-
-**Test Hash:** — *(no hash — operational configuration, not testable code in this block)*
-
----
-
-### Block G: Commercial Transcript Extension
-
-**Status:** Planned (not started)
-
-**What:** Proposed commercial extension as a separate product layer reusing the tube-bridge engine behind a server-side product gateway. Trial/paid transcript and research capabilities with per-user quota, billing, and support. Has its own launch gates independent of core library publication.
-
-**Depends on:** Blocks A, B, C, F (policy and gateway decisions must precede extension launch)
-
-**Evidence:** Defined in `PROJECT_VISION.md` "Proposed Extension" section, ADR-001 decision #5, and `PUBLICATION_READINESS.md` items E1–E4. No implementation exists.
-
-**Exit Criteria:**
-- [ ] Product gateway design — auth, entitlements, usage enforcement (extension-only, E1)
-- [ ] Entitlement model, billing integration, trial/pricing structure, support SLAs (extension-only, E2)
-- [ ] CWS compliance plan — Chrome Web Store compliance if extension uses CWS distribution (extension-only, E3)
-- [ ] Deployment architecture decision — whether extension deploys on same or separate Railway services (extension-only, E4)
-
-**Must not block core library use.** The open-core 16 tools remain MIT-licensed and independently installable. Commercial extension launch gates are separate from core library publication gates unless the Operator explicitly changes the gate.
-
----
-
-### Block H: Optional Grabbit Connector
-
-**Status:** Deferred (not started)
-
-**What:** Optional connector for batch video-link collection into Grabbit, transcript/research attachment to Grabbit items, and cross-promotion between the tube-bridge extension and Grabbit. Has its own launch gates independent of core library publication.
-
-**Depends on:** Block G (extension gateway must be established first)
-
-**Evidence:** Defined in `PROJECT_VISION.md` "Grabbit Integration" section, ADR-001 decision #6, and `PUBLICATION_READINESS.md` G1–G2. No implementation exists.
-
-**Exit Criteria:**
-- [ ] Integration contract for batch video-link collections defined (connector-only, G1)
-- [ ] Batch video-link collection workflow implemented
-- [ ] Transcript and research attachment operational
-- [ ] Cross-promotion terms agreed (connector-only, G2)
-
-**Must not block core library use.** Grabbit is an independent opt-in path; tube-bridge operates fully without it. Grabbit launch gates are separate from core library publication gates unless the Operator explicitly changes the gate.
+**Test Hash:** — *(no hash — operational configuration and implementation, not yet tested)*
 
 ---
 
@@ -206,18 +165,17 @@
 ```
 A (Interaction Engine) ──→ B (Transports/Deploy)
 │                           │
-├──→ C (Corpus Engine)      ├──→ F (Demo/Policy Gate) ──→ G (Commercial Extension) ──→ H (Grabbit)
+├──→ C (Corpus Engine)      ├──→ E (Tests/CI/Package)
 │                           │
-└──→ D (Docs/Station Sync)  └──→ E (Tests/CI/PyPI)
+└──→ D (Docs/Station Sync)  └──→ F (Disposable Demo Implementation)
 ```
 
 - A is foundational — all other blocks depend on it.
 - B and C are parallel after A; both shipped.
-- D (docs sync) documentation synchronization complete; operator decisions pending.
+- D (docs sync) is complete; corrected-model Codex documentation audit passed.
 - E (tests/CI) is open and depends on A, B, C.
-- F (demo/policy gate) is blocked on operator decisions; depends on B.
-- G (commercial extension) is planned; depends on F. Has own launch gates separate from core.
-- H (Grabbit) is deferred; depends on G. Has own launch gates separate from core.
+- F (disposable demo) depends on B and C; all decisions resolved per ADR-001; implementation open.
+- No extension or Grabbit implementation items exist.
 
 ## Gates (Mandatory Checkpoints)
 
@@ -231,12 +189,12 @@ After each block:
 
 The canonical readiness checklist is `docs/planning/PUBLICATION_READINESS.md`. It defines:
 
-- **P0 items** — must resolve before the named surface is accepted as publication-ready. Core library P0 items are C1–C5; controlled demo P0 items are D1–D5; extension and Grabbit items (E1–E4, G1–G2) are extension/connector-only and must not block core library or demo release.
-- **P1 items** — should resolve before a broad announcement; explicitly triageable with owner and timeline. D6 (quota extension) is conditional P1 for the controlled demo. X1–X3 are cross-surface conditional items.
+- **P0 items** — must resolve before the named surface is accepted as publication-ready. Core library P0 items are C1–C5; disposable demo P0 items are D1–D5.
+- **P1 items** — should resolve before a broad announcement; explicitly triageable with owner and timeline. D6 (quota extension) is conditional P1 for the demo. X1–X2 are cross-surface conditional items; X3 is N/A (no persistent volume with ephemeral corpora).
 - **P2 items** — do not block publication.
 - **No-go gate** — conditions that permanently block publication (bundling secrets, misrepresenting CI/PyPI, inventing metrics).
 
-Commercial extension (Block G) and Grabbit connector (Block H) must not block core library use. Each has its own launch gates independent of core library publication. The open-core 16 tools are independently installable and MIT-licensed.
+Tube-bridge is an MIT self-hosted MCP with a disposable try-before-install demo. There is no commercial extension, product gateway, billing, entitlement, or Grabbit connector. The open-core 16 tools are independently installable and MIT-licensed.
 
 ---
 

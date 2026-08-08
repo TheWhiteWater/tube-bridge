@@ -1,6 +1,6 @@
 # MVP Scope — tube-bridge
 
-> **Status:** Implementation baseline shipped in source. Formal runtime acceptance and per-surface publication readiness are **not yet complete**. This is a retrospective scope document grounded in shipped code, not a forward-looking plan.
+> **Status:** Implementation baseline shipped in source. Formal runtime acceptance and per-surface publication readiness are **not yet complete**. This is a retrospective scope document grounded in shipped code, not a forward-looking plan. Product model: MIT self-hosted MCP with disposable try-before-install demo. No commercial extension, product gateway, or Grabbit connector.
 
 ## What the Implementation Baseline Contains
 
@@ -75,24 +75,23 @@ Total tools registered in `tube_bridge/server.py` `list_tools()`: **10 YouTube i
 | Local embedding inference | **Shipped** | `tube_bridge/corpus.py` uses fastembed; inference code present in source (source-verified; formal runtime acceptance open) |
 | Railway demo exists | **Deployed** | Confirmed endpoint deployed |
 | Automated test suite / CI | **Not shipped** | Core C2 P0. `test_tools.py` is a 4-unique-tool live smoke script (search, video_info, trending, transcript); no full suite, no CI pipeline configured |
-| PyPI / install / entrypoint verification | **Unverified** | Core C3 P0. `pyproject.toml` exists with console entrypoint `tube-bridge = "server:main"`; `pip install` from source and entrypoint not verified; package-registry route undecided |
-| Demo public access controls | **Proposed, not implemented** | Demo D1–D2 P0. Per ADR-001; dedicated GCP project, per-consumer budgets, rate limiting, abuse controls not deployed |
-| Observability and monitoring | **Proposed, not implemented** | Demo D3 P0. Structured logging, metrics export, alerting not deployed |
-| Policy / legal / retention | **Decision required** | Demo D4 P0. Operator decisions pending on copyright, privacy, GDPR, retention, deletion |
-| Corpus exposure and persistence mode | **Decision required** | Demo D5 P0. Ephemeral, persistent, or disabled mode not chosen; all modes require disclosure and deletion/retention treatment |
-| Commercial extension / gateway | **Planned, not implemented** | Extension-only (E1–E4). Proposed product layer; separate launch gates independent of core; does not block core library or controlled demo |
+| PyPI / install / entrypoint verification | **Unverified** | Core C3 P0. `pyproject.toml` exists with console entrypoint `tube-bridge = \"server:main\"`; source install, entrypoint, PyPI build/metadata/upload, and clean-environment install are not yet verified |
+| Demo public access controls | **Decision resolved, not implemented** | Demo D1–D2 P0. Per ADR-001: dedicated GCP project, exactly 5 Data API ops per client/IP. Enforcement not deployed |
+| Observability and monitoring | **Decision resolved, not implemented** | Demo D3 P0. Counters/errors for 5-op limit and 10-min TTL. Not deployed |
+| Policy / privacy / retention | **Decision resolved, implementation open** | Demo D4 P0. Per ADR-001: no persistent volume, accounts, backups, or durable transcript/corpus hosting. A concise demo data-handling/deletion notice is required; the transient model does not waive applicable privacy, copyright, or YouTube policy obligations |
+| Corpus exposure and persistence mode | **Decision resolved, not implemented** | Demo D5 P0. Per ADR-001: every corpus auto-deleted 10 minutes after creation. Self-hosted instances have full persistent corpus storage |
 
 ## Excluded from MVP Scope
 
 | Feature | Reason | Status |
 |---------|--------|--------|
-| Commercial extension / product gateway | Extension-only (E1–E4); separate product layer; core is MIT open-source library; own launch gates independent of core | Planned |
-| Grabbit connector (batch video-link collection) | Connector-only (G1–G2); optional independent path; not in core; own launch gates independent of core | Proposed |
 | Bulk scraping / scheduled harvests | Non-goal per 05_NON_GOALS.md | Excluded |
 | Video download or mutation | Read-only tools only per 00_MISSION.md | Excluded |
-| Unlimited public demo access | Budgets and abuse controls not yet implemented; D1–D2 P0 for controlled demo | Blocked (Demo D1–D2 P0) |
-| Legal review / copyright compliance | Operator decision pending; D4 P0 for controlled demo per PUBLICATION_READINESS.md | Blocked (Demo D4 P0) |
-| Data retention / deletion policy | Operator decision pending; D4 P0 for controlled demo per PUBLICATION_READINESS.md | Blocked (Demo D4 P0) |
+| Unlimited public demo access | Per ADR-001: exactly 5 Data API ops per client/IP; enforcement not yet implemented (D2 P0) | Blocked (Demo D2 P0) |
+| Browser extension | Outside project scope and release gate per ADR-001 | Excluded |
+| Grabbit connector or integration | Grabbit is a completely separate MCP per ADR-001; companion MCP example only, no tube-bridge implementation | Excluded |
+| Commercial extension / product gateway | No commercial extension, gateway, billing, or managed hosting planned per ADR-001 | Excluded |
+| SaaS / managed hosting | tube-bridge is an MIT self-hosted MCP, never a SaaS per ADR-001 | Excluded |
 
 ## Definition of Done
 
@@ -112,28 +111,28 @@ The following items are verified against source code (`tube_bridge/` package). I
 
 ### Core Library Acceptance Gate (Independent of Demo)
 
-Core library acceptance (Surface 1) requires C1–C5 P0 evidence. C4 is Resolved by the successful official re-audit receipt at `.brainops/methodology/audits/2026-08-08T05-16-06-772Z-64150819-codex/station-codex-audit.json` (verdict: PASS). This resolves documentation coherence only and does not imply runtime/source/test/package/demo acceptance. C1, C2, C3, C5 remain unresolved. Core can be accepted independently of the controlled demo. Existing GitHub availability is not revoked.
+Core library acceptance (Surface 1) requires C1–C5 P0 evidence. C4 is resolved by the current corrected-model PASS receipt at `.brainops/methodology/audits/2026-08-08T06-30-02-732Z-f614f821-codex/station-codex-audit.json`. This resolves documentation coherence only and does not imply runtime/source/test/package/demo acceptance. C1, C2, C3, C5 remain unresolved. Core can be accepted independently of the disposable demo. Existing GitHub availability is not revoked.
 
 - [ ] C1: HELP_TEXT / package-docstring count drift corrected to reflect 16 tools (P0)
 - [ ] C2: Deterministic tests and CI — unit/contract tests with mocked upstreams; CI pipeline running on PRs (P0)
-- [ ] C3: Installation, entrypoint, and registry verification — `pip install .` from source checkout; console entrypoint `tube-bridge` verified; package-registry route decided (P0)
-- [x] C4: Independent docs audit — Resolved with PASS receipt from official Station Codex re-audit (`.brainops/methodology/audits/2026-08-08T05-16-06-772Z-64150819-codex/station-codex-audit.json`, verdict: PASS). Docs coherence verified; does not imply runtime/source/test/package acceptance. (P0)
+- [ ] C3: Installation, entrypoint, and publication verification — `pip install .` from source checkout; console entrypoint `tube-bridge` verified; PyPI build/metadata/upload and clean-environment install verified (P0)
+- [x] C4: Independent docs audit — corrected-model PASS at `.brainops/methodology/audits/2026-08-08T06-30-02-732Z-f614f821-codex/station-codex-audit.json`. Docs coherence verified; runtime/source/test/package/demo/publication acceptance remains separate. (P0)
 - [ ] C5: Release configuration and license review — `pyproject.toml` reviewed for publication; MIT license accurate; no bundled secrets (P0)
 
-### Controlled Demo Acceptance Gate (Independent of Core)
+### Disposable Demo Acceptance Gate (Independent of Core)
 
-Controlled demo acceptance (Surface 2) requires D1–D5 P0 evidence. D6 and X1–X3 are triaged/conditional. The demo can be withheld while core remains available.
+Disposable demo acceptance (Surface 2) requires D1–D5 P0 evidence. D6 and X1–X3 are triaged/conditional. The demo can be withheld while core remains available. All demo decisions are resolved per ADR-001 (accepted 2026-08-08); implementation remains open.
 
-- [ ] D1: Dedicated GCP project and server-side upstream setup (P0)
-- [ ] D2: Exact budgets, rate limits, abuse controls, and access controls (P0)
-- [ ] D3: Monitoring and observability — structured logging, metrics export, alerting configured (P0)
-- [ ] D4: Policy, privacy, copyright, retention, and deletion — written policy document (P0)
-- [ ] D5: Corpus exposure, persistence, and retention choice — mode chosen and documented (P0)
+- [ ] D1: Dedicated Google Cloud project and server-side upstream setup, isolated from Operator personal/development configuration (P0)
+- [ ] D2: Exactly 5 official YouTube Data API v3 operations per client/IP enforced (P0)
+- [ ] D3: Counters/errors observability sufficient to enforce the 5-operation limit and 10-minute corpus TTL (P0)
+- [ ] D4: Self-hosted boundary and disposable demo disclosure documented — no persistent volume, accounts, backups, or durable transcript/corpus hosting (P0, decision resolved per ADR-001)
+- [ ] D5: 10-minute corpus auto-deletion implemented — every corpus created on the demo is deleted 10 minutes after creation; self-hosted instances have full persistent storage (P0, decision resolved per ADR-001)
 - [ ] D6: YouTube API Services audit/quota-extension path (P1 conditional; becomes P0 if demo usage hits default quota ceiling before extension complete)
 - [ ] X1–X3: Quota extension, proxy reliability, Railway persistence — triaged conditional (P1); not blocking without threshold breach
 
-### Extension and Grabbit Gates (Future, Never Block Core/Demo)
+### Publication Scope
 
-Extension E1–E4 and Grabbit G1–G2 are separate future launch gates and never gate core or controlled demo acceptance. Existing GitHub availability is not revoked.
+Full open-source distribution means GitHub release, PyPI package, Docker image, and documented demo. Readiness remains unaccepted until source/test/package verification is complete. Only two surfaces have acceptance gates: Core Full Publication and Disposable Demo. There is no commercial extension, product gateway, or Grabbit connector surface. A browser extension is outside this project's scope and release gate.
 
 **Implementation baseline is shipped. Formal runtime acceptance and per-surface publication readiness are not accepted.**

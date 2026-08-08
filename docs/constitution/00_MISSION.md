@@ -26,19 +26,16 @@ Build the **most complete, zero-friction YouTube MCP server** — covering searc
 - Zero-registration workflows: 13 tools usable without any API key.
 - Users bring their own `YOUTUBE_API_KEY` for the 3 API-dependent tools (comments, channel search, channel info).
 
-**Hosted demo endpoint (deployed, not yet publicly promoted):**
-- Railway-hosted at `tube-bridge-production.up.railway.app`.
-- Dedicated Google Cloud project and controlled budgets are approved architecture, but provisioning and controls are not yet implemented.
-- Not advertised as a public service until controls are in place.
+**Hosted demo endpoint (Railway, disposable):**
+- Try-before-install only: `tube-bridge-production.up.railway.app`.
+- Isolated Google Cloud project with server-side upstream configuration, separate from Operator personal/development configuration.
+- Exactly 5 YouTube Data API v3 operations per client/IP.
+- Corpora auto-delete after 10 minutes. No persistent volume, backups, accounts, or durable transcript/corpus hosting.
+- Not advertised as a public service.
 
-**Proposed extension (separate commercial product layer, planned):**
-- Reuses the tube-bridge engine behind a server-side product gateway.
-- Trial/paid transcript and research capabilities with per-user quota, billing, and support.
-- Deployment sharing between core and extension is an open architecture decision.
-
-**Grabbit connector (optional, proposed):**
-- Batch video-link collection and transcript attachment to Grabbit items.
-- Independent opt-in path; not required for core tube-bridge operation.
+**Grabbit (separate MCP):**
+- Completely separate MCP. No connector, dependency, shared service, code integration, or implementation roadmap exists between tube-bridge and Grabbit.
+- An example agent usage sequence may show the agent using tube-bridge to find videos and then separately using Grabbit to save links — that is the full extent of any documented relationship.
 
 ## Tool Baseline
 

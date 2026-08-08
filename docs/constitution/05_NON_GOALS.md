@@ -1,6 +1,15 @@
 # 05 — Non-Goals
 
-These are explicit things tube-bridge will NOT build into the open-core. They prevent scope creep and define the boundary between the MIT-licensed core and the proposed commercial extension.
+These are explicit things tube-bridge will NOT build into the open-core.
+
+### SaaS / Managed Hosting
+tube-bridge is an MIT self-hosted MCP, never a SaaS or managed transcript-hosting product. The Railway demo is solely a disposable try-before-install convenience. No accounts, billing, durable hosted transcripts/corpora, or commercial extension architecture.
+
+### Full Publication Distribution
+Full open-source distribution (GitHub release, PyPI package, Docker image, documented demo) remains in scope. Readiness is tracked in `docs/planning/PUBLICATION_READINESS.md` and is not yet accepted.
+
+### Browser Extension
+A browser extension is outside this project's scope and release gate. It must not be architected, planned, or documented here.
 
 ---
 
@@ -24,24 +33,13 @@ Transcripts are returned as-is in the requested language. No translation, sentim
 ### Authentication / user accounts (core)
 No built-in user accounts, registration, login, or identity management in the open-core. The only auth mechanism is an optional `TUBE_BRIDGE_AUTH_KEY` Bearer token protecting remote transport endpoints — a deployment-level access control, not a user-account system.
 
-### Billing / subscriptions / entitlements (core)
-No payment processing, subscription management, trial enforcement, or usage metering in the open-core. These belong to the proposed commercial extension's product gateway.
+### Billing / subscriptions / entitlements
+No payment processing, subscription management, trial enforcement, or usage metering. tube-bridge is an MIT self-hosted MCP with no commercial extension, SaaS, accounts, billing, or managed hosting.
 
-### Hard Grabbit dependency
-Grabbit integration is an **optional connector**, not a core dependency. tube-bridge operates fully without Grabbit. The connector, if built, is an independent opt-in path.
+### Grabbit integration
+Grabbit is a completely separate MCP. There is no connector, dependency, shared service, bundled workflow, code integration, or implementation roadmap between tube-bridge and Grabbit. An agent may independently invoke both MCPs in sequence — that is the full extent of any relationship.
 
----
 
-## Core vs Extension Boundary
-
-The proposed commercial extension may provide the following **without changing the open-core's scope**:
-
-- **UI / Dashboard** — user-facing web interface for managing corpora, viewing search results, and configuring access.
-- **User accounts / authentication** — server-side identity, registration, and login managed by the product gateway.
-- **Billing / subscriptions** — payment processing, trial management, and usage enforcement through the product gateway.
-- **Grabbit connector** — batch video-link collections, transcript attachment, and cross-promotion. Optional; does not alter core tools or add dependencies.
-
-These are **extension features**, not core features. The open-core remains a library you can install from source, run, and fully use without any of them.
 
 ---
 
@@ -53,7 +51,7 @@ The following are **not promised** until their respective readiness gates are pa
 - **YouTube Data API quota beyond default allocation** — no additional allocation beyond the default has been documented as requested or granted. YouTube's official docs identify the audit/extension process; no purchasable quota tier was identified.
 - **Legal clearance** — no legal review, copyright compliance assessment, or terms-of-service analysis has been completed. Users are responsible for their own compliance.
 - **Proxy reliability** — the `TUBE_BRIDGE_PROXY` feature is operational, but no uptime SLA, throughput guarantee, or reliability promise is made for any specific proxy service.
-- **Persistent hosted corpus storage** — corpus.db on Railway is ephemeral without a persistent volume mount. Persistent corpus storage is a readiness item (P1), not a current capability.
+- **Durable hosted corpus storage** — the disposable demo automatically deletes every corpus 10 minutes after creation. No persistent volume, backups, or durable transcript/corpus hosting is provided on the demo. Self-hosted instances have full persistent corpus storage.
 
 ---
 

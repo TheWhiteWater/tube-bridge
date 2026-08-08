@@ -1,7 +1,7 @@
 # Project Vision — tube-bridge
 
 **Last updated:** 2026-08-08
-**Status:** MIT open-core library; hosted demo endpoint deployed; controlled public demo access model proposed, not yet ready for broad promotion. Full-publication readiness not yet accepted.
+**Status:** MIT self-hosted individual MCP. Railway is a disposable try-before-install demo. Full-publication readiness not yet accepted.
 
 ## North Star
 
@@ -68,11 +68,12 @@ The MCP server registers exactly 16 tools (source: `tube_bridge/server.py` `list
 
 ## Demo Endpoint
 
-- **Railway-hosted endpoint deployed:** `tube-bridge-production.up.railway.app`.
-- **Dedicated Google Cloud project proposed (P0)** for demo Data API access; accepted as architecture but pending Operator provisioning evidence. Auth material would be held server-side only.
-- **Controlled public demo access model proposed, not yet ready:** strict per-user/IP and global daily budgets with abuse controls and observability are planned but not yet fully implemented. Until these controls are in place, the demo endpoint exists for development and limited testing — it is not advertised as a public service.
-- **No shared upstream access material** would be distributed to extension consumers.
-- IPRoyal residential proxy (`TUBE_BRIDGE_PROXY` env var, pay-as-you-go) for transcript bot-detection workaround.
+- **Railway-hosted disposable demo:** `tube-bridge-production.up.railway.app`. This is solely a try-before-install demo, never a SaaS or managed transcript-hosting product.
+- **Isolated Google Cloud project:** Demo Data API access uses a dedicated Google Cloud project with isolated server-side upstream configuration, completely separate from Operator personal/development configuration.
+- **Fixed 5-operation limit:** The demo allows exactly 5 official YouTube Data API v3 operations per client/IP. Exhaustion affects only the disposable demo; self-hosted users bring their own keys and are unaffected.
+- **10-minute corpus TTL:** Demo corpora are temporary only. Every corpus created on the demo is automatically deleted 10 minutes after creation. No persistent volume, backups, accounts, or durable transcript/corpus hosting is provided.
+- **No shared upstream access material** is distributed to any consumer.
+- IPRoyal residential proxy (`TUBE_BRIDGE_PROXY` env var, pay-as-you-go) for transcript bot-detection workaround on the demo.
 
 ## Quota Facts (Verified 2026-08-08)
 
@@ -83,24 +84,24 @@ Default allocation documented as 100 search.list calls/day, 100 videos.insert ca
 
 The Data API does not provide transcript text; transcripts rely on a separate `youtube-transcript-api`/proxy pipeline.
 
-## Open-Core Boundary
+## Self-Hosted Boundary
+
+tube-bridge is an MIT self-hosted individual MCP. It is never a SaaS or managed transcript-hosting product.
 
 **Open core (MIT licensed):**
 - All 16 MCP tools, all transports, all cache/corpus logic.
 - Zero-registration workflows: 13 tools usable without any API key.
 - Users bring their own `YOUTUBE_API_KEY` for the 3 API-dependent tools.
 
-**Proposed extension (separate commercial product layer):**
-- Reuses the tube-bridge engine but is a distinct product.
-- Requires a server-side product gateway for entitlements, usage enforcement, billing, trial management, and support.
-- Physical deployment may reuse services (an architecture decision, not precluded).
-- Features: trial/paid transcript and research capabilities; per-user quota, abuse controls, observability.
+The Railway demo is solely a disposable try-before-install convenience. There is no commercial extension, product gateway, billing, entitlement, managed higher-quota tier, or extension deployment.
 
-**Grabbit integration (optional connector):**
-- Batch video-link collection workflow: save YouTube links into Grabbit collections.
-- Transcript and research attachment to Grabbit items.
-- Cross-promotion between tube-bridge extension and Grabbit.
-- Not required for core tube-bridge operation; an independent opt-in path.
+## Grabbit
+
+Grabbit is a completely separate MCP. There is no connector, dependency, shared service, bundled workflow, code integration, or implementation roadmap between tube-bridge and Grabbit. An example agent usage sequence may show that the agent uses tube-bridge to find videos and then separately uses Grabbit to save links — that is the full extent of any documented relationship.
+
+## Browser Extension
+
+A browser extension is outside this project's scope and release gate. It must not be architected, planned, or documented here.
 
 ## Known Code/Docs Inconsistencies
 
@@ -112,6 +113,6 @@ These are documented readiness issues requiring source correction; they should n
 
 ## Publication Readiness
 
-- **Full-publication readiness is not yet accepted.** A decision-ready checklist is maintained in `docs/planning/PUBLICATION_READINESS.md`.
+- **Full-publication readiness is not yet accepted.** Full open-source distribution means GitHub release, PyPI package, Docker image, and documented demo. Readiness remains unaccepted until source/test/package verification.
 - Architecture direction recorded in `docs/adr/001-demo-api-quota-and-product-boundary.md`.
 - No production-ready promise, no coverage percentage, no SLA, no pricing, no launch venue, no legal conclusion is asserted.

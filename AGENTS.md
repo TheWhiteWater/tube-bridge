@@ -105,10 +105,10 @@ python3 test_tools.py          # live smoke script only
 - Do NOT bundle, embed, commit, or ship any API key, secret, or access material in the repository.
 - Prior README claims implying bundled credentials are stale and have been corrected.
 
-### Core vs Extension vs Grabbit Boundary
+### Core vs Demo vs Grabbit Boundary
 - **Core (MIT):** All 16 tools, all transports, cache/corpus logic — open source, zero registration for 13 tools.
-- **Extension (proposed commercial):** Separate product layer reusing tube-bridge engine behind a server-side product gateway. Trial/paid features, billing, support. Deployment sharing between core and extension is an open architecture decision, not precluded.
-- **Grabbit (optional connector):** Batch video-link collection and transcript attachment. Independent opt-in path; not required for core operation.
+- **Demo (Railway, disposable):** Try-before-install only. Exactly 5 Data API operations per client/IP, corpora auto-delete after 10 minutes. No persistence, accounts, SaaS, or managed hosting.
+- **Grabbit (separate MCP):** Completely separate MCP. No connector, dependency, shared service, code integration, or implementation roadmap exists. An example agent usage sequence may show the agent using tube-bridge to find videos and then separately using Grabbit to save links — that is the full extent of any documented relationship.
 
 ### Source/Test Changes
 - Source and test changes require corresponding tests and independent acceptance.

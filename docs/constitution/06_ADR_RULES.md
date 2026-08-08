@@ -9,8 +9,9 @@ An Architecture Decision Record is mandatory for:
 3. **Changing the transport or auth model** — e.g., adding/removing transports, changing auth mechanism, altering the `/health` surface.
 4. **Changing storage architecture** — e.g., switching database engines, splitting/merging `cache.db` and `corpus.db`, changing embedding models.
 5. **Demo quota, abuse controls, or access policy** — per-user/IP budgets, rate limiting, observability, any change to who can access the demo and under what constraints.
-6. **Open-core vs commercial/Grabbit boundary** — any change to what is MIT-licensed vs what belongs to the proposed extension or the optional Grabbit connector.
-7. **Pricing architecture** — the structure of pricing, trial, and paid tiers for the extension (but not exact commercial prices, which are operator decisions).
+6. **Self-hosted core compatibility** — any change to what is MIT-licensed, how the 16 tools are distributed, or whether self-hosted users are affected by demo-side decisions.
+7. **Disposable demo isolation and quota** — changes to the dedicated Google Cloud project boundary, the fixed 5 Data API operations per client/IP limit, or the 10-minute corpus TTL.
+8. **Full-publication distribution strategy** — changes to the GitHub release, PyPI package, Docker image, or documented demo targets.
 
 ## ADR Format
 
@@ -51,9 +52,9 @@ Decisions are role-based, not tied to any specific agent identity:
 
 | ADR | Status | Title | Supersedes |
 |-----|--------|-------|------------|
-| [ADR-001](../adr/001-demo-api-quota-and-product-boundary.md) | **Accepted** | Demo API Access, Quota Boundary, and Product Separation | — |
+| [ADR-001](../adr/001-demo-api-quota-and-product-boundary.md) | **Accepted** | Demo API Access, Quota Boundary, and Self-Hosted Product Boundary | — |
 
-ADR-001 records the accepted architecture direction for demo access, quota boundaries, product separation (open-core vs extension), and Grabbit integration. It is architecture direction, **not launch approval**. Per-surface acceptance requires all P0 items for the surface being accepted in `docs/planning/PUBLICATION_READINESS.md` to be resolved, plus Operator/Architect sign-off for that surface. Extension E1–E4 and Grabbit G1–G2 gates do not block Core or Controlled Demo acceptance.
+ADR-001 records the accepted architecture direction for demo access, quota boundaries, and the self-hosted product boundary. It is architecture direction, **not launch approval**. Per-surface acceptance requires all P0 items for the surface being accepted in `docs/planning/PUBLICATION_READINESS.md` to be resolved, plus Operator/Architect sign-off for that surface. Only two surfaces have acceptance gates: Core Full Publication (Surface 1) and Disposable Demo (Surface 2). There is no commercial extension, product gateway, or Grabbit connector surface.
 
 ## ADR Lifecycle
 

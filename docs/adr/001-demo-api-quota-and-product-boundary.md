@@ -1,4 +1,4 @@
-# ADR-001: Demo API Access, Quota Boundary, and Product Separation
+# ADR-001: Demo API Access, Quota Boundary, and Self-Hosted Product Boundary
 
 **Status:** Accepted (architecture direction; not launch approval)
 **Date:** 2026-08-08
@@ -6,9 +6,9 @@
 
 ## Context
 
-tube-bridge is an MIT-licensed open-core MCP server that provides 16 tools for AI agents to interact with YouTube. It ships with a zero-registration workflow: 13 of 16 tools work without an API key, using yt-dlp and youtube-transcript-api. Three tools (comments, channel search, channel info) require a YouTube Data API v3 key, which users obtain from Google Cloud Console.
+tube-bridge is an MIT-licensed self-hosted MCP server that provides 16 tools for AI agents to interact with YouTube. It ships with a zero-registration workflow: 13 of 16 tools work without an API key, using yt-dlp and youtube-transcript-api. Three tools (comments, channel search, channel info) require a YouTube Data API v3 key, which users obtain from Google Cloud Console.
 
-A Railway-hosted demo endpoint exists at `tube-bridge-production.up.railway.app`. This ADR defines the architecture direction for demo API access, quota management, and the boundary between the open-core library, the optional hosted demo, proposed commercial extensions, and Grabbit integration.
+A Railway-hosted disposable demo endpoint exists at `tube-bridge-production.up.railway.app`. This ADR defines the architecture direction for demo API access, quota management, and the self-hosted product boundary.
 
 ### Key constraints
 
@@ -19,19 +19,25 @@ A Railway-hosted demo endpoint exists at `tube-bridge-production.up.railway.app`
 
 ## Decision
 
-### 1. Dedicated server-side demo access
+### 1. Isolated server-side demo access
 
-The demo's Data API access will use a dedicated Google Cloud project, separate from any development or personal projects. Authentication material (API key) will be held only server-side as a Railway environment variable and never exposed to demo consumers, extension users, or the repository.
+The demo's Data API access uses a dedicated Google Cloud project with isolated server-side upstream configuration, completely separate from Operator personal/development configuration. Authentication material (API key) is held only server-side as a Railway environment variable and never exposed to demo consumers or the repository.
 
-**Rationale:** Isolates demo quota from individual developer keys. Prevents shared-quota exhaustion. Aligns with Google's API terms.
+**Rationale:** Isolates demo quota from individual developer keys. Prevents cross-contamination between demo usage and Operator development work. Aligns with Google's API terms.
 
-### 2. Strict per-user/IP and global daily budgets
+### 2. Fixed 5-operation limit per client/IP
 
-The demo will enforce both per-consumer and aggregate daily budgets on Data API calls. Abuse controls (rate limiting, anomaly detection, IP-based throttling) and observability (metrics, alerting) will be implemented before the demo is publicly promoted.
+The demo enforces exactly 5 official YouTube Data API v3 operations per observed client IP during the lifetime of the current demo process. Identity is IP-only: there are no user accounts or sessions. The counter is held only in process memory, has no time-based reset, and resets when the disposable demo process restarts. The IP counter is not written to corpus storage or another durable store. Exhaustion affects only the disposable demo — self-hosted users bring their own keys and are unaffected.
 
-**Rationale:** Prevents a single consumer from exhausting shared demo quota. Provides operator visibility into usage patterns.
+**Rationale:** This is the simplest literal implementation of the fixed per-client/IP allowance. It prevents one client from exhausting shared demo quota without accounts, persistent identity, complex budgets, or an anomaly-detection platform. Process restarts may restore the allowance because the demo provides no continuity guarantee.
 
-### 3. Official YouTube quota path
+### 3. 10-minute corpus TTL on demo
+
+Demo corpora are temporary only. Every corpus created on the demo is automatically deleted 10 minutes after creation. No persistent volume, backups, accounts, or durable transcript/corpus hosting is provided on the demo.
+
+**Rationale:** Eliminates Railway volume mounts, backup promises, and durable hosted-data operations. The demo still requires a concise data-handling and deletion notice, and the transient model does not waive applicable privacy, copyright, or YouTube policy obligations. Self-hosted instances have full persistent corpus storage under `~/.tube_bridge`.
+
+### 4. Official YouTube quota path
 
 Additional Data API allocation follows the YouTube API Services audit/quota-extension process documented at:
 - https://developers.google.com/youtube/v3/determine_quota_cost
@@ -40,28 +46,29 @@ Additional Data API allocation follows the YouTube API Services audit/quota-exte
 
 No purchasable quota tier was identified in these official documents. If Google introduces one, the decision can be revisited.
 
-### 4. Separate transcript pipeline
+### 5. Separate transcript pipeline
 
 Transcripts are obtained via `youtube-transcript-api` (with IPRoyal residential proxy for datacenter IP bot-detection workaround), not through the Data API. The Data API does not provide transcript text. This pipeline is architecturally independent from the API key/quotas decisions above.
 
-### 5. Extension as separate product layer
+### 6. Self-hosted boundary
 
-The proposed commercial extension is a separate product layer but is explicitly based on and reuses the tube-bridge engine. It requires:
-- A server-side product gateway for entitlements, usage enforcement, billing, trial management, and support.
-- Physical deployment may reuse existing services (Railway or equivalent); this remains an architecture decision, not a prohibition.
+tube-bridge is an MIT self-hosted individual MCP, never a SaaS or managed transcript-hosting product. The Railway demo is solely a disposable try-before-install convenience. There is no commercial extension, product gateway, billing, entitlement, or managed higher-quota tier.
 
-**What the extension is NOT:** The extension is not a re-bundling of the open-core with shared upstream access material. No demo API key or proxy credential is distributed to extension consumers.
+**Rationale:** Keeps the open-core library zero-friction. Users self-host with their own keys. The demo proves the tool works but makes no durability or availability promise.
 
-**Rationale:** Keeps the open-core library zero-friction. Allows the extension to monetize value-add (managed access, higher quotas, research features) without compromising the MIT promise.
+### 7. Full-publication scope
 
-### 6. Grabbit as optional connector
+Full open-source distribution means: GitHub release, PyPI package, Docker image, and documented demo. Readiness remains unaccepted until source/test/package verification is complete.
 
-Grabbit integration is an optional connector and product workflow. It enables:
-- Batch video-link collections: save YouTube links into Grabbit collections.
-- Transcript and research attachment to Grabbit items.
-- Cross-promotion between the tube-bridge extension and Grabbit.
+### 8. Grabbit separation
 
-Grabbit is not required for core tube-bridge operation. It is an independent opt-in path that may be implemented after the extension product gateway is established.
+Grabbit is a completely separate MCP. There is no connector, dependency, shared service, bundled workflow, code integration, or implementation roadmap between tube-bridge and Grabbit. An example agent usage sequence may show the agent uses tube-bridge to find videos and then separately uses Grabbit to save links — that is the full extent of any documented relationship.
+
+**Rationale:** tube-bridge and Grabbit are independent products with separate lifecycles. No coupling is introduced.
+
+### 9. Browser extension
+
+A browser extension is outside this project's scope and release gate. It must not be architected, planned, or documented here.
 
 ## Alternatives Considered
 
@@ -69,9 +76,10 @@ Grabbit is not required for core tube-bridge operation. It is an independent opt
 |-------------|-----------------|
 | Bundle an API key in the open-core repo | Security risk; violates MIT open-core principle; against Google API terms |
 | Require all users to bring their own API key for all 16 tools | Destroys the zero-registration value proposition; 13 tools would regress |
-| Make the extension entirely separate infrastructure | The extension is built on the tube-bridge engine; physical deployment reuse is a valid architecture decision |
-| Skip the product gateway and distribute shared credentials | Security and quota-abuse risk; no enforceable per-user budgets |
-| Embed Grabbit as a hard dependency | Adds coupling; Grabbit is a separate product with its own lifecycle |
+| Per-user/IP daily budgets with abuse controls | Over-engineering for a disposable try-before-install demo; 5-op fixed limit is simpler and sufficient |
+| Persistent demo corpus with volume mounts | Introduces retention policy, backup, deletion, GDPR, and copyright compliance infrastructure for a disposable demo |
+| Commercial extension with product gateway | tube-bridge is an MIT self-hosted MCP, not a SaaS; no billing, entitlement, or managed tier is planned |
+| Grabbit connector or shared service | Grabbit is a completely separate MCP; no coupling is introduced |
 
 ## Consequences
 
@@ -79,30 +87,28 @@ Grabbit is not required for core tube-bridge operation. It is an independent opt
 
 - Open-core library remains zero-friction: 13 tools work without any setup.
 - Demo users get a functional hosted endpoint without obtaining their own API key.
-- Extension users get managed, higher-quota access without sharing upstream credentials.
-- Clean product boundary enables independent extension pricing, trial, and support models.
-- Grabbit integration adds a natural content-to-collection workflow without complicating the core.
+- Fixed 5-operation limit is transparent and simple — no complex budget/enforcement infrastructure needed.
+- 10-minute corpus TTL eliminates data retention, privacy, and compliance overhead on the demo.
+- Self-hosted users are unaffected by demo limits; they bring their own keys and have full persistent storage.
+- Clean product boundary: no extension, no gateway, no billing, no Grabbit coupling.
 
 ### Negative
 
-- Demo quota is finite and shared; budget exhaustion will degrade demo availability.
-- Extension requires a product gateway — non-trivial infrastructure investment.
+- Demo quota is finite and shared; 5-operation limit will be exhausted quickly by multiple users.
+- No persistent corpus on demo — every corpus disappears after 10 minutes.
 - YouTube audit/quota-extension process has no guaranteed timeline or outcome.
 - Transcript pipeline depends on a third-party proxy service (IPRoyal) for datacenter deployments.
 
-## Open Decisions
+## Open Implementation Details
 
-1. **Demo budget values** — exact per-user/IP and global daily limits need operator decision.
-2. **Extension pricing and trial structure** — commercial decision for the operator.
-3. **Product gateway technology** — whether to build custom or use an off-the-shelf API gateway.
-4. **Grabbit integration timing** — whether to ship with extension v1 or as a follow-on.
-5. **Persistent storage for corpus.db on Railway** — volume mount needed for production corpus retention.
+1. **10-minute TTL mechanism** — background cleanup loop, per-corpus timer, or lazy expiry checks may be chosen during implementation, provided every demo corpus becomes inaccessible and is deleted no later than 10 minutes after creation.
+2. **Full-publication verification** — exact deterministic test cases, CI configuration, `pip install` verification steps, and PyPI build/upload procedure remain implementation planning items. PyPI itself is already part of the fixed full-publication target.
 
 ## Exit Criteria
 
 This ADR is considered **accepted as architecture direction** when:
 - Operator/Architect review confirms the direction is sound.
-- No blocking concerns are raised that would invalidate the open-core boundary.
+- No blocking concerns are raised that would invalidate the self-hosted boundary.
 
 This ADR is **NOT** launch acceptance. Full-publication readiness requires all P0 items in `docs/planning/PUBLICATION_READINESS.md` to be resolved.
 

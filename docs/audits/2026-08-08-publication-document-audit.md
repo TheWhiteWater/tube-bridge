@@ -1,5 +1,7 @@
 # Documentation Audit Report — tube-bridge
 
+> **Historical audit — superseded for current product-model acceptance.** This report predates the Operator clarification that tube-bridge is a self-hosted MCP with only a disposable Railway demo and that Grabbit is a separate MCP with no connector. Its source-grounding findings remain useful history, but its verdict and C4 status are not current release evidence. Use `docs/planning/PUBLICATION_READINESS.md`, ADR-001, and the latest Station Codex audit receipt as authority.
+
 **Date:** 2026-08-08
 **Audit type:** Independent adversarial documentation audit (PUBLICATION_READINESS C4)
 **Scope:** 20 files (read_scope) + 5 runtime source files inspected for cross-validation

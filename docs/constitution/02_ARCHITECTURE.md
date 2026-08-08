@@ -157,24 +157,18 @@ Two-layer cache for transcripts and video metadata:
 
 ## Product Layers (Architecture)
 
-### Core (MIT) — This Repository
+### Core Self-Hosted MCP — This Repository
 - All 16 tools, all transports, cache/corpus logic.
 - No external database/vector/embedding service required. Requires network connectivity to YouTube upstreams.
 - Users bring their own `YOUTUBE_API_KEY` for the 3 API-keyed tools.
+- MIT-licensed; installable from source. No SaaS, accounts, billing, or managed hosting.
 
-### Hosted Demo (Deployed, Not Yet Public)
+### Disposable Try-Before-Install Demo
 - Railway deployment at `tube-bridge-production.up.railway.app`.
-- Dedicated Google Cloud project and controlled budgets are approved architecture, but provisioning and controls are not yet implemented.
-- Controlled public access proposed (budgets, abuse controls, observability) but not fully implemented.
-
-### Extension (Proposed Commercial Product Layer, Planned)
-- Reuses tube-bridge engine behind a server-side product gateway.
-- Entitlements, usage enforcement, billing, trial management, support.
-- Deployment sharing with core is an open architecture decision, not precluded.
-
-### Grabbit Connector (Optional, Proposed)
-- Batch video-link collection and transcript attachment.
-- Independent opt-in path, not a core dependency.
+- Isolated Google Cloud project — demo Data API configuration is completely separate from Operator personal/development configuration.
+- Exactly 5 official YouTube Data API v3 operations per client/IP. Exhaustion affects only the disposable demo; self-hosted users bring their own keys and are unaffected.
+- 10-minute automatic corpus deletion — every corpus created on the demo is deleted 10 minutes after creation.
+- No persistent volume, backups, accounts, or durable transcript/corpus hosting.
 
 ## Known Readiness / Source Drift
 

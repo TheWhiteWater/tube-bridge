@@ -126,7 +126,9 @@ tube_bridge/
 
 ## Self-Hosting
 
-### Railway
+tube-bridge is an MIT self-hosted individual MCP — never a SaaS or managed transcript-hosting product. The Railway deployment below is solely a disposable try-before-install demo.
+
+### Railway (Disposable Demo)
 
 ```bash
 git clone https://github.com/TheWhiteWater/tube-bridge
@@ -135,10 +137,12 @@ railway init --name tube-bridge
 railway up --service tube-bridge --detach
 
 # Set in Railway dashboard → Variables:
-#   YOUTUBE_API_KEY  (optional)
+#   YOUTUBE_API_KEY  (uses isolated demo GCP project, separate from Operator keys)
 #   TUBE_BRIDGE_PROXY (recommended for transcripts from datacenter IPs)
 #   TUBE_BRIDGE_AUTH_KEY (optional, protects all remote routes except /health)
 ```
+
+**Demo limits:** 5 Data API v3 operations per client/IP. Demo corpora are automatically deleted 10 minutes after creation. No persistent volume, backups, or durable hosting.
 
 ### Docker
 
@@ -192,28 +196,28 @@ python3 server.py --http --port 8080 --host 0.0.0.0
 }
 ```
 
-## Roadmap & Product Boundaries
+## Product Boundary
 
 ### Current State
-- **Open-core MIT library** — 16 MCP tools, all transports, cache/corpus logic. Available on GitHub.
-- **Hosted demo endpoint deployed** on Railway (`tube-bridge-production.up.railway.app`) for development and testing.
-- **Controlled public demo access is proposed, not ready.** Per-user/IP budgets, abuse controls, and observability are planned but not yet implemented. The demo endpoint should not be treated as a public service until those controls are in place.
+- **MIT self-hosted library** — 16 MCP tools, all transports, cache/corpus logic. Available on GitHub.
+- **Disposable Railway demo** — `tube-bridge-production.up.railway.app` is a try-before-install demo only. Not a SaaS or managed product.
+- **Demo Data API access** uses an isolated Google Cloud project with server-side configuration, completely separate from Operator personal/development keys. Exactly 5 Data API v3 operations per client/IP. Exhaustion affects only the disposable demo.
+- **Demo corpus TTL** — corpora created on the demo are automatically deleted 10 minutes after creation. No persistent volume, backups, accounts, or durable transcript/corpus hosting.
 - **No PyPI publication, CI pipeline, or production-ready claims.** `test_tools.py` is a live smoke script, not an automated acceptance suite.
 
-### Proposed Extension (Separate Commercial Product Layer)
-- Reuses the tube-bridge engine behind a server-side product gateway.
-- Trial/paid transcript and research capabilities with per-user quota, billing, and support.
-- Deployment sharing between open-core and extension remains an open architecture decision.
+### Full Publication Scope
+Full open-source distribution means: GitHub release, PyPI package, Docker image, and documented demo. Readiness remains unaccepted until source/test/package verification is complete.
 
-### Grabbit Integration (Optional Connector)
-- Batch video-link collection: save YouTube links into Grabbit collections.
-- Transcript and research attachment to Grabbit items.
-- Independent opt-in path; not required for core tube-bridge operation.
+### What tube-bridge Is NOT
+- Not a SaaS or managed transcript-hosting product.
+- No commercial extension, product gateway, billing, entitlement, or managed higher-quota tier.
+- Grabbit is a completely separate MCP. No connector, dependency, shared service, bundled workflow, code integration, or implementation roadmap exists between tube-bridge and Grabbit. An example agent usage sequence may show the agent uses tube-bridge and then separately uses Grabbit to save links.
+- Browser extension is outside this project's release gate and must not be architected here.
 
 ### Decision Sources
 - `PROJECT_VISION.md` — product boundaries, tool baseline, open-core scope.
 - `docs/planning/PUBLICATION_READINESS.md` — readiness checklist (P0/P1/P2 items, no-go gates).
-- `docs/adr/001-demo-api-quota-and-product-boundary.md` — architecture direction for demo access, quota, and product separation.
+- `docs/adr/001-demo-api-quota-and-product-boundary.md` — architecture direction for demo isolation, fixed 5-operation limit, 10-minute corpus TTL, self-hosted boundary, and full-publication scope.
 
 ## Testing
 
@@ -226,7 +230,7 @@ This is a live smoke script that exercises search, video_info, trending, and tra
 ## Known Limitations
 
 - **Datacenter IPs (Railway, AWS, etc.):** YouTube may block anonymous requests from cloud IP ranges. `youtube_search` and `youtube_get_video_info` are unaffected with a Data API v3 key. `youtube_get_transcript` may fail with bot detection — set `TUBE_BRIDGE_PROXY` to a residential proxy to work around this.
-- **Corpus DB is ephemeral on Railway** without a persistent volume mount. Use Railway volume mount for production corpus storage.
+- **Demo corpus is temporary:** Corpora on the Railway demo are automatically deleted 10 minutes after creation. No persistent storage, backups, or durable hosting. Self-hosted instances have full persistent corpus storage under `~/.tube_bridge`.
 - **yt-dlp anonymous search:** degraded by YouTube in recent months. Prefer Data API v3 when available.
 
 ## License

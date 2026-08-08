@@ -26,7 +26,7 @@ Unresolved questions and blocking decisions. Resolved historical questions recor
 
 ### Q5: Deployment — local stdio plus Railway HTTP
 **Status:** Resolved — ADR-001 (2026-08-08).
-**Resolution:** tube-bridge supports both local stdio (child-process MCP transport) and Railway-hosted HTTP (`tube-bridge-production.up.railway.app`) with Streamable HTTP `/mcp` and optional Bearer auth. Stdio mode opens no inbound socket; tools use outbound network (yt-dlp subprocess, Data API v3 HTTPS). Public hardening (auth enforcement, rate limiting, abuse controls) remains pending for the demo endpoint. No third deployment target is required.
+**Resolution:** tube-bridge supports both local stdio (child-process MCP transport) and Railway-hosted HTTP (`tube-bridge-production.up.railway.app`) with Streamable HTTP `/mcp` and optional Bearer auth. Stdio mode opens no inbound socket; tools use outbound network (yt-dlp subprocess, Data API v3 HTTPS). Public hardening (5-operation limit enforcement, 10-minute corpus TTL) remains pending implementation for the demo endpoint. No third deployment target is required.
 **Evidence:** `server.py` transport dispatch; `tube_bridge/transport.py`; Railway endpoint deployed; ADR-001.
 
 ### Q6: Channel search
@@ -36,43 +36,48 @@ Unresolved questions and blocking decisions. Resolved historical questions recor
 
 ---
 
-## Blocking Questions (P0 for Core + Controlled Demo Release)
+## Blocking Questions (Resolved)
 
-Combined target has four blockers. B1–B3 gate controlled-demo acceptance. B4 gates core publication acceptance. Existing GitHub source remains available regardless of blocker resolution.
+All four blocking questions are resolved per ADR-001 (accepted 2026-08-08). Implementation remains open. No blocking decisions remain.
 
 ### B1: Consumer identity and usage budgets
-**Status:** Decision required.
+**Status:** Decision Resolved / Implementation Open.
 **Owner:** Operator.
-**Context:** The hosted demo needs per-consumer identity (IP-based or token-based) and enforceable daily budgets on Data API v3 calls. Without this, a single consumer could exhaust shared demo quota.
-**Exit evidence:** Budget values set; per-consumer identity scheme chosen; enforcement implemented and observable.
+**Resolution:** ADR-001 decision #1 and #2: Isolated Google Cloud project completely separate from Operator personal/development configuration. Exactly 5 official YouTube Data API v3 operations per observed client IP during the current demo-process lifetime. Identity is IP-only with no accounts or sessions. The counter is memory-only, has no time reset, resets when the disposable process restarts, and is never written to durable storage.
+**Exit evidence:** Isolated GCP project provisioned (D1); memory-only IP counter and 5-operation limit enforced and tested (D2) — both implementation open.
 
 ### B2: Hosted corpus exposure, persistence, and retention
-**Status:** Decision required.
+**Status:** Decision Resolved / Implementation Open.
 **Owner:** Operator.
-**Context:** The demo endpoint hosts `corpus.db` on Railway. The corpus is deployment-local and may be lost on restart/redeploy. Every mode — including ephemeral — needs disclosure and a documented deletion/retention treatment.
-**Options:**
-- A. Ephemeral: corpus may be lost on restart/redeploy. Requires disclosure of this behavior and a deletion process.
-- B. Persistent: Railway volume mount. Requires retention policy, backup strategy, and deletion mechanism.
-- C. Disabled: corpus tools return "not available on demo" message.
-**Exit evidence:** Persistence mode chosen; disclosure and deletion/retention treatment documented for the chosen mode.
+**Resolution:** ADR-001 decision #3 and #6: Every corpus created on the demo is automatically deleted 10 minutes after creation. No persistent volume, backups, accounts, or durable transcript/corpus hosting. Self-hosted instances have full persistent corpus storage under `~/.tube_bridge`. Tube-bridge is an MIT self-hosted MCP, never a SaaS or managed hosting product.
+**Exit evidence:** 10-minute corpus TTL enforced and observable (D5). No persistent volume or accounts required.
 
 ### B3: Copyright, privacy, deletion, and compliance policy
-**Status:** Decision required.
+**Status:** Decision Resolved / Implementation Open.
 **Owner:** Operator.
-**Context:** The demo caches transcripts (cache.db) and stores corpus chunks (corpus.db). What is the copyright compliance stance? What is the privacy/GDPR position? How are user data and cached transcripts deleted? This is a legal/policy decision, not a technical implementation question.
-**Exit evidence:** Written policy document covering: transcript retention period, copyright compliance stance, DMCA takedown path, user data deletion procedure, GDPR considerations.
+**Resolution:** ADR-001 decision #3 and #6: No persistent hosted corpus, no durable transcripts, no user accounts, no SaaS/managed hosting. Corpora auto-delete 10 minutes after creation. Self-hosted boundary means users bring their own storage and keys. The demo needs a concise data-handling and deletion notice; the transient model does not waive applicable privacy, copyright, or YouTube policy obligations.
+**Exit evidence:** Published demo data-handling and deletion notice (D4), plus evidence that no user data persists beyond the 10-minute corpus TTL.
 
 ### B4: Release evidence target
-**Status:** Decision required.
+**Status:** Decision Resolved / Implementation Open.
 **Owner:** Operator/Architect.
-**Context:** What evidence is required before the core library release can be accepted? This includes: deterministic tests (scope and coverage expectation), CI pipeline configuration, source installation verification (`pip install .` from source checkout), console entrypoint verification (`pyproject.toml` line 17), and package-registry decision (PyPI vs source-only vs both).
-**Exit evidence:** Deterministic test suite accepted with agreed scope; CI running on PRs; `pip install` verified from source checkout; entrypoint `tube-bridge` verified; package-registry publication decision recorded. Known drift items (`HELP_TEXT` tool count, `__init__.py` docstring) must be corrected before any release evidence claim is accepted.
+**Resolution:** ADR-001 decision #7: Full open-source distribution means GitHub release, PyPI package, Docker image, and documented demo. Readiness remains unaccepted until source/test/package verification (C2, C3, C5 P0 items) is complete. Known drift items (HELP_TEXT tool count, `__init__.py` docstring) must be corrected before any release evidence claim is accepted (C1, P0).
+**Exit evidence:** Deterministic test suite with agreed scope; CI running on PRs; `pip install` verified from source checkout; entrypoint `tube-bridge` verified; package-registry publication decision recorded. All implementation open.
+
+---
+
+## Grabbit Relationship
+
+### G1: Grabbit connector and integration
+**Status:** Resolved — ADR-001 (2026-08-08).
+**Resolution:** Grabbit is a completely separate MCP. There is no connector, dependency, shared service, bundled workflow, code integration, or implementation roadmap between tube-bridge and Grabbit. An agent may use tube-bridge to find videos and separately use Grabbit to save links — that is the full extent of any documented relationship. Grabbit is a separate companion MCP usage example only, never a tube-bridge implementation item.
+**Evidence:** ADR-001 decision #8; PROJECT_VISION.md "Grabbit" section.
 
 ---
 
 ## Conditional / Nonblocking Questions
 
-These do not block the core library or controlled demo release. Each may become blocking if a higher-priority dependency is not resolved.
+These do not block the core library or disposable demo release. Each may become blocking if a higher-priority dependency is not resolved.
 
 ### C1: YouTube Data API quota extension
 **Status:** Acknowledged.
@@ -86,19 +91,7 @@ These do not block the core library or controlled demo release. Each may become 
 **Context:** `TUBE_BRIDGE_PROXY` (IPRoyal residential proxy, pay-as-you-go) is operational with disclosed limitations. Transcript pipeline depends on it for datacenter deployments (Railway). No performance SLA is asserted. This is P1 with disclosed limitations; it becomes P0 only if the accepted demo transcript/corpus promise fails an Operator-defined availability threshold.
 **Condition:** Becomes P0 if the accepted demo transcript/corpus promise fails an Operator-defined availability threshold.
 
-### C3: Extension economics and CWS compliance
-**Status:** Planned, extension-only.
-**Owner:** Operator/Architect.
-**Context:** Commercial extension pricing, trial structure, billing integration, entitlement model, and Chrome Web Store compliance plan. These are extension launch gates, not core library or demo gates. Do not block core.
-**Condition:** Extension cannot launch without these resolved, but core library and demo release are independent.
-
-### C4: Grabbit connector timing
-**Status:** Deferred, connector-only.
-**Owner:** Operator.
-**Context:** Grabbit batch video-link collection and cross-promotion integration. Depends on extension gateway (Block G). Independent opt-in path. Do not block core.
-**Condition:** Grabbit cannot launch without extension gateway established, but core library and demo release are independent.
-
-### C5: Optional trending region parameter
+### C3: Optional trending region parameter
 **Status:** Deferred, nonblocking.
 **Owner:** Architect.
 **Context:** `youtube_get_trending` with Data API v3 supports a `regionCode` parameter. Adding this to the MCP tool schema would allow agents to request region-specific trending. This is a feature enhancement, not a blocking issue.
