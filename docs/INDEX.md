@@ -20,6 +20,7 @@
 | [PUBLICATION_READINESS.md](planning/PUBLICATION_READINESS.md) | Two-surface readiness checklist with gates |
 | [OPEN_QUESTIONS.md](planning/OPEN_QUESTIONS.md) | Resolved questions and blocking decisions |
 | [ADR-001](adr/001-demo-api-quota-and-product-boundary.md) | Demo API access, quota boundary, self-hosted product boundary |
+| [v1.0.0 metadata hygiene audit](audits/2026-08-09-v1.0.0-release-metadata-hygiene.md) | Historical release disposition and public verification |
 
 ## Tool Inventory
 
@@ -33,8 +34,8 @@ Search, video_info, and trending upgrade to higher-quality Data API v3 results w
 ## State
 
 - **Architecture:** ADR-001 accepted and implemented — demo API identity/quota, 10-minute corpus boundary, and self-hosted product separation.
-- **Current WorkItems:** WI-00027 documentation synchronization, WI-00028 core publication, and WI-00029 disposable-demo hardening are complete.
-- **Active TME direction:** DIR-004-publication-productization
-- **Core publication:** Accepted and externally verified through GitHub Release, PyPI, public GHCR, hosted CI, clean install, and registry-image MCP checks.
+- **Current WorkItems:** WI-00027 documentation synchronization, WI-00028 core publication, WI-00029 disposable-demo hardening, and WI-00034 release metadata hygiene are complete.
+- **TME direction:** DIR-004-publication-productization is complete; there is no active P0 direction.
+- **Core publication:** Accepted and externally verified through GitHub Release, PyPI, public GHCR, hosted CI, clean install, and registry-image MCP checks. Historical `v1.0.0` remains functional and unyanked but is explicitly marked superseded for release metadata by current `v1.0.2`.
 - **Disposable demo:** Independently accepted D1–D5 P0 controls: Railway-overwritten identity, 5 attempted Data API operations/IP/process, aggregate privacy-preserving observability, no durable storage, and transactional 10-minute corpus deletion. Conditional P1 operations remain triaged. No commercial extension, product gateway, Grabbit connector, or browser-extension roadmap exists.
 - **Last updated:** 2026-08-09

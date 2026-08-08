@@ -36,6 +36,7 @@ The following conditions permanently block any publication that would violate th
 | C3 | Installation, entrypoint, and registry verification | P0 | Resolved | Architect | Packaged `tube_bridge.cli:main`, wheel+sdist/twine, PyPI publication/install, public GHCR pull, and authenticated registry-image MCP handshake pass. |
 | C4 | Independent docs audit | P0 | Resolved | Auditor | Historical corrected-model PASS: `.brainops/methodology/audits/2026-08-08T06-30-02-732Z-f614f821-codex/station-codex-audit.json`. Subsequent audit receipts preserve the remediation trail; current core publication claims are additionally grounded by lifecycle and external release evidence. Demo acceptance remains separate. |
 | C5 | Release configuration and license review | P0 | Resolved | Architect | PEP 517/setuptools metadata, MIT license, bounded MCP compatibility, full SHA-256 runtime lock, reproducible Docker consumption, and no bundled auth values verified. |
+| C6 | Historical release metadata hygiene | P1 | Resolved | Operator | `v1.0.0` is functional but contains stale publication-state text. It remains unyanked under PyPI's disruption-aware guidance; its GitHub release is explicitly marked superseded for metadata by current `v1.0.2`. Tags/assets and `v1.0.1`/`v1.0.2` are preserved. See the [hygiene audit](../audits/2026-08-09-v1.0.0-release-metadata-hygiene.md). |
 
 ## Launch Surface 2: Disposable Try-Before-Install Demo
 
@@ -75,5 +76,6 @@ The following conditions permanently block any publication that would violate th
 - **Deterministic tests and CI:** Core acceptance remains the original 125-test freeze; the cumulative suite is 209 deterministic tests with hosted Python 3.12/3.13 CI PASS.
 - **Install/entrypoint/package route:** PyPI install, CLI/MCP, artifacts/twine and public GHCR runtime PASS (C3).
 - **Both surfaces are accepted independently.** The demo acceptance adds no SLA, account continuity, managed-hosting, or durability claim.
-- **Station items:** WI-00028 core publication and WI-00029 demo hardening are complete; conditional P1 items D6/X1/X2 remain triaged and non-blocking absent their documented thresholds.
+- **Release history hygiene:** WI-00034 is complete. Functional PyPI `1.0.0` remains unyanked; GitHub `v1.0.0` now carries an explicit documentation-metadata supersession notice pointing to current `v1.0.2`.
+- **Station items:** WI-00028 core publication, WI-00029 demo hardening, and WI-00034 metadata hygiene are complete; conditional P1 items D6/X1/X2 remain triaged and non-blocking absent their documented thresholds.
 - **ADR-001:** Accepted and implemented; lifecycle/live evidence, not the ADR alone, supplies demo acceptance.
