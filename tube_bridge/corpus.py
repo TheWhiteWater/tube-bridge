@@ -13,6 +13,7 @@ from typing import Any
 import sqlite_vec
 
 from .cache import CACHE_DIR
+from . import demo_policy
 
 DB_PATH = CACHE_DIR / "corpus.db"
 
@@ -40,7 +41,13 @@ def _get_conn() -> sqlite3.Connection:
         conn.enable_load_extension(False)
         conn.execute("PRAGMA journal_mode=WAL")
         conn.execute("CREATE TABLE IF NOT EXISTS corpora ("
-                     "corpus_id TEXT PRIMARY KEY, label TEXT, embedding_model TEXT, created_at REAL)")
+                     "corpus_id TEXT PRIMARY KEY, label TEXT, embedding_model TEXT, "
+                     "created_at REAL, expires_at REAL)")
+        columns = {
+            row[1] for row in conn.execute("PRAGMA table_info(corpora)").fetchall()
+        }
+        if "expires_at" not in columns:
+            conn.execute("ALTER TABLE corpora ADD COLUMN expires_at REAL")
         conn.execute("CREATE TABLE IF NOT EXISTS corpus_chunks ("
                      "id INTEGER PRIMARY KEY AUTOINCREMENT, corpus_id TEXT NOT NULL, video_id TEXT NOT NULL, "
                      "start_ts REAL, end_ts REAL, text TEXT, added_at REAL, "
@@ -134,137 +141,317 @@ def _chunk_transcript(segments: list[dict], window_sec: int = 80, overlap_sec: i
 
 
 # ---------------------------------------------------------------------------
+# Demo expiry helpers
+# ---------------------------------------------------------------------------
+
+
+def _delete_corpus_rows(conn: sqlite3.Connection, corpus_id: str) -> None:
+    _validate_corpus_id(corpus_id)
+    vec_table = _vec_table(corpus_id)
+    # Keep virtual-table DDL last. If an earlier relational delete fails, no
+    # vector table has been dropped; if DROP itself fails, the row deletes roll
+    # back with the surrounding transaction.
+    conn.execute("DELETE FROM corpus_chunks WHERE corpus_id=?", (corpus_id,))
+    conn.execute("DELETE FROM corpus_added_videos WHERE corpus_id=?", (corpus_id,))
+    conn.execute("DELETE FROM corpora WHERE corpus_id=?", (corpus_id,))
+    conn.execute(f"DROP TABLE IF EXISTS {vec_table}")
+
+
+def delete_expired_demo_corpora(now: float | None = None) -> list[str]:
+    """Transactionally delete every demo corpus whose persisted deadline passed."""
+    if not demo_policy.is_demo_mode():
+        return []
+    deadline = time.time() if now is None else now
+    with _connection() as conn:
+        # Reserve the writer before selecting IDs. Otherwise another connection
+        # can recreate the same corpus_id with a fresh deadline between SELECT
+        # and DELETE, and stale cleanup would remove the fresh corpus.
+        conn.execute("BEGIN IMMEDIATE")
+        corpus_ids = [
+            row[0] for row in conn.execute(
+                "SELECT corpus_id FROM corpora "
+                "WHERE expires_at IS NOT NULL AND expires_at <= ? "
+                "ORDER BY corpus_id",
+                (deadline,),
+            ).fetchall()
+        ]
+        for corpus_id in corpus_ids:
+            _delete_corpus_rows(conn, corpus_id)
+        conn.commit()
+        return corpus_ids
+
+
+def next_demo_expiry() -> float | None:
+    if not demo_policy.is_demo_mode():
+        return None
+    with _connection() as conn:
+        row = conn.execute(
+            "SELECT MIN(expires_at) FROM corpora WHERE expires_at IS NOT NULL"
+        ).fetchone()
+        return None if row is None or row[0] is None else float(row[0])
+
+
+def reconcile_demo_corpora(now: float | None = None) -> list[str]:
+    """Restore deadlines after restart and purge anything already expired."""
+    if not demo_policy.is_demo_mode():
+        return []
+    current = time.time() if now is None else now
+    with _connection() as conn:
+        conn.execute(
+            "UPDATE corpora SET expires_at = created_at + ? "
+            "WHERE expires_at IS NULL",
+            (demo_policy.DEMO_CORPUS_TTL_SECONDS,),
+        )
+        corpus_ids = [
+            row[0] for row in conn.execute(
+                "SELECT corpus_id FROM corpora WHERE expires_at <= ? ORDER BY corpus_id",
+                (current,),
+            ).fetchall()
+        ]
+        for corpus_id in corpus_ids:
+            _delete_corpus_rows(conn, corpus_id)
+        conn.commit()
+        return corpus_ids
+
+
+def _purge_expired_if_demo() -> None:
+    if demo_policy.is_demo_mode():
+        delete_expired_demo_corpora(now=time.time())
+
+
+# ---------------------------------------------------------------------------
 # Corpus operations
 # ---------------------------------------------------------------------------
 
 def corpus_create(corpus_id: str, label: str | None = None) -> dict:
-    """Create a named corpus."""
+    """Create a named corpus, with a persisted deadline in demo mode."""
+    _purge_expired_if_demo()
     _validate_corpus_id(corpus_id)
+    created_at = time.time()
+    expires_at = (
+        created_at + demo_policy.DEMO_CORPUS_TTL_SECONDS
+        if demo_policy.is_demo_mode() else None
+    )
+    created = False
     with _connection() as conn:
-        model, _ = _get_embedding_model()
+        _get_embedding_model()
         model_name = os.environ.get("TUBE_BRIDGE_EMBEDDING_MODEL", "BAAI/bge-small-en-v1.5")
         try:
-            conn.execute("INSERT INTO corpora VALUES (?, ?, ?, ?)",
-                         (corpus_id, label or corpus_id, model_name, time.time()))
+            conn.execute(
+                "INSERT INTO corpora "
+                "(corpus_id,label,embedding_model,created_at,expires_at) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (corpus_id, label or corpus_id, model_name, created_at, expires_at),
+            )
             conn.commit()
-            return {"corpus_id": corpus_id, "status": "created", "embedding_model": model_name}
+            created = True
+            result = {"corpus_id": corpus_id, "status": "created", "embedding_model": model_name}
         except sqlite3.IntegrityError:
-            return {"corpus_id": corpus_id, "status": "already_exists"}
+            result = {"corpus_id": corpus_id, "status": "already_exists"}
+    if created and demo_policy.is_demo_mode():
+        from . import demo_ttl
+        demo_ttl.wake_demo_ttl_worker()
+    return result
 
 
 def corpus_add(corpus_id: str, video_id: str, segments: list[dict], force_reembed: bool = False) -> dict:
-    """Add a video's transcript to a corpus. Chunks and embeds automatically. Idempotent."""
-    _validate_corpus_id(corpus_id)
-    with _connection() as conn:
+    """Add a video's transcript to a corpus. Chunks and embeds automatically. Idempotent.
 
-        # Check corpus exists
-        row = conn.execute("SELECT embedding_model FROM corpora WHERE corpus_id=?", (corpus_id,)).fetchone()
+    Embedding is intentionally outside the write transaction. A fresh
+    BEGIN IMMEDIATE plus deadline re-check prevents the expiry worker from
+    deleting the corpus between validation and inserts, which would otherwise
+    leave orphan chunks after a long embedding operation.
+    """
+    _purge_expired_if_demo()
+    _validate_corpus_id(corpus_id)
+    current_model = os.environ.get("TUBE_BRIDGE_EMBEDDING_MODEL", "BAAI/bge-small-en-v1.5")
+
+    # Cheap preflight before CPU-heavy embedding.
+    with _connection() as conn:
+        row = conn.execute(
+            "SELECT embedding_model FROM corpora WHERE corpus_id=?",
+            (corpus_id,),
+        ).fetchone()
         if not row:
             raise RuntimeError(f"Corpus '{corpus_id}' not found. Use corpus_create first.")
-        corpus_model = row[0]
-
-        # Check current model matches
-        current_model = os.environ.get("TUBE_BRIDGE_EMBEDDING_MODEL", "BAAI/bge-small-en-v1.5")
-        if corpus_model != current_model:
-            raise RuntimeError(f"Corpus was created with '{corpus_model}' but current model is '{current_model}'. "
-                               f"All chunks in a corpus must use the same embedding model.")
-
-        # Check if already added (idempotent)
-        existing = conn.execute("SELECT 1 FROM corpus_added_videos WHERE corpus_id=? AND video_id=?",
-                                (corpus_id, video_id)).fetchone()
+        if row[0] != current_model:
+            raise RuntimeError(
+                f"Corpus was created with '{row[0]}' but current model is '{current_model}'. "
+                "All chunks in a corpus must use the same embedding model."
+            )
+        existing = conn.execute(
+            "SELECT 1 FROM corpus_added_videos WHERE corpus_id=? AND video_id=?",
+            (corpus_id, video_id),
+        ).fetchone()
         if existing and not force_reembed:
             return {"corpus_id": corpus_id, "video_id": video_id, "status": "already_indexed"}
 
-        # Remove old chunks if re-embedding
-        if force_reembed:
-            conn.execute("DELETE FROM corpus_chunks WHERE corpus_id=? AND video_id=?", (corpus_id, video_id))
-            conn.execute("DELETE FROM corpus_added_videos WHERE corpus_id=? AND video_id=?", (corpus_id, video_id))
+    chunks = _chunk_transcript(segments)
+    if not chunks:
+        return {"corpus_id": corpus_id, "video_id": video_id, "status": "no_content"}
+    embeddings = _embed([chunk["text"] for chunk in chunks])
 
-        # Chunk and embed
-        chunks = _chunk_transcript(segments)
-        if not chunks:
-            return {"corpus_id": corpus_id, "video_id": video_id, "status": "no_content"}
+    expired = False
+    with _connection() as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute(
+            "SELECT embedding_model, expires_at FROM corpora WHERE corpus_id=?",
+            (corpus_id,),
+        ).fetchone()
+        if not row:
+            raise RuntimeError(f"Corpus '{corpus_id}' not found. Use corpus_create first.")
+        if (
+            demo_policy.is_demo_mode()
+            and row[1] is not None
+            and float(row[1]) <= time.time()
+        ):
+            _delete_corpus_rows(conn, corpus_id)
+            conn.commit()
+            expired = True
+        else:
+            if row[0] != current_model:
+                raise RuntimeError(
+                    f"Corpus was created with '{row[0]}' but current model is '{current_model}'. "
+                    "All chunks in a corpus must use the same embedding model."
+                )
+            existing = conn.execute(
+                "SELECT 1 FROM corpus_added_videos WHERE corpus_id=? AND video_id=?",
+                (corpus_id, video_id),
+            ).fetchone()
+            if existing and not force_reembed:
+                return {"corpus_id": corpus_id, "video_id": video_id, "status": "already_indexed"}
+            if force_reembed:
+                conn.execute(
+                    "DELETE FROM corpus_chunks WHERE corpus_id=? AND video_id=?",
+                    (corpus_id, video_id),
+                )
+                conn.execute(
+                    "DELETE FROM corpus_added_videos WHERE corpus_id=? AND video_id=?",
+                    (corpus_id, video_id),
+                )
 
-        texts = [c["text"] for c in chunks]
-        embeddings = _embed(texts)
+            vec_table = _vec_table(corpus_id)
+            for chunk, emb in zip(chunks, embeddings):
+                conn.execute(
+                    "INSERT INTO corpus_chunks "
+                    "(corpus_id,video_id,start_ts,end_ts,text,added_at) VALUES (?,?,?,?,?,?)",
+                    (corpus_id, video_id, chunk["start_ts"], chunk["end_ts"], chunk["text"], time.time()),
+                )
+                chunk_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+                conn.execute(
+                    f"CREATE VIRTUAL TABLE IF NOT EXISTS {vec_table} "
+                    f"USING vec0(embedding float[{len(emb)}])"
+                )
+                conn.execute(
+                    f"INSERT INTO {vec_table} (rowid, embedding) VALUES (?, ?)",
+                    (chunk_id, json.dumps(emb)),
+                )
 
-        # Store chunks
-        vec_table = _vec_table(corpus_id)
-        for chunk, emb in zip(chunks, embeddings):
-            conn.execute("INSERT INTO corpus_chunks (corpus_id, video_id, start_ts, end_ts, text, added_at) VALUES (?,?,?,?,?,?)",
-                         (corpus_id, video_id, chunk["start_ts"], chunk["end_ts"], chunk["text"], time.time()))
-            chunk_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
-
-            # Store vector in sqlite-vec virtual table — one per corpus.
-            # vec_table is safe to interpolate here: _validate_corpus_id() above
-            # restricts corpus_id (and therefore vec_table) to [A-Za-z0-9_-]+.
-            conn.execute(f"CREATE VIRTUAL TABLE IF NOT EXISTS {vec_table} USING vec0(embedding float[{len(emb)}])")
-            conn.execute(f"INSERT INTO {vec_table} (rowid, embedding) VALUES (?, ?)",
-                         (chunk_id, json.dumps(emb)))
-
-        conn.execute("INSERT OR REPLACE INTO corpus_added_videos VALUES (?, ?, ?)",
-                     (corpus_id, video_id, time.time()))
-        conn.commit()
-
-        return {"corpus_id": corpus_id, "video_id": video_id, "status": "indexed", "chunks": len(chunks)}
+            conn.execute(
+                "INSERT OR REPLACE INTO corpus_added_videos VALUES (?, ?, ?)",
+                (corpus_id, video_id, time.time()),
+            )
+            if (
+                demo_policy.is_demo_mode()
+                and row[1] is not None
+                and float(row[1]) <= time.time()
+            ):
+                _delete_corpus_rows(conn, corpus_id)
+                expired = True
+            conn.commit()
+    if expired:
+        raise RuntimeError(f"Corpus '{corpus_id}' not found. Use corpus_create first.")
+    return {"corpus_id": corpus_id, "video_id": video_id, "status": "indexed", "chunks": len(chunks)}
 
 
 def corpus_search(corpus_id: str, query: str, top_k: int = 10) -> dict:
     """Semantic search within a corpus. Returns chunks with scores, timestamps, video IDs."""
+    _purge_expired_if_demo()
     _validate_corpus_id(corpus_id)
-    with _connection() as conn:
+    current_model = os.environ.get("TUBE_BRIDGE_EMBEDDING_MODEL", "BAAI/bge-small-en-v1.5")
 
-        # Check corpus exists
-        row = conn.execute("SELECT 1 FROM corpora WHERE corpus_id=?", (corpus_id,)).fetchone()
+    # Validate before CPU-heavy embedding without holding a database lock.
+    with _connection() as conn:
+        row = conn.execute(
+            "SELECT embedding_model FROM corpora WHERE corpus_id=?",
+            (corpus_id,),
+        ).fetchone()
         if not row:
             raise RuntimeError(f"Corpus '{corpus_id}' not found.")
+        if row[0] != current_model:
+            raise RuntimeError(
+                f"Corpus '{corpus_id}' uses '{row[0]}' but current model is '{current_model}'. "
+                "Delete and recreate the corpus with the new model."
+            )
 
-        # Check model match
-        current_model = os.environ.get("TUBE_BRIDGE_EMBEDDING_MODEL", "BAAI/bge-small-en-v1.5")
-        corpus_model = conn.execute("SELECT embedding_model FROM corpora WHERE corpus_id=?", (corpus_id,)).fetchone()[0]
-        if corpus_model != current_model:
-            raise RuntimeError(f"Corpus '{corpus_id}' uses '{corpus_model}' but current model is '{current_model}'. "
-                               f"Delete and recreate the corpus with the new model.")
-
-        # Embed query
-        emb = _embed([query])[0]
-        vec_table = _vec_table(corpus_id)  # safe: corpus_id validated above
-        dim = len(emb)
-
-        # Ensure vec table exists
-        conn.execute(f"CREATE VIRTUAL TABLE IF NOT EXISTS {vec_table} USING vec0(embedding float[{dim}])")
-
-        # Search with metadata filtering — corpus_id filter BEFORE vector comparison
-        # sqlite-vec supports WHERE clause on vec0 results via JOIN
-        embedding_json = json.dumps(emb)
-        results = conn.execute(f"""
-            SELECT c.id, c.video_id, c.start_ts, c.end_ts, c.text, v.distance
-            FROM {vec_table} v
-            JOIN corpus_chunks c ON c.id = v.rowid
-            WHERE v.embedding MATCH ? AND c.corpus_id = ? AND k = ?
-            ORDER BY v.distance
-        """, (embedding_json, corpus_id, top_k)).fetchall()
-
-        chunks = []
-        for r in results:
-            chunks.append({
-                "video_id": r[1],
-                "start_ts": r[2],
-                "end_ts": r[3],
-                "text": r[4],
-                "score": round(1.0 - r[5], 4) if r[5] is not None else 0.0,  # distance → similarity
-            })
-
-        return {
-            "corpus_id": corpus_id,
-            "query": query,
-            "total_results": len(chunks),
-            "chunks": chunks,
-        }
+    emb = _embed([query])[0]
+    vec_table = _vec_table(corpus_id)
+    expired = False
+    chunks = []
+    with _connection() as conn:
+        # Revalidate under a short write lock so expiry deletion cannot race the
+        # vector query or its final deadline check.
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute(
+            "SELECT embedding_model, expires_at FROM corpora WHERE corpus_id=?",
+            (corpus_id,),
+        ).fetchone()
+        if not row:
+            raise RuntimeError(f"Corpus '{corpus_id}' not found.")
+        if (
+            demo_policy.is_demo_mode()
+            and row[1] is not None
+            and float(row[1]) <= time.time()
+        ):
+            _delete_corpus_rows(conn, corpus_id)
+            conn.commit()
+            expired = True
+        else:
+            if row[0] != current_model:
+                raise RuntimeError(
+                    f"Corpus '{corpus_id}' uses '{row[0]}' but current model is '{current_model}'. "
+                    "Delete and recreate the corpus with the new model."
+                )
+            conn.execute(
+                f"CREATE VIRTUAL TABLE IF NOT EXISTS {vec_table} "
+                f"USING vec0(embedding float[{len(emb)}])"
+            )
+            results = conn.execute(f"""
+                SELECT c.id, c.video_id, c.start_ts, c.end_ts, c.text, v.distance
+                FROM {vec_table} v
+                JOIN corpus_chunks c ON c.id = v.rowid
+                WHERE v.embedding MATCH ? AND c.corpus_id = ? AND k = ?
+                ORDER BY v.distance
+            """, (json.dumps(emb), corpus_id, top_k)).fetchall()
+            chunks = [{
+                "video_id": row[1],
+                "start_ts": row[2],
+                "end_ts": row[3],
+                "text": row[4],
+                "score": round(1.0 - row[5], 4) if row[5] is not None else 0.0,
+            } for row in results]
+            if (
+                demo_policy.is_demo_mode()
+                and row[1] is not None
+                and float(row[1]) <= time.time()
+            ):
+                _delete_corpus_rows(conn, corpus_id)
+                chunks = []
+                expired = True
+            conn.commit()
+    if expired:
+        raise RuntimeError(f"Corpus '{corpus_id}' not found.")
+    return {
+        "corpus_id": corpus_id,
+        "query": query,
+        "total_results": len(chunks),
+        "chunks": chunks,
+    }
 
 
 def corpus_list() -> dict:
     """List all available corpora with chunk counts."""
+    _purge_expired_if_demo()
     with _connection() as conn:
         rows = conn.execute("""
             SELECT c.corpus_id, c.label, c.embedding_model, c.created_at, COUNT(ch.id) as chunk_count,
@@ -291,10 +478,9 @@ def corpus_delete(corpus_id: str) -> dict:
     """Delete a corpus and all its chunks/vectors."""
     _validate_corpus_id(corpus_id)
     with _connection() as conn:
-        vec_table = _vec_table(corpus_id)  # safe: corpus_id validated above
-        conn.execute(f"DROP TABLE IF EXISTS {vec_table}")
-        conn.execute("DELETE FROM corpus_chunks WHERE corpus_id=?", (corpus_id,))
-        conn.execute("DELETE FROM corpus_added_videos WHERE corpus_id=?", (corpus_id,))
-        conn.execute("DELETE FROM corpora WHERE corpus_id=?", (corpus_id,))
+        _delete_corpus_rows(conn, corpus_id)
         conn.commit()
-        return {"corpus_id": corpus_id, "status": "deleted"}
+    if demo_policy.is_demo_mode():
+        from . import demo_ttl
+        demo_ttl.wake_demo_ttl_worker()
+    return {"corpus_id": corpus_id, "status": "deleted"}

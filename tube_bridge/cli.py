@@ -8,6 +8,7 @@ from mcp.server.stdio import stdio_server
 
 from .server import server
 from .transport import create_app
+from . import demo_policy
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -19,9 +20,18 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 async def _run(args: argparse.Namespace) -> None:
+    if demo_policy.is_demo_mode() and not args.http:
+        raise RuntimeError("demo mode requires HTTP transport")
+
     if args.http:
         app = create_app(server, args.host, args.port)
-        config = uvicorn.Config(app, host=args.host, port=args.port, log_level="info")
+        config = uvicorn.Config(
+            app,
+            host=args.host,
+            port=args.port,
+            log_level="info",
+            access_log=not demo_policy.is_demo_mode(),
+        )
         await uvicorn.Server(config).serve()
         return
 

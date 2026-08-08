@@ -8,6 +8,8 @@ from mcp.server.sse import SseServerTransport
 from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
 from starlette.responses import JSONResponse
 
+from . import demo_policy as policy
+
 
 def _get_auth_key() -> str | None:
     """If set, all /mcp and /sse requests must include Authorization: Bearer <this>."""
@@ -41,22 +43,39 @@ def create_app(server: Server, host: str, port: int):
         await sse.handle_post_message(scope, receive, send)
 
     async def health(scope, receive, send):
+        metrics = policy.demo_metrics()
         response = JSONResponse({
             "status": "ok", "server": "tube-bridge", "tools": 16,
             "auth": "enabled" if auth_key else "disabled",
+            "demo": {
+                "enabled": policy.is_demo_mode(),
+                "data_api_limit": policy.DEMO_DATA_API_LIMIT,
+                "allowed_total": metrics["allowed_total"],
+                "rejected_total": metrics["rejected_total"],
+                "client_buckets": metrics["client_buckets"],
+                "corpus_ttl_seconds": policy.DEMO_CORPUS_TTL_SECONDS,
+            },
         })
         await response(scope, receive, send)
 
     async def app(scope, receive, send):
         if scope["type"] == "lifespan":
-            async with contextlib.AsyncExitStack() as stack:
-                await stack.enter_async_context(http_manager.run())
-                await send({"type": "lifespan.startup.complete"})
-                while True:
-                    message = await receive()
-                    if message["type"] == "lifespan.shutdown":
-                        await send({"type": "lifespan.shutdown.complete"})
-                        return
+            demo_ttl = None
+            if policy.is_demo_mode():
+                from . import demo_ttl
+                demo_ttl.start_demo_ttl_worker()
+            try:
+                async with contextlib.AsyncExitStack() as stack:
+                    await stack.enter_async_context(http_manager.run())
+                    await send({"type": "lifespan.startup.complete"})
+                    while True:
+                        message = await receive()
+                        if message["type"] == "lifespan.shutdown":
+                            await send({"type": "lifespan.shutdown.complete"})
+                            return
+            finally:
+                if demo_ttl is not None:
+                    demo_ttl.stop_demo_ttl_worker()
             return
 
         path = scope["path"]
@@ -70,14 +89,17 @@ def create_app(server: Server, host: str, port: int):
 
         if path == "/health":
             await health(scope, receive, send)
-        elif path == "/mcp":
-            await http_manager.handle_request(scope, receive, send)
-        elif path == "/sse":
-            await handle_sse(scope, receive, send)
-        elif path == "/messages" and method == "POST":
-            await handle_messages(scope, receive, send)
-        else:
-            resp = JSONResponse({"error": "not found"}, status_code=404)
-            await resp(scope, receive, send)
+            return
+
+        with policy.bind_request_identity(scope):
+            if path == "/mcp":
+                await http_manager.handle_request(scope, receive, send)
+            elif path == "/sse":
+                await handle_sse(scope, receive, send)
+            elif path == "/messages" and method == "POST":
+                await handle_messages(scope, receive, send)
+            else:
+                resp = JSONResponse({"error": "not found"}, status_code=404)
+                await resp(scope, receive, send)
 
     return app

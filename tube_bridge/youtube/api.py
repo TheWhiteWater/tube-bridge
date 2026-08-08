@@ -6,6 +6,8 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+from .. import demo_policy
+
 
 def get_api_key() -> str | None:
     """Get YouTube Data API key from environment."""
@@ -20,6 +22,9 @@ def api_call(endpoint: str, params: dict) -> dict:
     params["key"] = key
     url = f"https://www.googleapis.com/youtube/v3/{endpoint}?{urllib.parse.urlencode(params)}"
     req = urllib.request.Request(url, headers={"Accept": "application/json"})
+    # Count attempted official operations, not tool calls. Missing-key
+    # validation above intentionally consumes nothing.
+    demo_policy.consume_data_api_operation()
     try:
         with urllib.request.urlopen(req, timeout=15) as resp:
             data = json.loads(resp.read())
@@ -132,6 +137,8 @@ def search_channels(query: str, max_results: int = 10, **filters) -> dict:
                 }
             for ch in channels:
                 ch.update(stat_map.get(ch["channel_id"], {}))
+        except demo_policy.DemoPolicyError:
+            raise
         except Exception:
             pass
 

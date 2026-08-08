@@ -13,6 +13,7 @@ from .tools import (
     corpus_create, corpus_add, corpus_search, corpus_list, corpus_delete,
 )
 from .youtube.client import extract_video_id
+from . import demo_policy
 
 HELP_TEXT = {
     "server": "tube-bridge",
@@ -32,6 +33,13 @@ HELP_TEXT = {
     ],
     "api_key_setup": "Set YOUTUBE_API_KEY env var. Get from https://console.cloud.google.com/apis/library/youtube.googleapis.com",
     "deploy_url": "https://tube-bridge-production.up.railway.app/mcp",
+    "demo_policy": {
+        "enabled_by": "TUBE_BRIDGE_DEMO_MODE=1",
+        "data_api_operations_per_ip": demo_policy.DEMO_DATA_API_LIMIT,
+        "allowance_reset": "process_restart",
+        "corpus_ttl_seconds": demo_policy.DEMO_CORPUS_TTL_SECONDS,
+        "self_hosted_affected": False,
+    },
 }
 
 
@@ -251,6 +259,11 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
     try:
         result = await _handle_tool(name, arguments)
         return [TextContent(type="text", text=json.dumps(result, ensure_ascii=False, indent=2))]
+    except demo_policy.DemoPolicyError as e:
+        return [TextContent(
+            type="text",
+            text=json.dumps(e.to_payload(), ensure_ascii=False),
+        )]
     except ValueError as e:
         return [TextContent(type="text", text=json.dumps({"error": str(e)}, ensure_ascii=False))]
     except RuntimeError as e:
