@@ -75,5 +75,5 @@ The following conditions permanently block any publication that would violate th
 - **Deterministic tests and CI:** 125 local frozen tests PASS; hosted CI pending authorized push (C2).
 - **Install/entrypoint/package route:** local artifact/CLI/MCP/twine verification PASS; external publication pending (C3).
 - **Full-publication readiness remains unaccepted.**
-- **Active Station items:** WI-00027 (documentation synchronization), DIR-004-publication-productization (TME operating map direction).
+- **Station items:** WI-00027 and WI-00028 are ready for gate; WI-00029 demo hardening is draft. DIR-004-publication-productization remains the active TME direction.
 - **ADR-001:** Accepted as architecture direction; not launch approval.

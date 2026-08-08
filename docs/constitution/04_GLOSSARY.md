@@ -28,7 +28,7 @@
 | **Grabbit companion workflow** | An agent independently invoking two separate MCPs (tube-bridge and Grabbit) with no code integration between them. For example, an agent uses tube-bridge to find videos and then separately uses Grabbit to save links. There is no connector, dependency, shared service, or implementation roadmap between the two projects. |
 | **publication gate** | The set of P0/P1 readiness checks in `docs/planning/PUBLICATION_READINESS.md`. Full-publication readiness is not yet accepted. Until this gate passes, tube-bridge remains an MIT open-core library with an optional development/testing demo. |
 | **Flat playlist** | yt-dlp mode (`--flat-playlist`) returning metadata without full page fetch. Used by channel_videos and playlist tools for efficiency. |
-| **source checkout install** | tube-bridge is installable from a source checkout via pip tooling (e.g., `pip install .` from the repository root). PyPI publication and console entrypoint (`tube-bridge` command) are not verified. |
+| **source checkout install** | tube-bridge builds as wheel+sdist and installs into an isolated environment; the packaged `tube-bridge` console entrypoint and MCP runtime are verified. Actual PyPI publication has not occurred. |
 | **quota extension** | No additional allocation beyond the default has been documented as requested or granted. YouTube's official docs identify the audit/extension process; no purchasable quota tier was identified. |
 | **TME** | Task Model Engine — BrainOps hypothesis tracker and operating map. |
 | **ADR** | Architecture Decision Record — documented technical decision with context, rationale, and consequences. See `docs/adr/`. |
