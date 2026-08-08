@@ -1,40 +1,105 @@
 # Open Questions
 
-Unresolved questions that need ADRs or investigation.
+Unresolved questions and blocking decisions. Resolved historical questions recorded for audit.
 
-## Q1: yt-dlp rate-limiting risk
-**Status:** Open  
-**Owner:** W-1020  
-**Context:** yt-dlp uses YouTube's InnerTube API without auth. Moderate use is fine, but heavy search traffic may trigger CAPTCHA or IP blocks.  
+## Resolved Architecture Questions
+
+### Q1: Dual-source architecture (yt-dlp + Data API v3)
+**Status:** Resolved — ADR-001 (2026-08-08).
+**Resolution:** Dual-source architecture confirmed as the direction. Data API v3 is primary for search, video_info, and trending when `YOUTUBE_API_KEY` is present; yt-dlp is the fallback for quota-exhausted or key-absent paths. Source: `tube_bridge/tools.py` implements dual-source dispatch in `search()`, `video_info()`, `trending()`.
+**Evidence:** `tube_bridge/tools.py` lines 16–62, 78–117, 125–163; ADR-001.
+
+### Q2: Comments — Data API v3 only
+**Status:** Resolved — ADR-001 (2026-08-08).
+**Resolution:** Comments are obtained exclusively via YouTube Data API v3 (`youtube_get_comments`). This is a key-required tool. yt-dlp comment extraction is not used due to fragility and breakage on YouTube layout changes. If no API key is set, the tool returns a clear message: comments require `YOUTUBE_API_KEY`.
+**Evidence:** `tube_bridge/tools.py` `comments()` delegates to `api.get_comments()`; ADR-001.
+
+### Q3: One transcript tool
+**Status:** Resolved — 2026-08-07.
+**Resolution:** Single `youtube_get_transcript` tool with `with_timestamps` boolean parameter. Plain-text or `[MM:SS]`-prefixed output. Manual subtitles prioritized over auto-generated.
+**Evidence:** `tube_bridge/server.py` `list_tools()` registers one transcript tool; `tube_bridge/tools.py` `transcript()`.
+
+### Q4: Trending — geo-dependent with API upgrade path
+**Status:** Resolved — ADR-001 (2026-08-08).
+**Resolution:** Trending uses Data API v3 as primary when `YOUTUBE_API_KEY` is present; yt-dlp as fallback. Data API v3 trending returns US results by default. The yt-dlp fallback path is IP-region dependent (YouTube's trending page varies by IP region). An optional exposed `region` input parameter for Data API v3 trending remains backlog/nonblocking.
+**Evidence:** `tube_bridge/tools.py` `trending()` implements dual-source; README documents the geo-dependency; `tube_bridge/youtube/api.py` `get_trending()`.
+
+### Q5: Deployment — local stdio plus Railway HTTP
+**Status:** Resolved — ADR-001 (2026-08-08).
+**Resolution:** tube-bridge supports both local stdio (child-process MCP transport) and Railway-hosted HTTP (`tube-bridge-production.up.railway.app`) with Streamable HTTP `/mcp` and optional Bearer auth. Stdio mode opens no inbound socket; tools use outbound network (yt-dlp subprocess, Data API v3 HTTPS). Public hardening (auth enforcement, rate limiting, abuse controls) remains pending for the demo endpoint. No third deployment target is required.
+**Evidence:** `server.py` transport dispatch; `tube_bridge/transport.py`; Railway endpoint deployed; ADR-001.
+
+### Q6: Channel search
+**Status:** Resolved — shipped in source.
+**Resolution:** `youtube_search_channels` is registered in `list_tools()`. It requires `YOUTUBE_API_KEY` and uses Data API v3 exclusively. Supports subscriber count filters (`min_subscribers`, `max_subscribers`) and `order` parameter. No yt-dlp fallback exists for channel search.
+**Evidence:** `tube_bridge/server.py` `list_tools()` registers `youtube_search_channels`; `tube_bridge/tools.py` `search_channels()` delegates to `api.search_channels()`.
+
+---
+
+## Blocking Questions (P0 for Core + Controlled Demo Release)
+
+Combined target has four blockers. B1–B3 gate controlled-demo acceptance. B4 gates core publication acceptance. Existing GitHub source remains available regardless of blocker resolution.
+
+### B1: Consumer identity and usage budgets
+**Status:** Decision required.
+**Owner:** Operator.
+**Context:** The hosted demo needs per-consumer identity (IP-based or token-based) and enforceable daily budgets on Data API v3 calls. Without this, a single consumer could exhaust shared demo quota.
+**Exit evidence:** Budget values set; per-consumer identity scheme chosen; enforcement implemented and observable.
+
+### B2: Hosted corpus exposure, persistence, and retention
+**Status:** Decision required.
+**Owner:** Operator.
+**Context:** The demo endpoint hosts `corpus.db` on Railway. The corpus is deployment-local and may be lost on restart/redeploy. Every mode — including ephemeral — needs disclosure and a documented deletion/retention treatment.
 **Options:**
-- A. Keep yt-dlp as primary, document rate-limit risk
-- B. Add optional Data API v3 as primary for search, yt-dlp as fallback
-- C. Both: primary=yt-dlp, optional upgrade to API key for guaranteed quota
+- A. Ephemeral: corpus may be lost on restart/redeploy. Requires disclosure of this behavior and a deletion process.
+- B. Persistent: Railway volume mount. Requires retention policy, backup strategy, and deletion mechanism.
+- C. Disabled: corpus tools return "not available on demo" message.
+**Exit evidence:** Persistence mode chosen; disclosure and deletion/retention treatment documented for the chosen mode.
 
-## Q2: Comments — yt-dlp or Data API v3
-**Status:** Needs ADR  
-**Owner:** W-1020  
-**Context:** Comments are the only feature where Data API v3 clearly beats yt-dlp. yt-dlp comment extraction is slow, fragile, and breaks on YouTube layout changes.  
-**Leaning:** Data API v3 with optional `YOUTUBE_API_KEY`. Graceful fallback: if no key, tool returns "comments require API key" instead of error.
+### B3: Copyright, privacy, deletion, and compliance policy
+**Status:** Decision required.
+**Owner:** Operator.
+**Context:** The demo caches transcripts (cache.db) and stores corpus chunks (corpus.db). What is the copyright compliance stance? What is the privacy/GDPR position? How are user data and cached transcripts deleted? This is a legal/policy decision, not a technical implementation question.
+**Exit evidence:** Written policy document covering: transcript retention period, copyright compliance stance, DMCA takedown path, user data deletion procedure, GDPR considerations.
 
-## Q3: One tool vs two for transcript
-**Status:** Resolved — merged into one tool with `with_timestamps` param.  
-**Resolution:** 2026-08-07.
+### B4: Release evidence target
+**Status:** Decision required.
+**Owner:** Operator/Architect.
+**Context:** What evidence is required before the core library release can be accepted? This includes: deterministic tests (scope and coverage expectation), CI pipeline configuration, source installation verification (`pip install .` from source checkout), console entrypoint verification (`pyproject.toml` line 17), and package-registry decision (PyPI vs source-only vs both).
+**Exit evidence:** Deterministic test suite accepted with agreed scope; CI running on PRs; `pip install` verified from source checkout; entrypoint `tube-bridge` verified; package-registry publication decision recorded. Known drift items (`HELP_TEXT` tool count, `__init__.py` docstring) must be corrected before any release evidence claim is accepted.
 
-## Q4: Trending accuracy
-**Status:** Open  
-**Context:** Trending uses YouTube's `results?search_query=trending&sp=...` page which is geo-dependent. Non-US IPs get regional trending.  
-**Options:**
-- A. Accept geo-dependency, document it
-- B. Add optional `region` parameter with yt-dlp `--geo-bypass`
-- C. Use Data API v3 for region-independent trending
+---
 
-## Q5: Deployment target
-**Status:** Open  
-**Context:** Currently local stdio only. Options: Railway (same as BrainOps stack), Fly.io, or keep local.  
-**Consideration:** MCP servers typically run local; HTTP transport adds auth complexity.
+## Conditional / Nonblocking Questions
 
-## Q6: Channel search (not just video search)
-**Status:** Backlog  
-**Context:** `youtube_search` returns videos. Should we add `youtube_search_channels`?  
-yt-dlp supports `ytsearchN:query` but doesn't distinguish channel results well.
+These do not block the core library or controlled demo release. Each may become blocking if a higher-priority dependency is not resolved.
+
+### C1: YouTube Data API quota extension
+**Status:** Acknowledged.
+**Owner:** Operator.
+**Context:** Default allocation is documented as 100 search.list calls/day, 100 videos.insert calls/day, and 10,000 units/day combined for other endpoints. Additional quota requires the YouTube API Services audit/quota-extension process. No purchasable tier was identified in reviewed official documentation. This is a conditional P1 for a bounded demo — only becomes blocking if demo demand exceeds default allocation before extension is complete.
+**Condition:** Blocking only if demo usage hits default quota ceiling before audit/extension is complete.
+
+### C2: Proxy reliability (IPRoyal residential proxy)
+**Status:** Deployed, conditional P1.
+**Owner:** Operator.
+**Context:** `TUBE_BRIDGE_PROXY` (IPRoyal residential proxy, pay-as-you-go) is operational with disclosed limitations. Transcript pipeline depends on it for datacenter deployments (Railway). No performance SLA is asserted. This is P1 with disclosed limitations; it becomes P0 only if the accepted demo transcript/corpus promise fails an Operator-defined availability threshold.
+**Condition:** Becomes P0 if the accepted demo transcript/corpus promise fails an Operator-defined availability threshold.
+
+### C3: Extension economics and CWS compliance
+**Status:** Planned, extension-only.
+**Owner:** Operator/Architect.
+**Context:** Commercial extension pricing, trial structure, billing integration, entitlement model, and Chrome Web Store compliance plan. These are extension launch gates, not core library or demo gates. Do not block core.
+**Condition:** Extension cannot launch without these resolved, but core library and demo release are independent.
+
+### C4: Grabbit connector timing
+**Status:** Deferred, connector-only.
+**Owner:** Operator.
+**Context:** Grabbit batch video-link collection and cross-promotion integration. Depends on extension gateway (Block G). Independent opt-in path. Do not block core.
+**Condition:** Grabbit cannot launch without extension gateway established, but core library and demo release are independent.
+
+### C5: Optional trending region parameter
+**Status:** Deferred, nonblocking.
+**Owner:** Architect.
+**Context:** `youtube_get_trending` with Data API v3 supports a `regionCode` parameter. Adding this to the MCP tool schema would allow agents to request region-specific trending. This is a feature enhancement, not a blocking issue.
+**Nonblocking:** Core library and demo release are independent of this feature.

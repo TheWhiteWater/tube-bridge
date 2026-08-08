@@ -2,15 +2,35 @@
 
 | Term | Definition |
 |------|-----------|
-| **MCP** | Model Context Protocol — JSON-RPC protocol for AI agent ↔ tool communication |
-| **Stdio transport** | MCP transport over stdin/stdout; server runs as child process |
-| **yt-dlp** | YouTube downloader fork; used here for search/metadata extraction via subprocess |
-| **youtube-transcript-api** | Python library wrapping YouTube's TimedText API for subtitle extraction |
-| **InnerTube API** | YouTube's internal API used by the web client; what yt-dlp calls under the hood |
-| **TimedText API** | YouTube endpoint (`/api/timedtext`) for subtitle/CC retrieval; no auth needed |
-| **Data API v3** | YouTube's official REST API; requires API key and has quota system (10k units/day) |
-| **ASR** | Automatic Speech Recognition — auto-generated captions. Lower quality than manual subs. |
-| **Flat playlist** | yt-dlp mode (`--flat-playlist`) returning metadata without full page fetch |
-| **TME** | Task Model Engine — BrainOps hypothesis tracker and operating map |
-| **ADR** | Architecture Decision Record — documented technical decision with context and rationale |
-| **Genesis** | BrainOps lifecycle template for project birth: discover → attach → plan → persist → gate → publish |
+| **MCP** | Model Context Protocol — JSON-RPC protocol for AI agent ↔ tool communication. tube-bridge implements stdio, HTTP (Streamable HTTP), and SSE transports. |
+| **Streamable HTTP** | Stateless MCP transport at `/mcp` (built via `StreamableHTTPSessionManager`). Recommended for remote deployments. Replaces legacy SSE. |
+| **SSE (legacy)** | Server-Sent Events MCP transport at `/sse` with `/messages` POST handler. Deprecated in favor of Streamable HTTP. Retained for backward compatibility. |
+| **stdio transport** | MCP transport over stdin/stdout. MCP client spawns `python3 server.py` as a child process. Implemented in root `server.py` via `mcp.server.stdio`. |
+| **dual-source** | tube-bridge architecture pattern: YouTube Data API v3 primary → yt-dlp fallback. Used for search, video_info, and trending. Quota exhaustion falls through gracefully. |
+| **Data API v3** | YouTube's official REST API; requires `YOUTUBE_API_KEY` from Google Cloud Console. Provides search/video_info/trending results with richer metadata and unlocks comments, channel search, and channel info. Default allocation: 100 search.list calls/day, 100 videos.insert calls/day, and 10,000 units/day combined for other endpoints, subject to change. Additional allocation uses YouTube's audit/extension process. |
+| **Data API setup** | Users obtain a `YOUTUBE_API_KEY` from Google Cloud Console and set it as an environment variable. 13 of 16 tools work without it; 3 require it. No API key is bundled or committed. |
+| **yt-dlp** | YouTube downloader fork; used via subprocess for search/metadata/playlist/channel extraction. `--flat-playlist` mode for efficient listing. 2 retries with exponential backoff. |
+| **youtube-transcript-api** | Python library wrapping YouTube's TimedText API for subtitle extraction. Manual subtitles are prioritized over auto-generated (ASR) in the fetch order. |
+| **InnerTube API** | YouTube's internal API used by the web client; what yt-dlp calls under the hood. Anonymous access, no auth required. |
+| **TimedText API** | YouTube endpoint (`/api/timedtext`) for subtitle/CC retrieval. No auth needed. Used by `youtube-transcript-api`. |
+| **ASR** | Automatic Speech Recognition — auto-generated captions. tube-bridge prioritizes manual subtitles over ASR in the fetch order but does not assert universal quality superiority of either. |
+| **proxy** | `TUBE_BRIDGE_PROXY` environment variable. Routes both yt-dlp subprocess and youtube-transcript-api through a proxy. Used to work around datacenter IP bot detection (e.g., IPRoyal residential proxy on Railway). |
+| **cache.db** | Persistent SQLite database for transcript segments and video metadata. Located at `$TUBE_BRIDGE_CACHE/cache.db` (default `~/.tube_bridge`). Tables: `transcripts`, `video_info`. WAL journal mode. |
+| **corpus.db** | Separate SQLite database for semantic search corpora. Located at `$TUBE_BRIDGE_CACHE/corpus.db` (same directory as cache.db). Tables: `corpora`, `corpus_chunks`, `corpus_added_videos`, plus per-corpus `vec_{id}` virtual tables. WAL journal mode. |
+| **sqlite-vec** | SQLite extension for vector similarity search. Creates per-corpus `vec_{corpus_id}` virtual tables with `MATCH` query support. Distributed as a Python package (`sqlite-vec>=0.1.0`). |
+| **fastembed** | Python library for local text embedding inference. Uses BGE-small-en-v1.5 (384-dim) by default. Configurable via `TUBE_BRIDGE_EMBEDDING_MODEL`. Inference runs locally after model assets are available; initial model acquisition may require network. Zero API keys. |
+| **embedding model** | The model used to convert text chunks and search queries into vectors. Default: `BAAI/bge-small-en-v1.5`. Each corpus records its embedding model at creation; model mismatch on add/search raises an error. Switching models requires deleting and recreating corpora. |
+| **corpus** | A named collection of video transcripts with embeddings for semantic search. Created via `corpus_create`, populated via `corpus_add`, searched via `corpus_search`. |
+| **chunk** | A window of transcript segments (80 seconds, 20-second overlap) converted to a single embedding vector. Stored in `corpus_chunks` table with timestamps and text. The per-corpus vector table stores the embedding. |
+| **corpus_add workflow** | 1. Fetch transcript over network (youtube-transcript-api, cache-aware). 2. Chunk segments into overlapping windows. 3. Embed each chunk locally via fastembed. 4. Store chunks and vectors. Idempotent via `corpus_added_videos` tracking. |
+| **corpus score** | Semantic similarity computed as `round(1.0 - distance, 4)` without clamping. A higher computed score corresponds to a lower returned distance from sqlite-vec. Consumers must not assume a bounded [0, 1] range — distance can theoretically exceed 1.0, producing negative scores. |
+| **hosted demo** | Railway-deployed endpoint at `tube-bridge-production.up.railway.app`. Deployed for development and testing. Controlled public access (budgets, abuse controls, observability) is proposed but not yet fully implemented. Not advertised as a public production service. |
+| **product gateway** | Proposed server-side gateway for the commercial extension layer. Handles entitlements, usage enforcement, billing, trial management, and support. Reuses tube-bridge engine behind the gateway. Not part of the MIT open-core. |
+| **Grabbit connector** | Optional integration path for batch video-link collections and transcript attachment to Grabbit items. Independent opt-in; not a core dependency. Proposed but not yet implemented. |
+| **publication gate** | The set of P0/P1 readiness checks in `docs/planning/PUBLICATION_READINESS.md`. Full-publication readiness is not yet accepted. Until this gate passes, tube-bridge remains an MIT open-core library with an optional development/testing demo. |
+| **Flat playlist** | yt-dlp mode (`--flat-playlist`) returning metadata without full page fetch. Used by channel_videos and playlist tools for efficiency. |
+| **source checkout install** | tube-bridge is installable from a source checkout via pip tooling (e.g., `pip install .` from the repository root). PyPI publication and console entrypoint (`tube-bridge` command) are not verified. |
+| **quota extension** | No additional allocation beyond the default has been documented as requested or granted. YouTube's official docs identify the audit/extension process; no purchasable quota tier was identified. |
+| **TME** | Task Model Engine — BrainOps hypothesis tracker and operating map. |
+| **ADR** | Architecture Decision Record — documented technical decision with context, rationale, and consequences. See `docs/adr/`. |
+| **Genesis** | BrainOps lifecycle template for project birth: discover → attach → plan → persist → gate → publish. |

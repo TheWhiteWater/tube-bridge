@@ -2,78 +2,206 @@
 
 ## Overview
 
-yt-mcp is a **single-file stdio MCP server** (~600 lines) that wraps two battle-tested libraries:
+tube-bridge is a **modular Python package** (`tube_bridge/`) with a thin root launcher (`server.py`). It wraps three data sources behind a unified MCP interface with 16 tools:
 
 ```
 Agent (Claude / Codex / Hermes)
-   │ MCP stdio (JSON-RPC)
+   │ MCP JSON-RPC over:
+   │   • stdio (root server.py → mcp.server.stdio)
+   │   • Streamable HTTP /mcp (tube_bridge/transport.py)
+   │   • SSE /sse (legacy, tube_bridge/transport.py)
    ▼
-yt-mcp server.py
-   ├── youtube-transcript-api  →  Transcripts (TimedText API)
-   └── yt-dlp (subprocess)     →  Search, Metadata, Channels, Playlists, Trending
+server.py                       — Launch entrypoint: stdio (lines 26-27) or HTTP (lines 20-24)
+tube_bridge/server.py           — MCP wiring: list_tools() + call_tool() + _handle_tool()
+tube_bridge/tools.py            — 15 operational tool implementations (async, cached, dual-source); tube_bridge_help is handled directly in server.py
+tube_bridge/transport.py        — HTTP/SSE ASGI app builder + session manager + Bearer auth + /health
+tube_bridge/cache.py            — cache.db: persistent SQLite for transcripts + video metadata
+tube_bridge/corpus.py           — corpus.db: sqlite-vec vectors + fastembed embeddings
+tube_bridge/youtube/
+   ├── client.py       — yt-dlp subprocess (retry, backoff, proxy)
+   ├── api.py          — Data API v3 client (stdlib urllib, no Google SDK)
+   ├── transcript.py   — youtube-transcript-api (manual > ASR, proxy)
+   └── models.py       — VideoInfo dataclass
 ```
 
-## Transport
+## Transport Layer
 
-**stdio only.** No HTTP server, no WebSocket, no long-running daemon. The MCP client (Hermes, Claude Desktop, etc.) spawns `python3 server.py` as a child process and communicates via stdin/stdout JSON-RPC.
+**Root launcher** (`server.py`, 31 lines):
+- Parses `--http`, `--port`, `--host` arguments.
+- stdio mode (lines 26–27): `stdio_server()` → `server.run(read_stream, write_stream, ...)`. This is where stdio transport is implemented, using `mcp.server.stdio.stdio_server`.
+- HTTP mode (lines 20–24): `transport.create_app(server, host, port)` → uvicorn.
 
-Rationale:
-- Zero network surface — no ports, no auth, no CORS
-- Process lifecycle tied to client — no orphaned servers
-- Deployment: a single `command` + `args` in MCP client config
+**Transport builder** (`tube_bridge/transport.py`, 83 lines):
+- Builds a raw ASGI app routing `/mcp`, `/sse`, `/messages`, `/health`.
+- `/mcp`: `StreamableHTTPSessionManager` (stateless) — recommended for remote deployments.
+- `/sse`: `SseServerTransport` with `/messages` POST handler — legacy, deprecated.
+- `/health`: Always-open JSON endpoint returning tool count (16) and auth status.
+- Auth: Optional Bearer token via `TUBE_BRIDGE_AUTH_KEY` env var. Applied to every remote route except `/health`, including `/mcp`, `/sse`, and `/messages`. No auth key = open access.
+- Lifespan: `http_manager.run()` started/stopped with ASGI lifespan events; session manager lifecycle is tied to the server process.
+- **Note:** `transport.py` builds HTTP/SSE ASGI routes only. It does not implement stdio transport; stdio is handled in the root `server.py`.
 
-## Dependency Strategy
+## Tool Registration & Dispatch
 
-| Dependency | Role | Required? | Notes |
-|-----------|------|-----------|-------|
-| `mcp` (>=1.0) | MCP protocol server | Yes | Stdio transport, tool registration |
-| `yt-dlp` | Search, metadata, discovery | Yes | Called as subprocess with timeout |
-| `youtube-transcript-api` | Transcript extraction | Yes | TimedText API, no auth needed |
-| `google-api-python-client` | YouTube Data API v3 | **No** (optional) | Only for comments; graceful fallback if missing |
+**Tool registration** (`tube_bridge/server.py` `list_tools()`, lines 67–248):
+- Registers exactly 16 MCP `Tool` objects with names, descriptions, and JSON input schemas.
+- 10 YouTube interaction tools + 5 corpus tools + 1 help tool.
+- Each tool schema declares required parameters, optional parameters with defaults, and type constraints. Not every schema contains enum constraints; schemas use standard JSON Schema `type` declarations (`string`, `integer`, `boolean`, `object`).
 
-## Module Map
+**Tool dispatch** (`tube_bridge/server.py` `call_tool()` + `_handle_tool()`, lines 251–318):
+- `call_tool()` wraps the result in `TextContent` with JSON serialization.
+- Errors are caught at three levels: `ValueError`, `RuntimeError`, and generic `Exception`.
+- `_handle_tool()` is a `match`/`case` block routing tool names to async implementation functions in `tube_bridge/tools.py`.
 
-```
-server.py
-├── [L0] Constants & Types
-│   └── VideoInfo dataclass
-│
-├── [L1] yt-dlp helpers
-│   ├── _run_ytdlp()          — single JSON result
-│   ├── _run_ytdlp_multi()    — multiple JSON results (playlists, search)
-│   ├── _extract_video_id()   — URL → ID regex
-│   └── _parse_video_info()   — raw JSON → VideoInfo
-│
-├── [L2] Transcript helpers
-│   ├── _get_yt_api()              — lazy singleton
-│   ├── _get_transcript()          — segments + language + is_generated
-│   ├── _get_transcript_with_meta()— dict wrapper
-│   └── _get_available_languages() — language list
-│
-├── [L3] Tool implementations (async)
-│   ├── _search()            — yt-dlp ytsearchN:
-│   ├── _video_info()        — yt-dlp --dump-json
-│   ├── _trending()          — YouTube trending page
-│   ├── _channel_videos()    — channel/@handle -> uploads
-│   ├── _playlist()          — playlist URL -> videos
-│   ├── _transcript()        — plain text or [MM:SS] lines
-│   └── _available_languages()
-│
-├── [L4] MCP Server wiring
-│   ├── list_tools()         — 7 tools with JSON schemas
-│   ├── call_tool()          — dispatch
-│   ├── _handle_tool()       — match → implementation
-│   └── main()               — stdio_server.run()
-```
+**Source drift note:** `HELP_TEXT` at line 20 defines numeric `"tools": 11`, but a duplicate `"tools"` key at line 28 contains an 11-entry list (10 interaction + `tube_bridge_help`) that overwrites the numeric value at Python runtime; no numeric count field remains in the resolved dict. The runtime help list omits the 5 corpus tools. `list_tools()` authoritatively registers 10 interaction + 5 corpus + 1 help = 16 tools. `tube_bridge/__init__.py` docstring (line 3) claims "10 tools." Both are readiness issues requiring source correction.
+
+## Tool Implementation Patterns
+
+15 operational tool implementations are delegated to `tube_bridge/tools.py` (369 lines); `tube_bridge_help` is handled directly in `tube_bridge/server.py` by returning `HELP_TEXT` (line 304):
+
+### Dual-Source Pattern (search, video_info, trending)
+
+Tools that work with or without an API key follow the same pattern:
+1. Check `api.get_api_key()` — if present and non-empty, call the Data API v3 path first.
+2. On `QUOTA_EXCEEDED`, fall through to the yt-dlp path.
+3. On other RuntimeErrors, propagate the error.
+4. If no key is set, go directly to the yt-dlp path.
+
+Source: `tube_bridge/tools.py` lines 16–62 (search), 78–117 (video_info), 125–163 (trending).
+
+### Async-to-Thread Boundaries
+
+CPU-bound and I/O-bound synchronous code is wrapped with `asyncio.to_thread()`:
+- `video_info()` → `_video_info_cached()` (LRU-cached, checks persistent cache before live fetch)
+- `transcript()` → `_get_transcript_with_meta()` (persistent-cache-first)
+- `trending()` → `_trending_sync()`
+- `channel_videos()` → `_channel_videos_sync()`
+- `playlist()` → `_playlist_sync()`
+- `comments()`, `channel_info()`, `search_channels()` → `api.*()` calls
+- All 5 corpus functions → `corpus.*()` calls
+
+### Caching Strategy
+
+Two-layer cache for transcripts and video metadata:
+1. **Persistent SQLite cache** (`tube_bridge/cache.py`, 63 lines):
+   - `cache.db` under `TUBE_BRIDGE_CACHE` directory (default: `~/.tube_bridge`).
+   - Tables: `transcripts` (video_id, lang, segments JSON, language, is_generated, cached_at), `video_info` (video_id, data JSON, cached_at).
+   - WAL journal mode for concurrent read safety.
+2. **In-memory LRU cache:**
+   - `@functools.lru_cache(maxsize=64)` on `_video_info_cached()`.
+   - `@functools.lru_cache(maxsize=32)` on `_get_transcript_cached()`.
+   - Hot layer sits on top of persistent cache; both are checked before live fetches.
+
+### Transcript Priority
+
+`tube_bridge/youtube/transcript.py` (85 lines) implements manual > ASR priority:
+1. List available transcripts via `youtube-transcript-api`.
+2. Segregate into manual (`not t.is_generated`) and auto-generated (`t.is_generated`).
+3. If a language code is specified, filter both lists.
+4. Try manual transcripts first, then auto-generated, then a direct `fetch()` call as last resort.
+5. Lazy singleton `_get_api()` reuses the API instance; proxy configuration is applied at first instantiation.
+
+### Retry & Resilience
+
+`tube_bridge/youtube/client.py` (125 lines):
+- `run_ytdlp()` and `run_ytdlp_multi()` both implement 2 retries with exponential backoff (`1.5 ** attempt` seconds).
+- Timeout is configurable per call (default 30–60s depending on operation).
+- `TUBE_BRIDGE_PROXY` env var is applied to all yt-dlp subprocess calls.
+- Stderr is captured and returned alongside results. ytdlp helpers (`run_ytdlp`, `run_ytdlp_multi`) return stderr as a string.
+
+### Stderr Handling
+
+- ytdlp helper functions (`run_ytdlp`, `run_ytdlp_multi`) return stderr as a string (second element of the tuple).
+- Individual tool functions expose `_warning` on the result dict mainly when list results are empty (e.g., `if stderr and not videos: result["_warning"] = stderr`). This pattern appears in `search`, `trending`, `channel_videos`, and `playlist`.
+- `video_info` may set `_ytdlp_stderr` on the result dict when stderr is present (`if stderr: result["_ytdlp_stderr"] = stderr` at tools.py lines 109–110).
+
+## Data API Client
+
+`tube_bridge/youtube/api.py` (271 lines):
+- Uses Python stdlib `urllib.request` for all Data API v3 calls — no `google-api-python-client` dependency.
+- `get_api_key()` reads `YOUTUBE_API_KEY` from environment at runtime (line 12).
+- `api_call()` is the central request function: builds URL, makes GET request, handles HTTP errors and quota-exceeded with structured `RuntimeError` messages.
+- Provides: `search_videos()`, `search_channels()`, `channel_info()`, `get_comments()`, `get_trending()`, `get_video_info()`.
+
+## Corpus Engine
+
+`tube_bridge/corpus.py` (282 lines) provides semantic search over YouTube transcripts:
+
+**Storage:**
+- `corpus.db` — separate SQLite database from `cache.db`, same configurable directory.
+- Tables: `corpora` (corpus_id, label, embedding_model, created_at), `corpus_chunks` (id, corpus_id, video_id, start_ts, end_ts, text, added_at), `corpus_added_videos` (corpus_id, video_id, added_at).
+- Per-corpus sqlite-vec virtual tables: `vec_{corpus_id}` with float embedding columns.
+
+**Embedding:**
+- fastembed with BGE-small-en-v1.5 (384-dim). Inference runs locally after model assets are available; initial model download may require network. Zero API keys.
+- Model is lazy-loaded on first use via `_get_embedding_model()`.
+- Model name configurable via `TUBE_BRIDGE_EMBEDDING_MODEL` env var.
+- Each corpus records its embedding model at creation time; model mismatch on add/search raises an error.
+
+**corpus_add workflow:**
+1. `tube_bridge/tools.py` `corpus_add()` first fetches the transcript via `_get_transcript_with_meta()` (which checks cache, then calls youtube-transcript-api over the network).
+2. Passes transcript segments to `tube_bridge/corpus.py` `corpus_add()`.
+3. Chunks segments into overlapping windows via `_chunk_transcript()`. The default window is **80 seconds** with a **20-second overlap** (`window_sec=80, overlap_sec=20`).
+4. Embeds each chunk with fastembed (locally after model assets are available).
+5. Stores chunks in `corpus_chunks` table and vectors in per-corpus sqlite-vec virtual table.
+6. Idempotent: `corpus_added_videos` table prevents duplicate indexing. `force_reembed=True` bypasses this.
+
+**corpus_search workflow:**
+1. Validates corpus exists and embedding model matches.
+2. Embeds the query string with the same model (locally after model assets are available).
+3. Runs sqlite-vec `MATCH` query joined with `corpus_chunks` for metadata filtering.
+4. Returns chunks with video IDs, timestamps, text, and similarity scores (distance → 1.0 − distance).
+
+**Offline/online boundary:** Embedding inference and vector search run locally after model assets are available; initial model acquisition may require network (no external embedding service required). However, `corpus_add` fetches the video transcript over the network (via youtube-transcript-api) before chunking and embedding. The corpus workflow is not fully offline.
+
+**Safety:** `corpus_id` is validated against `^[A-Za-z0-9_-]{1,128}$` before any SQL interpolation. Per-corpus vector table names are derived from the validated corpus_id.
+
+## Product Layers (Architecture)
+
+### Core (MIT) — This Repository
+- All 16 tools, all transports, cache/corpus logic.
+- No external database/vector/embedding service required. Requires network connectivity to YouTube upstreams.
+- Users bring their own `YOUTUBE_API_KEY` for the 3 API-keyed tools.
+
+### Hosted Demo (Deployed, Not Yet Public)
+- Railway deployment at `tube-bridge-production.up.railway.app`.
+- Dedicated Google Cloud project and controlled budgets are approved architecture, but provisioning and controls are not yet implemented.
+- Controlled public access proposed (budgets, abuse controls, observability) but not fully implemented.
+
+### Extension (Proposed Commercial Product Layer, Planned)
+- Reuses tube-bridge engine behind a server-side product gateway.
+- Entitlements, usage enforcement, billing, trial management, support.
+- Deployment sharing with core is an open architecture decision, not precluded.
+
+### Grabbit Connector (Optional, Proposed)
+- Batch video-link collection and transcript attachment.
+- Independent opt-in path, not a core dependency.
+
+## Known Readiness / Source Drift
+
+These are documented inconsistencies between source and documentation; they should not be cited as current facts:
+
+1. **HELP_TEXT tool count** (`tube_bridge/server.py` line 20): Defines numeric `"tools": 11`, but a duplicate `"tools"` key at line 28 contains an 11-entry list (10 interaction + `tube_bridge_help`) that overwrites the numeric value at runtime; no numeric count field remains in the resolved dict. The runtime help list omits the 5 corpus tools. `list_tools()` correctly registers 16.
+
+2. **Package docstring** (`tube_bridge/__init__.py` line 3): Claims "10 tools." Should read 16.
+
+3. **Console entrypoint** (`pyproject.toml` line 17): `tube-bridge = "server:main"` references root `server.py`. Requires `pip install` verification before any PyPI publication claim.
+
+4. **No automated test suite:** `test_tools.py` is a live smoke script exercising 4 unique tools (search, video_info, trending, transcript — transcript is called in two modes). It imports `playlist` but does not call it. It is not an automated acceptance suite. No CI pipeline is configured.
+
+5. **Full-publication readiness not yet accepted:** Tracked in `docs/planning/PUBLICATION_READINESS.md`. Do not claim PyPI publication, completed CI, production acceptance, or any production-ready promise.
 
 ## Design Decisions
 
-1. **Subprocess, not Python bindings** — yt-dlp is called via `subprocess.run()` with timeout. Python bindings exist but are unstable. Subprocess gives clean process isolation and predictable timeouts.
+1. **Subprocess, not Python import** — yt-dlp is called via `subprocess.run()` with explicit timeout, captured stdout/stderr, 2-retry with exponential backoff, and process isolation. This provides clean timeout control and predictable failure modes.
 
-2. **Flat playlist for search/channels** — `--flat-playlist` flag means yt-dlp returns metadata without fetching full video pages. This is fast (50 results in <5s) but lacks descriptions/tags. Full metadata is available via `youtube_get_video_info` on individual videos.
+2. **Flat playlist for search/channels** — `--flat-playlist` flag means yt-dlp returns metadata without fetching full video pages. Full metadata is available via `youtube_get_video_info` on individual videos.
 
-3. **Lazy transcript API** — `YouTubeTranscriptApi` is instantiated once and reused. It maintains an internal HTTP session, reducing connection overhead.
+3. **Lazy transcript API** — `YouTubeTranscriptApi` is instantiated once and reused via a module-level singleton.
 
-4. **Manual > ASR** — Transcript priority: manual subtitles first, auto-generated second. Manual subs have better punctuation and accuracy.
+4. **Manual > ASR** — Transcript priority: manual subtitles first, auto-generated second.
 
-5. **Single-file by design** — 600 lines is the sweet spot: small enough to audit, large enough to be useful. Discovery layer (comments, Data API v3) will be added as sibling functions in the same file or as `discovery.py` import.
+5. **Modular package** — Clean module boundaries: server wiring, tool implementations, transport, cache, corpus, and YouTube subpackage. Root `server.py` is a thin launcher selecting transport at runtime.
+
+6. **Dual database files** — `cache.db` and `corpus.db` are separate SQLite databases with distinct schemas and lifecycles, sharing the same configurable directory.
+
+7. **No Google SDK dependency** — Data API v3 calls use Python stdlib `urllib` exclusively. No `google-api-python-client` package is required or referenced.
