@@ -1,6 +1,6 @@
 """tube-bridge — YouTube MCP server for AI agents.
 
-10 tools: search, discovery, transcripts, comments.
+16 tools: YouTube discovery, transcripts, comments, help, and semantic corpora.
 Zero API keys for core features. Optional Data API v3 upgrade.
 """
 

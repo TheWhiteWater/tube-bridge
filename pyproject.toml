@@ -1,10 +1,20 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "tube-bridge"
 version = "1.0.0"
 description = "Tube Bridge — YouTube MCP server for AI agents. 16 tools: search, transcripts, semantic corpus, comments. Zero keys + optional API v3."
+readme = "README.md"
+license = "MIT"
 requires-python = ">=3.12"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+]
 dependencies = [
-    "mcp>=1.0.0",
+    "mcp>=1.28.1,<1.29",
     "yt-dlp>=2024.0.0",
     "youtube-transcript-api>=1.0.0",
     "starlette>=0.40.0",
@@ -13,5 +23,11 @@ dependencies = [
     "fastembed>=0.8.0",
 ]
 
+[project.urls]
+Repository = "https://github.com/TheWhiteWater/tube-bridge"
+
 [project.scripts]
-tube-bridge = "server:main"
+tube-bridge = "tube_bridge.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["tube_bridge*"]

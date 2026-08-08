@@ -17,7 +17,6 @@ from .youtube.client import extract_video_id
 HELP_TEXT = {
     "server": "tube-bridge",
     "version": "1.0.0",
-    "tools": 11,
     "description": "YouTube MCP server — search, discovery, transcripts, comments.",
     "architecture": {
         "dual_source": "Data API v3 primary, yt-dlp fallback for search, video_info, trending",
@@ -25,30 +24,7 @@ HELP_TEXT = {
         "caching": "lru_cache on video_info (64) and transcripts (32)",
         "retry": "2 retries with exponential backoff for yt-dlp subprocess",
     },
-    "tools": [
-        {"name": "youtube_search", "key_required": False, "upgrades_with_key": True,
-         "description": "Search videos. Rich filters when API key present: date, channel, duration, order."},
-        {"name": "youtube_search_channels", "key_required": True, "upgrades_with_key": False,
-         "description": "Search channels by name/topic with subscriber filters."},
-        {"name": "youtube_get_channel_info", "key_required": True, "upgrades_with_key": False,
-         "description": "Channel stats: subscribers, views, videos, country, keywords."},
-        {"name": "youtube_get_video_info", "key_required": False, "upgrades_with_key": True,
-         "description": "Video metadata: title, duration, views, channel, tags, description."},
-        {"name": "youtube_get_trending", "key_required": False, "upgrades_with_key": True,
-         "description": "Trending videos. Data API v3 primary, yt-dlp fallback."},
-        {"name": "youtube_get_channel_videos", "key_required": False, "upgrades_with_key": False,
-         "description": "Recent uploads from a channel (@handle or URL)."},
-        {"name": "youtube_get_playlist", "key_required": False, "upgrades_with_key": False,
-         "description": "All videos in a playlist."},
-        {"name": "youtube_get_transcript", "key_required": False, "upgrades_with_key": False,
-         "description": "Subtitles/transcript. Plain text or [MM:SS] timestamps. Manual > ASR."},
-        {"name": "youtube_get_available_languages", "key_required": False, "upgrades_with_key": False,
-         "description": "Available subtitle languages with manual/auto-generated flags."},
-        {"name": "youtube_get_comments", "key_required": True, "upgrades_with_key": False,
-         "description": "Top-level comments with likes and reply counts."},
-        {"name": "tube_bridge_help", "key_required": False, "upgrades_with_key": False,
-         "description": "This help text."},
-    ],
+    "tools": [],
     "known_limitations": [
         "Datacenter IPs (Railway, AWS): transcripts may fail with bot detection. No Data API v3 alternative.",
         "yt-dlp anonymous search degraded by YouTube. Prefer Data API v3 when key is set.",
@@ -62,8 +38,7 @@ HELP_TEXT = {
 server = Server("tube-bridge")
 
 
-@server.list_tools()
-async def list_tools() -> list[Tool]:
+def _build_tools() -> list[Tool]:
     return [
         Tool(
             name="youtube_search",
@@ -246,6 +221,29 @@ async def list_tools() -> list[Tool]:
             },
         ),
     ]
+
+
+TOOL_CATALOG = tuple(_build_tools())
+_DATA_API_REQUIRED = {
+    "youtube_search_channels", "youtube_get_channel_info", "youtube_get_comments",
+}
+_UPGRADES_WITH_KEY = {
+    "youtube_search", "youtube_get_video_info", "youtube_get_trending",
+}
+HELP_TEXT["tools"] = [
+    {
+        "name": tool.name,
+        "key_required": tool.name in _DATA_API_REQUIRED,
+        "upgrades_with_key": tool.name in _UPGRADES_WITH_KEY,
+        "description": tool.description,
+    }
+    for tool in TOOL_CATALOG
+]
+
+
+@server.list_tools()
+async def list_tools() -> list[Tool]:
+    return list(TOOL_CATALOG)
 
 
 @server.call_tool()
