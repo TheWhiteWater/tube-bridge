@@ -1,7 +1,7 @@
 # Project Vision — tube-bridge
 
 **Last updated:** 2026-08-08
-**Status:** MIT self-hosted individual MCP. Core release candidate accepted locally; external publication and disposable-demo hardening remain separately gated.
+**Status:** MIT self-hosted individual MCP. Core v1 is published on GitHub, PyPI, and GHCR; disposable-demo hardening remains separately gated.
 
 ## North Star
 
@@ -69,11 +69,10 @@ The MCP server registers exactly 16 tools (source: `tube_bridge/server.py` `list
 ## Demo Endpoint
 
 - **Railway-hosted disposable demo:** `tube-bridge-production.up.railway.app`. This is solely a try-before-install demo, never a SaaS or managed transcript-hosting product.
-- **Isolated Google Cloud project:** Demo Data API access uses a dedicated Google Cloud project with isolated server-side upstream configuration, completely separate from Operator personal/development configuration.
-- **Fixed 5-operation limit:** The demo allows exactly 5 official YouTube Data API v3 operations per client/IP. Exhaustion affects only the disposable demo; self-hosted users bring their own keys and are unaffected.
-- **10-minute corpus TTL:** Demo corpora are temporary only. Every corpus created on the demo is automatically deleted 10 minutes after creation. No persistent volume, backups, accounts, or durable transcript/corpus hosting is provided.
-- **No shared upstream access material** is distributed to any consumer.
-- IPRoyal residential proxy (`TUBE_BRIDGE_PROXY` env var, pay-as-you-go) for transcript bot-detection workaround on the demo.
+- **Accepted target, implementation open:** WI-00029 must provide isolated server-side upstream configuration, exactly 5 official Data API operations per observed client IP, deletion of each demo corpus within 10 minutes, and no persistent volume/backups/accounts/durable hosted corpus.
+- **Current evidence boundary:** the deployed endpoint proves reachability only; it does not yet prove those quota and retention controls. Self-hosted users remain unaffected and bring their own keys/storage.
+- **No shared upstream access material** may be distributed to consumers.
+- IPRoyal residential proxy (`TUBE_BRIDGE_PROXY` env var, pay-as-you-go) is the planned transcript bot-detection workaround for the demo.
 
 ## Quota Facts (Verified 2026-08-08)
 
@@ -113,6 +112,7 @@ A browser extension is outside this project's scope and release gate. It must no
 
 ## Publication Readiness
 
-- **Local core release candidate is accepted; external full publication is not yet accepted.** Push, hosted CI, tag, GitHub Release, PyPI upload, and Docker registry publication require explicit Operator authorization.
+- **Self-hosted core publication is accepted.** GitHub Release, PyPI package, public GHCR image, hosted CI, and post-publication install/container receipts are present.
+- **Disposable demo acceptance remains separate.** The 5-operation allowance and 10-minute corpus deletion controls belong to WI-00029 and are not implied by core publication.
 - Architecture direction recorded in `docs/adr/001-demo-api-quota-and-product-boundary.md`.
 - No production-ready promise, no coverage percentage, no SLA, no pricing, no launch venue, no legal conclusion is asserted.

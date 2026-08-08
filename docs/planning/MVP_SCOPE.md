@@ -1,6 +1,6 @@
 # MVP Scope — tube-bridge
 
-> **Status:** Implementation baseline shipped in source. Formal runtime acceptance and per-surface publication readiness are **not yet complete**. This is a retrospective scope document grounded in shipped code, not a forward-looking plan. Product model: MIT self-hosted MCP with disposable try-before-install demo. No commercial extension, product gateway, or Grabbit connector.
+> **Status:** Self-hosted core implementation, runtime acceptance, and publication are complete. Disposable-demo quota/retention implementation remains open under WI-00029. This is a retrospective scope document grounded in shipped code. No commercial extension, product gateway, or Grabbit connector.
 
 ## What the Implementation Baseline Contains
 
@@ -74,8 +74,8 @@ Total tools registered in `tube_bridge/server.py` `list_tools()`: **10 YouTube i
 | Separate cache.db / corpus.db | **Shipped** | `tube_bridge/cache.py` line 13, `tube_bridge/corpus.py` line 15 (source-verified) |
 | Local embedding inference | **Shipped** | `tube_bridge/corpus.py` uses fastembed; inference code present in source (source-verified; formal runtime acceptance open) |
 | Railway demo exists | **Deployed** | Confirmed endpoint deployed |
-| Automated test suite / CI | **Local verified; hosted run pending push** | Core C2: 125 frozen deterministic tests pass and GitHub Actions is configured. `test_tools.py` remains optional live smoke |
-| PyPI / install / entrypoint verification | **Local verified; upload pending** | Core C3: packaged `tube_bridge.cli:main`, isolated wheel install, installed MCP runtime, wheel+sdist and twine checks pass; no PyPI upload claimed |
+| Automated test suite / CI | **Verified** | Core C2: 125 frozen deterministic tests and hosted Python 3.12/3.13 CI pass. `test_tools.py` remains optional live smoke |
+| PyPI / install / entrypoint verification | **Published and verified** | Core C3: PyPI install, packaged `tube_bridge.cli:main`, installed MCP runtime, wheel+sdist/twine, and public GHCR runtime pass |
 | Demo public access controls | **Decision resolved, not implemented** | Demo D1–D2 P0. Per ADR-001: dedicated GCP project, exactly 5 Data API ops per client/IP. Enforcement not deployed |
 | Observability and monitoring | **Decision resolved, not implemented** | Demo D3 P0. Counters/errors for 5-op limit and 10-min TTL. Not deployed |
 | Policy / privacy / retention | **Decision resolved, implementation open** | Demo D4 P0. Per ADR-001: no persistent volume, accounts, backups, or durable transcript/corpus hosting. A concise demo data-handling/deletion notice is required; the transient model does not waive applicable privacy, copyright, or YouTube policy obligations |
@@ -97,7 +97,7 @@ Total tools registered in `tube_bridge/server.py` `list_tools()`: **10 YouTube i
 
 ### Implementation Baseline (Shipped in Source)
 
-The following items are verified against source code (`tube_bridge/` package). Items marked [x] reflect implementation present in source; formal runtime acceptance (live tool invocation, embedding inference, fallback execution) is **not yet complete** and tracked separately.
+The following core items are verified against source, frozen tests, installed artifacts, hosted CI, PyPI, and the public registry image. Live upstream availability and disposable-demo controls remain separately bounded.
 
 - [x] 16 MCP tools registered in source (`list_tools()` returns exactly 16 `Tool()` objects)
 - [x] 13 tools work without API key; 3 with optional `YOUTUBE_API_KEY` (source-verified)
@@ -111,11 +111,11 @@ The following items are verified against source code (`tube_bridge/` package). I
 
 ### Core Library Acceptance Gate (Independent of Demo)
 
-Core release-candidate acceptance (Surface 1) has local evidence for C1–C5. External publication remains independently Operator-gated: hosted CI, tag, GitHub Release, PyPI upload and Docker registry push are not yet claimed. Core remains independent of the disposable demo.
+Core publication acceptance (Surface 1) has complete C1–C5 evidence plus GitHub Release, PyPI and public GHCR receipts. Core remains independent of the disposable demo.
 
 - [x] C1: one authoritative 16-tool catalog, derived HELP metadata and corrected package docs (P0)
-- [x] C2: 125 frozen deterministic tests PASS and CI workflow configured; hosted run pending authorized push (P0)
-- [x] C3: isolated wheel install, synchronous console entrypoint, installed MCP runtime, wheel+sdist and twine PASS; upload pending (P0)
+- [x] C2: 125 frozen deterministic tests and hosted Python 3.12/3.13 CI PASS (P0)
+- [x] C3: PyPI install, synchronous console entrypoint, installed MCP runtime, wheel+sdist/twine, public GHCR pull and MCP handshake PASS (P0)
 - [x] C4: corrected-model independent documentation audit PASS; source/test conformance is tracked by Station methodology receipts (P0)
 - [x] C5: package metadata, bounded/public dependencies, exact SHA-256 lock, Docker consumption, MIT license and secret exclusion verified (P0)
 
@@ -133,6 +133,6 @@ Disposable demo acceptance (Surface 2) requires D1–D5 P0 evidence. D6 and X1�
 
 ### Publication Scope
 
-Full open-source distribution means GitHub release, PyPI package, Docker image, and documented demo. Readiness remains unaccepted until source/test/package verification is complete. Only two surfaces have acceptance gates: Core Full Publication and Disposable Demo. There is no commercial extension, product gateway, or Grabbit connector surface. A browser extension is outside this project's scope and release gate.
+Only two surfaces have acceptance gates: published self-hosted Core and Disposable Demo. Core publication/runtime acceptance is complete; demo quota/retention implementation remains open. There is no commercial extension, product gateway, Grabbit connector, or browser-extension surface.
 
-**Implementation baseline is shipped. Formal runtime acceptance and per-surface publication readiness are not accepted.**
+**Core implementation and publication are accepted. Disposable-demo acceptance is not.**

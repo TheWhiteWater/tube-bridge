@@ -165,11 +165,9 @@ Two-layer cache for transcripts and video metadata:
 - MIT-licensed; installable from source. No SaaS, accounts, billing, or managed hosting.
 
 ### Disposable Try-Before-Install Demo
-- Railway deployment at `tube-bridge-production.up.railway.app`.
-- Isolated Google Cloud project — demo Data API configuration is completely separate from Operator personal/development configuration.
-- Exactly 5 official YouTube Data API v3 operations per client/IP. Exhaustion affects only the disposable demo; self-hosted users bring their own keys and are unaffected.
-- 10-minute automatic corpus deletion — every corpus created on the demo is deleted 10 minutes after creation.
-- No persistent volume, backups, accounts, or durable transcript/corpus hosting.
+- Railway endpoint exists at `tube-bridge-production.up.railway.app`; reachability is not demo-control acceptance.
+- WI-00029 target architecture: isolated upstream configuration, exactly 5 official Data API operations per observed client IP, deletion of each demo corpus within 10 minutes, and no persistent volume/backups/accounts/durable hosted corpus.
+- These controls remain unimplemented/unverified for the current demo. Self-hosted users bring their own keys and persistent storage.
 
 ## Release-Candidate Readiness
 
@@ -177,7 +175,7 @@ Two-layer cache for transcripts and video metadata:
 2. Package documentation and the synchronous installed `tube_bridge.cli:main` entrypoint are verified from an isolated wheel.
 3. Ten frozen Python files produce 125 passing tests; CI is configured and `test_tools.py` remains optional live smoke.
 4. Wheel+sdist/twine, exact dependency lock, Docker MCP handshake and SQLite lifecycle contracts pass locally.
-5. External push, hosted CI, tag, GitHub Release, PyPI upload and Docker registry publication remain Operator-gated; demo hardening remains separate.
+5. GitHub Release, PyPI and public GHCR publication are complete and externally verified; disposable-demo hardening remains separate.
 
 ## Design Decisions
 

@@ -7,20 +7,23 @@
 [![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://python.org)
 [![MCP](https://img.shields.io/badge/MCP-1.28.1-green.svg)](https://modelcontextprotocol.io)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![PyPI](https://img.shields.io/pypi/v/tube-bridge.svg)](https://pypi.org/project/tube-bridge/)
+[![Container](https://img.shields.io/badge/GHCR-tube--bridge-blue.svg)](https://github.com/TheWhiteWater/tube-bridge/pkgs/container/tube-bridge)
 
 ## Quick Start
 
 ```bash
-# 1. Install dependencies
-pip install mcp==1.28.1 yt-dlp youtube-transcript-api starlette uvicorn sqlite-vec fastembed
+# 1. Install the published package
+pip install tube-bridge
 
 # 2. Run (no API key needed for 13 of 16 tools)
-python3 server.py              # stdio mode (local MCP clients)
-python3 server.py --http       # HTTP mode (remote, port 8080)
+tube-bridge                    # stdio mode (local MCP clients)
+tube-bridge --http             # HTTP mode (remote, port 8080)
 
-# 3. Connect — any MCP client
-# stdio: python3 /path/to/tube-bridge/server.py
-# HTTP:  http://localhost:8080/mcp
+# 3. Or run the published container
+docker run --rm -p 8080:8080 ghcr.io/thewhitewater/tube-bridge:latest
+
+# MCP endpoints: stdio via `tube-bridge`, HTTP at http://localhost:8080/mcp
 ```
 
 **16 tools: 13 callable without any setup. 3 unlock with a Data API v3 key. 5 corpus tools use local embeddings.**
@@ -142,7 +145,7 @@ railway up --service tube-bridge --detach
 #   TUBE_BRIDGE_AUTH_KEY (optional, protects all remote routes except /health)
 ```
 
-**Demo limits:** 5 Data API v3 operations per client/IP. Demo corpora are automatically deleted 10 minutes after creation. No persistent volume, backups, or durable hosting.
+**Demo hardening target (not yet accepted):** exactly 5 Data API v3 operations per observed client IP and deletion of every demo corpus within 10 minutes. WI-00029 still owns implementation and verification; do not rely on these controls on the current endpoint yet.
 
 ### Docker
 
@@ -201,12 +204,11 @@ python3 server.py --http --port 8080 --host 0.0.0.0
 ### Current State
 - **MIT self-hosted library** — 16 MCP tools, all transports, cache/corpus logic. Available on GitHub.
 - **Disposable Railway demo** — `tube-bridge-production.up.railway.app` is a try-before-install demo only. Not a SaaS or managed product.
-- **Demo Data API access** uses an isolated Google Cloud project with server-side configuration, completely separate from Operator personal/development keys. Exactly 5 Data API v3 operations per client/IP. Exhaustion affects only the disposable demo.
-- **Demo corpus TTL** — corpora created on the demo are automatically deleted 10 minutes after creation. No persistent volume, backups, accounts, or durable transcript/corpus hosting.
-- **Core release candidate verified locally, not externally published.** The frozen 125-test suite, clean wheel install, installed CLI/MCP, Docker handshake, wheel+sdist and twine checks pass. CI is configured; no PyPI upload, tag, hosted CI receipt, or registry publication is claimed.
+- **Disposable-demo controls are planned, not yet accepted.** WI-00029 must implement and verify isolated upstream configuration, exactly 5 Data API operations per observed client IP, deletion of each demo corpus within 10 minutes, and no durable hosted storage. Do not treat the current Railway endpoint as evidence that these controls are active.
+- **Published self-hosted core.** GitHub Release, PyPI package, and public GHCR image are live. Frozen 125-test, clean install, installed CLI/MCP, Docker handshake, wheel+sdist, twine, and hosted CI checks pass.
 
 ### Full Publication Scope
-Full open-source distribution means: GitHub release, PyPI package, Docker image, and documented demo. Readiness remains unaccepted until source/test/package verification is complete.
+The self-hosted core is fully published through GitHub Release, PyPI, and GHCR. Disposable Railway demo controls and retention guarantees remain a separate acceptance surface.
 
 ### What tube-bridge Is NOT
 - Not a SaaS or managed transcript-hosting product.
@@ -225,12 +227,12 @@ Full open-source distribution means: GitHub release, PyPI package, Docker image,
 python3 test_tools.py
 ```
 
-This remains an optional live smoke against YouTube. Formal acceptance uses `python3 -m pytest tests -q`; the frozen suite contains 125 deterministic tests. GitHub Actions CI is configured but requires an authorized push before a hosted run can be cited.
+This remains an optional live smoke against YouTube. Formal acceptance uses `python3 -m pytest tests -q`; the frozen suite contains 125 deterministic tests. Hosted GitHub Actions CI passes on Python 3.12 and 3.13.
 
 ## Known Limitations
 
 - **Datacenter IPs (Railway, AWS, etc.):** YouTube may block anonymous requests from cloud IP ranges. `youtube_search` and `youtube_get_video_info` are unaffected with a Data API v3 key. `youtube_get_transcript` may fail with bot detection — set `TUBE_BRIDGE_PROXY` to a residential proxy to work around this.
-- **Demo corpus is temporary:** Corpora on the Railway demo are automatically deleted 10 minutes after creation. No persistent storage, backups, or durable hosting. Self-hosted instances have full persistent corpus storage under `~/.tube_bridge`.
+- **Demo retention hardening pending:** the accepted target is deletion within 10 minutes with no persistent volume or backups, but WI-00029 implementation/verification remains open. Self-hosted instances retain corpora under `~/.tube_bridge`.
 - **yt-dlp anonymous search:** degraded by YouTube in recent months. Prefer Data API v3 when available.
 
 ## License

@@ -1,7 +1,7 @@
 # Publication Readiness Checklist — tube-bridge
 
 **Last updated:** 2026-08-08
-**Status:** Core release candidate accepted locally under frozen TDD. External full-publication readiness is not yet accepted: push, remote CI, tag, GitHub Release, PyPI upload, and Docker registry publication require a separate Operator gate.
+**Status:** Self-hosted core publication accepted: GitHub Release, PyPI, public GHCR, hosted CI, external install, and container MCP verification pass. Disposable-demo hardening remains a separate gate.
 
 ## How to Read This Table
 
@@ -32,9 +32,9 @@ The following conditions permanently block any publication that would violate th
 | # | Area | Priority | Status | Owner Role | Evidence / Exit Criterion |
 |---|------|:---:|--------|------------|---------------------------|
 | C1 | HELP_TEXT / package-docstring count drift | P0 | Resolved | Architect | `TOOL_CATALOG` is the single runtime registry for 16 tools; HELP metadata is derived from it and package docs state 16. Frozen tool/schema/dispatch tests pass. |
-| C2 | Deterministic tests and CI | P0 | Local Resolved / Remote CI Pending | Operator | 125 frozen deterministic tests pass, including SQLite lifecycle, actual MCP handshakes and Docker. `.github/workflows/ci.yml` is configured; a green hosted run requires the separately authorized push. |
-| C3 | Installation, entrypoint, and registry verification | P0 | Local Resolved / Publication Pending | Architect | Packaged synchronous `tube_bridge.cli:main`, isolated wheel install, installed CLI/MCP handshake, wheel+sdist build and `twine check` pass. Actual PyPI upload is an external release action. |
-| C4 | Independent docs audit | P0 | Resolved | Auditor | Current corrected-model Station Codex audit passed: `.brainops/methodology/audits/2026-08-08T06-30-02-732Z-f614f821-codex/station-codex-audit.json`. It verifies continuation-safe documentation coherence only; it does not accept source, tests, package, demo implementation, or publication. Two intermediate FAIL receipts (`2026-08-08T06-24-15-276Z-76db5398` and `2026-08-08T06-26-29-240Z-6941e798`) were remediated and retained as audit trail. The older independent report is explicitly marked historical/superseded. |
+| C2 | Deterministic tests and CI | P0 | Resolved | Operator | 125 frozen deterministic tests pass, including SQLite lifecycle and MCP/Docker contracts; hosted CI passes on Python 3.12 and 3.13. |
+| C3 | Installation, entrypoint, and registry verification | P0 | Resolved | Architect | Packaged `tube_bridge.cli:main`, wheel+sdist/twine, PyPI publication/install, public GHCR pull, and authenticated registry-image MCP handshake pass. |
+| C4 | Independent docs audit | P0 | Resolved | Auditor | Historical corrected-model PASS: `.brainops/methodology/audits/2026-08-08T06-30-02-732Z-f614f821-codex/station-codex-audit.json`. Subsequent audit receipts preserve the remediation trail; current core publication claims are additionally grounded by lifecycle and external release evidence. Demo acceptance remains separate. |
 | C5 | Release configuration and license review | P0 | Resolved | Architect | PEP 517/setuptools metadata, MIT license, bounded MCP compatibility, full SHA-256 runtime lock, reproducible Docker consumption, and no bundled auth values verified. |
 
 ## Launch Surface 2: Disposable Try-Before-Install Demo
@@ -60,7 +60,7 @@ The following conditions permanently block any publication that would violate th
 
 ## Exit Rules
 
-1. **Full-publication readiness is not yet accepted.** Do not claim PyPI publication, completed CI, production acceptance, one-click deployment, legal compliance, or any production-ready promise until all P0 items for the named surface are resolved.
+1. **Core publication readiness is accepted.** Claims are bounded to GitHub Release, PyPI, public GHCR, hosted CI, and verified self-hosted runtime; no SLA, managed hosting, or legal conclusion is implied.
 2. **Core library (Surface 1) and disposable demo (Surface 2) may be released independently.** Each surface has its own gates.
 3. **Per-surface gate:** All P0 items for a surface must be resolved with documented evidence before that surface is accepted as ready. P1 items must be triaged with owner and timeline. No-go gate conditions must be confirmed absent.
 4. **Operator/Architect sign-off:** Required as a gate verdict for each surface before acceptance.
@@ -71,9 +71,9 @@ The following conditions permanently block any publication that would violate th
 - **Product model corrected:** Commercial extension (E1–E4) and Grabbit connector (G1–G2) surfaces removed per ADR-001. Tube-bridge is an MIT self-hosted MCP with a disposable try-before-install demo. No product gateway, billing, entitlement, or managed hosting.
 - **Demo decisions resolved (ADR-001):** Isolated Google Cloud project separate from personal use; exactly 5 Data API operations per client/IP; corpora auto-delete 10 minutes after creation; no persistent volume, accounts, backups, durable transcripts, SaaS, or managed hosting. Implementation remains open.
 - **README and architecture sync:** Complete. README.md, PROJECT_VISION.md, docs/constitution/02_ARCHITECTURE.md, and 01_SYSTEM_CONTEXT.md are synchronized with shipped source.
-- **Official doc audit:** Current corrected-model PASS at `.brainops/methodology/audits/2026-08-08T06-30-02-732Z-f614f821-codex/station-codex-audit.json`; C4 resolved for documentation coherence only. Source/test/package/demo/publication gates remain independent and open.
-- **Deterministic tests and CI:** 125 local frozen tests PASS; hosted CI pending authorized push (C2).
-- **Install/entrypoint/package route:** local artifact/CLI/MCP/twine verification PASS; external publication pending (C3).
-- **Full-publication readiness remains unaccepted.**
-- **Station items:** WI-00027 and WI-00028 are ready for gate; WI-00029 demo hardening is draft. DIR-004-publication-productization remains the active TME direction.
+- **Audit lineage:** The corrected-model documentation PASS remains historical evidence for C4. Current core source/test/package/publication claims additionally have lifecycle, hosted CI, registry, install and runtime receipts; demo gates remain independent and open.
+- **Deterministic tests and CI:** 125 frozen tests and hosted Python 3.12/3.13 CI PASS (C2).
+- **Install/entrypoint/package route:** PyPI install, CLI/MCP, artifacts/twine and public GHCR runtime PASS (C3).
+- **Self-hosted core publication is accepted; disposable-demo readiness remains separate.**
+- **Station items:** WI-00027 is ready for gate; WI-00028 core publication is complete; WI-00029 demo hardening is draft. DIR-004-publication-productization remains active for the separate demo surface.
 - **ADR-001:** Accepted as architecture direction; not launch approval.

@@ -97,7 +97,7 @@ python3 test_tools.py          # live smoke script only
 
 ### Decision Sources
 - `PROJECT_VISION.md` — product boundaries, tool baseline, open-core scope.
-- `docs/planning/PUBLICATION_READINESS.md` — readiness checklist; full-publication readiness is not yet accepted.
+- `docs/planning/PUBLICATION_READINESS.md` — per-surface readiness checklist; core publication is accepted, disposable-demo hardening remains separate.
 - `docs/adr/001-demo-api-quota-and-product-boundary.md` — architecture direction for demo access, quota management, and product separation.
 
 ### No Direct Client-Side Upstream Access Material
@@ -107,7 +107,7 @@ python3 test_tools.py          # live smoke script only
 
 ### Core vs Demo vs Grabbit Boundary
 - **Core (MIT):** All 16 tools, all transports, cache/corpus logic — open source, zero registration for 13 tools.
-- **Demo (Railway, disposable):** Try-before-install only. Exactly 5 Data API operations per client/IP, corpora auto-delete after 10 minutes. No persistence, accounts, SaaS, or managed hosting.
+- **Demo (Railway, disposable):** Try-before-install only. The accepted target is exactly 5 Data API operations per observed client IP plus corpus deletion within 10 minutes and no durable storage/accounts; WI-00029 implementation and verification remain open. Never present these controls as active yet.
 - **Grabbit (separate MCP):** Completely separate MCP. No connector, dependency, shared service, code integration, or implementation roadmap exists. An example agent usage sequence may show the agent using tube-bridge to find videos and then separately using Grabbit to save links — that is the full extent of any documented relationship.
 
 ### Source/Test Changes
@@ -116,15 +116,16 @@ python3 test_tools.py          # live smoke script only
 - Verify against runtime source (`tube_bridge/server.py` `list_tools()`) before citing tool counts.
 
 ### Publication Readiness
-- **Full-publication readiness is not yet accepted.** Do not claim PyPI publication, completed CI, production acceptance, one-click deployment, legal compliance, or any production-ready promise.
-- Documented readiness issues (P0/P1/P2) are tracked in `docs/planning/PUBLICATION_READINESS.md`.
+- **Core publication is accepted:** GitHub Release, PyPI, public GHCR, hosted CI, external install and container MCP checks are recorded.
+- Do not extend this claim to disposable-demo controls, production SLA, legal compliance, or one-click managed hosting.
+- Remaining demo P0/P1/P2 items are tracked in `docs/planning/PUBLICATION_READINESS.md`.
 
 ## Core Release-Candidate State
 
 1. `TOOL_CATALOG` is the single runtime source for 16 registered tools and derived HELP metadata.
 2. Package documentation states 16 tools.
 3. The installed synchronous entrypoint is `tube_bridge.cli:main`; isolated wheel install and MCP runtime are verified.
-4. Frozen suite, Docker handshake and build/twine pass through Station verification and lifecycle gate receipts. External publication remains Operator-gated.
+4. Frozen suite, build/twine, hosted CI, PyPI install, public GHCR pull/MCP handshake, and GitHub Release are verified. Demo hardening remains separately gated.
 
 ## Key Docs
 

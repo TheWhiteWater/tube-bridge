@@ -12,7 +12,7 @@ Build the **most complete, zero-friction YouTube MCP server** — covering searc
 
 ## Principles
 
-1. **Zero-friction first** — Works out of the box. 13 of 16 tools require no API key, no OAuth, no registration. Dependencies can be installed with pip; PyPI package publication is not yet verified.
+1. **Zero-friction first** — Works out of the box. 13 of 16 tools require no API key, OAuth, or registration. The verified package installs from PyPI with `pip install tube-bridge`.
 2. **Complete coverage** — Not just transcripts. Search, channels, playlists, trending, comments, metadata, and semantic corpus search. A broad read-only YouTube surface for agents; uploads, account management and bulk scraping remain non-goals.
 3. **Agent-native design** — Every tool returns structured JSON optimized for LLM consumption. Descriptions, schemas, and error messages are written for AI agents, not humans.
 4. **Graceful degradation** — yt-dlp as fallback (no keys needed for search/video_info/trending), YouTube Data API v3 as optional upgrade. Quota-exceeded falls through to the no-key path without breaking.
@@ -27,11 +27,9 @@ Build the **most complete, zero-friction YouTube MCP server** — covering searc
 - Users bring their own `YOUTUBE_API_KEY` for the 3 API-dependent tools (comments, channel search, channel info).
 
 **Hosted demo endpoint (Railway, disposable):**
-- Try-before-install only: `tube-bridge-production.up.railway.app`.
-- Isolated Google Cloud project with server-side upstream configuration, separate from Operator personal/development configuration.
-- Exactly 5 YouTube Data API v3 operations per client/IP.
-- Corpora auto-delete after 10 minutes. No persistent volume, backups, accounts, or durable transcript/corpus hosting.
-- Not advertised as a public service.
+- Reachable try-before-install endpoint: `tube-bridge-production.up.railway.app`; not a SaaS or managed service.
+- WI-00029 target: isolated server-side upstream configuration, exactly 5 Data API operations per observed client IP, corpus deletion within 10 minutes, and no persistent volume/backups/accounts/durable corpus.
+- Those demo controls are decisions, not accepted current behavior; implementation and deterministic verification remain open.
 
 **Grabbit (separate MCP):**
 - Completely separate MCP. No connector, dependency, shared service, code integration, or implementation roadmap exists between tube-bridge and Grabbit.
@@ -59,7 +57,7 @@ Search, video_info, and trending upgrade to higher-quality Data API v3 results w
 - 13 tools work with zero API keys; 3 unlock with an optional Data API v3 key.
 - Semantic corpus search over transcripts using local embeddings (fastembed + sqlite-vec), with embedding inference done locally after model assets are available; initial model acquisition/cache may require network. `corpus_add` fetches transcripts over the network.
 - Open-core library published on GitHub under MIT license; hosted demo endpoint deployed for development/testing (Railway).
-- Publication readiness gating: full-publication readiness is not yet accepted; tracked in `docs/planning/PUBLICATION_READINESS.md`.
+- Publication readiness gating: self-hosted core publication is accepted; disposable-demo readiness remains separately tracked in `docs/planning/PUBLICATION_READINESS.md`.
 
 ## Anti-Goals (what success is NOT)
 
@@ -67,4 +65,4 @@ Search, video_info, and trending upgrade to higher-quality Data API v3 results w
 - NOT a video player or UI.
 - NOT a replacement for YouTube Data API — a complementary, agent-first alternative.
 - NOT a scraping service at scale — designed for agent use, not bulk harvesting.
-- NOT a public production service — the hosted demo exists for development and limited testing until readiness gates are passed.
+- NOT a public production service — the Railway endpoint is only a try-before-install demo; its separate WI-00029 quota/retention gates have not passed.

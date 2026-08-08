@@ -31,7 +31,7 @@
 
 ### Block B: Transports and Deployment
 
-**Status:** Shipped (transports); public hardening open
+**Status:** Core transports published and accepted; disposable-demo hardening open
 
 **What:** All MCP transports — stdio (child process), Streamable HTTP `/mcp` (recommended for remote), legacy SSE `/sse` with `/messages` POST handler — plus `/health` route and optional Bearer auth. Railway demo deployment.
 
@@ -51,13 +51,13 @@
 - [x] Isolated wheel installation and packaged `tube_bridge.cli:main` entrypoint verified (C3, P0)
 - [ ] Public hardening: 5-operation limit enforcement and 10-minute corpus TTL not yet implemented (D1–D5, P0)
 
-**Test Hash:** — *(no hash — tests not written)*
+**Test Hash:** `.brainops/methodology/frozen-tests/frozen-tdd-wi-00028-core-publication-001-python.json` (transport/auth/MCP/Docker contracts included)
 
 ---
 
 ### Block C: Semantic Corpus Engine
 
-**Status:** Shipped (engine); persistence and acceptance open
+**Status:** Self-hosted engine shipped; deterministic dispatch/SQLite lifecycle accepted, live embedding smoke remains environment-dependent
 
 **What:** 5 corpus tools (`corpus_create`, `corpus_add`, `corpus_search`, `corpus_list`, `corpus_delete`) backed by sqlite-vec + fastembed local embedding inference.
 
@@ -72,17 +72,17 @@
 **Exit Criteria:**
 - [x] All 5 corpus tools registered in source (`list_tools()`)
 - [x] Separate `corpus.db` from `cache.db` (source-verified)
-- [x] Local embedding inference (fastembed) implemented in source; formal runtime acceptance open
-- [ ] Demo corpus TTL: corpora auto-delete 10 minutes after creation on demo (D5, P0). Self-hosted instances have full persistent storage
-- [ ] Corpus acceptance: automated corpus tests not written
+- [x] Local embedding inference (fastembed) implemented in source; initial model acquisition remains environment-dependent
+- [ ] Demo corpus TTL implementation/verification remains open under WI-00029 (D5, P0); self-hosted instances retain persistent storage
+- [x] Automated corpus schema/dispatch and SQLite success/miss/early-return/rollback lifecycle contracts pass
 
-**Test Hash:** — *(no hash — tests not written)*
+**Test Hash:** `.brainops/methodology/frozen-tests/frozen-tdd-wi-00028-core-publication-001-python.json`
 
 ---
 
 ### Block D: Documentation and Station Synchronization
 
-**Status:** Complete — documentation synchronized, Station/TME reconciled, and corrected-model Codex audit passed
+**Status:** Complete — documentation synchronized with published core and separately open demo gate
 
 **What:** Governance, planning, and station-aligned documentation synchronized with the current product and readiness state. Includes ADR rules, MVP scope, work breakdown, and publication readiness checklist. Commercial extension and Grabbit connector surfaces removed per ADR-001.
 
@@ -104,9 +104,9 @@
 - [x] Station references corrected — INDEX.md and OPEN_QUESTIONS use only role-based owners and current WorkItem identifiers; no stale project identifiers or agent IDs remain
 - [x] Checklist classified/triaged by launch surface
 - [x] B1–B4 Operator/Architect decisions resolved per ADR-001; implementation remains open
-- [x] Corrected product model re-audited: current Station Codex receipt is PASS
+- [x] Historical corrected-model PASS retained; later core lifecycle/publication evidence and demo boundaries synchronized
 
-**Docs Audit:** Current corrected-model PASS receipt: `.brainops/methodology/audits/2026-08-08T06-30-02-732Z-f614f821-codex/station-codex-audit.json`. It verifies continuation-safe documentation coherence only and does not accept source, tests, package, demo implementation, or publication. Two intermediate FAIL receipts (`2026-08-08T06-24-15-276Z-76db5398` and `2026-08-08T06-26-29-240Z-6941e798`) were remediated and retained. The older independent report at `docs/audits/2026-08-08-publication-document-audit.md` is explicitly marked historical/superseded. B1–B4 decisions are resolved per ADR-001; implementation remains open.
+**Docs Audit:** The corrected-model PASS at `.brainops/methodology/audits/2026-08-08T06-30-02-732Z-f614f821-codex/station-codex-audit.json` is historical documentation evidence. Later lifecycle and external receipts accept core source/tests/package/publication. B1–B3 demo decisions remain implementation-open under WI-00029; B4 core release evidence is complete.
 
 **Test Hash:** — *(no hash — documentation, not testable code)*
 
@@ -114,26 +114,26 @@
 
 ### Block E: Tests, CI, and Package Verification
 
-**Status:** Local release candidate accepted; external publication pending Operator gate
+**Status:** Complete — self-hosted core published and externally verified
 
 **What:** Frozen automated suite, CI configuration, package/install/entrypoint verification, exact dependency lock and Docker runtime acceptance for the self-hosted core.
 
 **Current State:**
 - 125 deterministic frozen tests pass; `test_tools.py` remains an optional network-dependent smoke.
-- GitHub Actions CI is configured; no hosted run is claimed before authorized push.
-- `tube_bridge.cli:main` is verified through an isolated installed wheel and real MCP initialize/tools-list.
-- Wheel+sdist build, `twine check`, exact SHA-256 release lock, Docker health/auth/MCP handshake and SQLite connection cleanup pass.
-- External tag, GitHub Release, PyPI upload and Docker registry push have not occurred.
+- GitHub Actions CI passes on Python 3.12 and 3.13.
+- `tube_bridge.cli:main` is verified locally and from a clean PyPI installation.
+- Wheel+sdist, `twine check`, exact SHA-256 lock, SQLite cleanup, public GHCR pull, health/auth and authenticated MCP handshake pass.
+- GitHub Release, PyPI and GHCR publication receipts are present.
 
 **Depends on:** Blocks A, B, C
 
 **Exit Criteria:**
 - [x] Deterministic unit/contract tests with mocked upstreams (C2, P0)
-- [x] CI workflow configured; hosted run explicitly pending authorized push (C2, P0)
+- [x] CI workflow configured and hosted Python 3.12/3.13 jobs pass (C2, P0)
 - [x] Existing `test_tools.py` retained as optional/manual evidence, not the CI gate
 - [x] All 16 registered tool schemas/help/dispatch covered
 - [x] Isolated wheel install, console entrypoint, installed MCP, artifacts and metadata verified (C3, P0)
-- [x] No invented coverage percentages, SLAs, hosted CI or publication claims
+- [x] Publication claims are evidence-backed; no invented coverage percentage, SLA, managed-hosting or legal claim
 
 **Test Hash:** `.brainops/methodology/frozen-tests/frozen-tdd-wi-00028-core-publication-001-python.json` (10 files; Station hash verification PASS)
 
@@ -174,7 +174,7 @@ A (Interaction Engine) ──→ B (Transports/Deploy)
 - A is foundational — all other blocks depend on it.
 - B and C are parallel after A; both shipped.
 - D (docs sync) is complete; corrected-model Codex documentation audit passed.
-- E (tests/CI) is open and depends on A, B, C.
+- E (tests/CI/package publication) is complete for the self-hosted core and depends on A, B, C.
 - F (disposable demo) depends on B and C; all decisions resolved per ADR-001; implementation open.
 - No extension or Grabbit implementation items exist.
 
@@ -184,7 +184,7 @@ After each block:
 - [ ] ADR written for architecture decisions made in the block
 - [ ] Evidence verified against shipped code or operator decisions
 - [ ] Documentation updated if the block changes product scope or boundaries
-- [ ] Publication readiness checklist reviewed for new P0/P1 items
+- [x] Publication readiness checklist reviewed; core closed and remaining demo P0/P1 items retained
 
 ## Publication Readiness Authority
 
@@ -199,4 +199,4 @@ Tube-bridge is an MIT self-hosted MCP with a disposable try-before-install demo.
 
 ---
 
-> **Role owners** (Operator, Architect, Auditor, Executor) are responsible for decisions, not specific agent IDs. Test hashes are absent because automated tests have not been written; do not invent hashes.
+> **Role owners** (Operator, Architect, Auditor, Executor) are responsible for decisions, not specific agent IDs. The core frozen-test hash is recorded above; demo-specific tests remain absent until WI-00029.

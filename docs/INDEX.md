@@ -33,8 +33,8 @@ Search, video_info, and trending upgrade to higher-quality Data API v3 results w
 ## State
 
 - **Architecture direction:** ADR-001 accepted (2026-08-08) — demo API access, quota boundary, and self-hosted product boundary. Not launch approval.
-- **Current WorkItems:** WI-00027 documentation synchronization and WI-00028 core publication hardening are ready for gate; WI-00029 disposable-demo hardening remains draft.
+- **Current WorkItems:** WI-00027 documentation synchronization is ready for gate; WI-00028 core publication hardening is complete; WI-00029 disposable-demo hardening remains draft.
 - **Active TME direction:** DIR-004-publication-productization
-- **Full publication:** Not accepted. Readiness checklist in `docs/planning/PUBLICATION_READINESS.md`. Two launch surfaces: Core Full Publication and Disposable Demo. No commercial extension, product gateway, Grabbit connector, or browser extension roadmap exists.
-- **Current correction:** Documentation model aligned with ADR-001 (self-hosted core, disposable demo, no extension/connector). Corrected-model Codex audit passed at `.brainops/methodology/audits/2026-08-08T06-30-02-732Z-f614f821-codex/station-codex-audit.json`; this resolves documentation coherence only, not source/test/package/demo/publication readiness.
+- **Core publication:** Accepted and externally verified through GitHub Release, PyPI, public GHCR, hosted CI, clean install, and registry-image MCP checks.
+- **Disposable demo:** Separate WI-00029 gate; quota and retention decisions are documented but implementation/verification remain open. No commercial extension, product gateway, Grabbit connector, or browser-extension roadmap exists.
 - **Last updated:** 2026-08-08

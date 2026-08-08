@@ -97,6 +97,6 @@ tube-bridge makes outbound calls to three distinct sources. All API keys, tokens
 ## Product Boundaries
 
 - **Core (MIT self-hosted)** — All 16 MCP tools, all transports, all cache/corpus logic. Zero registration for 13 tools. Users bring their own `YOUTUBE_API_KEY` for the 3 API-dependent tools.
-- **Demo (Railway, disposable)** — Try-before-install only at `tube-bridge-production.up.railway.app`. Isolated Google Cloud project with server-side upstream configuration, separate from Operator personal/development configuration. Exactly 5 Data API operations per client/IP, corpora auto-delete after 10 minutes. No persistence, accounts, SaaS, or managed hosting.
+- **Demo (Railway, disposable)** — Reachable try-before-install endpoint at `tube-bridge-production.up.railway.app`, not SaaS or managed hosting. WI-00029 still must implement and verify isolated upstream configuration, exactly 5 Data API operations per observed client IP, corpus deletion within 10 minutes, and no durable storage/accounts.
 - **Grabbit (separate MCP)** — Completely separate MCP. No connector, dependency, shared service, code integration, or implementation roadmap exists between tube-bridge and Grabbit. An example agent usage sequence may show the agent using tube-bridge to find videos and then separately using Grabbit to save links — that is the full extent of any documented relationship.
 - **Browser extension** — Outside this project's scope and release gate. Not architected, planned, or documented here.

@@ -59,10 +59,10 @@ All four blocking questions are resolved per ADR-001 (accepted 2026-08-08). Impl
 **Exit evidence:** Published demo data-handling and deletion notice (D4), plus evidence that no user data persists beyond the 10-minute corpus TTL.
 
 ### B4: Release evidence target
-**Status:** Local Core Resolved / External Publication Open.
+**Status:** Core Publication Resolved.
 **Owner:** Operator/Architect.
-**Resolution:** ADR-001 decision #7: full open-source distribution means GitHub release, PyPI package, Docker image, and documented demo. The core release candidate now passes C1–C5 local source/test/package/container acceptance. External publication and disposable-demo controls remain separate gates.
-**Exit evidence:** Frozen 125-test suite, CI configuration, isolated installed-wheel CLI/MCP, wheel+sdist/twine, exact dependency lock, Docker MCP handshake, SQLite cleanup, and Station verification/lifecycle gate pass. Hosted CI/tag/GitHub Release/PyPI/Docker registry receipts remain open.
+**Resolution:** ADR-001 decision #7 is complete for the self-hosted core: GitHub Release, PyPI package, and public GHCR image are published. Disposable-demo controls remain a separate gate.
+**Exit evidence:** Frozen 125-test suite, hosted Python 3.12/3.13 CI, PyPI install/CLI, wheel+sdist/twine, exact dependency lock, public GHCR pull and authenticated MCP handshake, SQLite cleanup, and GitHub Release assets pass.
 
 ---
 

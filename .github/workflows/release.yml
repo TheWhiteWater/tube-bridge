@@ -49,26 +49,29 @@ jobs:
           import tarfile
           import zipfile
 
-          expected = {
-              "tube_bridge-1.0.0-py3-none-any.whl",
-              "tube_bridge-1.0.0.tar.gz",
-          }
+          import tomllib
+
+          project = tomllib.loads(pathlib.Path("pyproject.toml").read_text())["project"]
+          version = project["version"]
+          wheel_name = f"tube_bridge-{version}-py3-none-any.whl"
+          sdist_name = f"tube_bridge-{version}.tar.gz"
+          expected = {wheel_name, sdist_name}
           files = {path.name for path in pathlib.Path("dist").iterdir() if path.is_file()}
           if files != expected:
               raise SystemExit(f"unexpected release artifacts: {sorted(files)!r}")
 
-          with zipfile.ZipFile("dist/tube_bridge-1.0.0-py3-none-any.whl") as archive:
-              metadata = archive.read("tube_bridge-1.0.0.dist-info/METADATA").decode()
+          with zipfile.ZipFile(pathlib.Path("dist") / wheel_name) as archive:
+              metadata = archive.read(f"tube_bridge-{version}.dist-info/METADATA").decode()
           wheel_meta = email.parser.Parser().parsestr(metadata)
 
-          with tarfile.open("dist/tube_bridge-1.0.0.tar.gz", "r:gz") as archive:
-              member = archive.extractfile("tube_bridge-1.0.0/PKG-INFO")
+          with tarfile.open(pathlib.Path("dist") / sdist_name, "r:gz") as archive:
+              member = archive.extractfile(f"tube_bridge-{version}/PKG-INFO")
               if member is None:
                   raise SystemExit("sdist PKG-INFO is missing")
               sdist_meta = email.parser.Parser().parsestr(member.read().decode())
 
           for label, parsed in (("wheel", wheel_meta), ("sdist", sdist_meta)):
-              if parsed["Name"] != "tube-bridge" or parsed["Version"] != "1.0.0":
+              if parsed["Name"] != "tube-bridge" or parsed["Version"] != version:
                   raise SystemExit(
                       f"{label} identity mismatch: {parsed['Name']!r} {parsed['Version']!r}"
                   )

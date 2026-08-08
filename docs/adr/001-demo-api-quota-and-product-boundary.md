@@ -15,7 +15,7 @@ A Railway-hosted disposable demo endpoint exists at `tube-bridge-production.up.r
 1. Source code obtains optional Data API access configuration from environment variables at runtime. No API key, token, or secret is bundled, embedded, committed, or shipped in the repository (source: `tube_bridge/tools.py` line 18 `api.get_api_key()`; `tube_bridge/transport.py` line 14 `os.environ.get("TUBE_BRIDGE_AUTH_KEY")`).
 2. YouTube Data API v3 does not provide transcript text. Transcript reliability is a separate `youtube-transcript-api`/proxy concern.
 3. Google documents default allocation as 100 search.list calls/day, 100 videos.insert calls/day, and 10,000 units/day combined for other endpoints, subject to change. Additional quota uses the YouTube API Services audit/quota-extension process. No purchasable quota tier was identified in official documentation.
-4. Full-publication readiness is not yet accepted.
+4. At ADR acceptance time, full-publication readiness was not accepted. Subsequent WI-00028 evidence now accepts the self-hosted core publication; demo acceptance remains separate.
 
 ## Decision
 
@@ -58,7 +58,7 @@ tube-bridge is an MIT self-hosted individual MCP, never a SaaS or managed transc
 
 ### 7. Full-publication scope
 
-Full open-source distribution means: GitHub release, PyPI package, Docker image, and documented demo. Readiness remains unaccepted until source/test/package verification is complete.
+Full open-source core distribution means GitHub Release, PyPI package, and public container image, with the demo documented as a separate surface. WI-00028 subsequently completed source/test/package verification and external publication; WI-00029 demo controls remain open.
 
 ### 8. Grabbit separation
 
@@ -102,7 +102,7 @@ A browser extension is outside this project's scope and release gate. It must no
 ## Open Implementation Details
 
 1. **10-minute TTL mechanism** — background cleanup loop, per-corpus timer, or lazy expiry checks may be chosen during implementation, provided every demo corpus becomes inaccessible and is deleted no later than 10 minutes after creation.
-2. **Full-publication verification** — exact deterministic test cases, CI configuration, `pip install` verification steps, and PyPI build/upload procedure remain implementation planning items. PyPI itself is already part of the fixed full-publication target.
+2. **Full-publication verification** — subsequently completed by WI-00028: frozen deterministic tests, hosted CI, PyPI install, public GHCR runtime, and GitHub Release receipts are present.
 
 ## Exit Criteria
 
@@ -110,7 +110,7 @@ This ADR is considered **accepted as architecture direction** when:
 - Operator/Architect review confirms the direction is sound.
 - No blocking concerns are raised that would invalidate the self-hosted boundary.
 
-This ADR is **NOT** launch acceptance. Full-publication readiness requires all P0 items in `docs/planning/PUBLICATION_READINESS.md` to be resolved.
+This ADR alone is **NOT** launch acceptance. Subsequent WI-00028 receipts satisfy the self-hosted core P0 gate; WI-00029 must independently satisfy the disposable-demo P0 gate.
 
 ## Sources
 

@@ -6,7 +6,7 @@ These are explicit things tube-bridge will NOT build into the open-core.
 tube-bridge is an MIT self-hosted MCP, never a SaaS or managed transcript-hosting product. The Railway demo is solely a disposable try-before-install convenience. No accounts, billing, durable hosted transcripts/corpora, or commercial extension architecture.
 
 ### Full Publication Distribution
-Full open-source distribution (GitHub release, PyPI package, Docker image, documented demo) remains in scope. Readiness is tracked in `docs/planning/PUBLICATION_READINESS.md` and is not yet accepted.
+Open-source core distribution through GitHub Release, PyPI, and GHCR is complete. The documented disposable demo remains in scope as a separate surface whose controls are tracked in `docs/planning/PUBLICATION_READINESS.md`.
 
 ### Browser Extension
 A browser extension is outside this project's scope and release gate. It must not be architected, planned, or documented here.
@@ -51,7 +51,7 @@ The following are **not promised** until their respective readiness gates are pa
 - **YouTube Data API quota beyond default allocation** — no additional allocation beyond the default has been documented as requested or granted. YouTube's official docs identify the audit/extension process; no purchasable quota tier was identified.
 - **Legal clearance** — no legal review, copyright compliance assessment, or terms-of-service analysis has been completed. Users are responsible for their own compliance.
 - **Proxy reliability** — the `TUBE_BRIDGE_PROXY` feature is operational, but no uptime SLA, throughput guarantee, or reliability promise is made for any specific proxy service.
-- **Durable hosted corpus storage** — the disposable demo automatically deletes every corpus 10 minutes after creation. No persistent volume, backups, or durable transcript/corpus hosting is provided on the demo. Self-hosted instances have full persistent corpus storage.
+- **Durable hosted corpus storage** — it is outside the accepted demo design. WI-00029 must still implement and verify deletion within 10 minutes and absence of persistent volumes/backups; do not claim the current endpoint already enforces this. Self-hosted instances have persistent corpus storage.
 
 ---
 
