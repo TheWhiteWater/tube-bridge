@@ -62,7 +62,7 @@ All four blocking questions are resolved per ADR-001 (accepted 2026-08-08). Impl
 **Status:** Local Core Resolved / External Publication Open.
 **Owner:** Operator/Architect.
 **Resolution:** ADR-001 decision #7: full open-source distribution means GitHub release, PyPI package, Docker image, and documented demo. The core release candidate now passes C1–C5 local source/test/package/container acceptance. External publication and disposable-demo controls remain separate gates.
-**Exit evidence:** Frozen 125-test suite, CI configuration, isolated installed-wheel CLI/MCP, wheel+sdist/twine, exact dependency lock, Docker MCP handshake, SQLite cleanup and independent audit pass. Hosted CI/tag/GitHub Release/PyPI/Docker registry receipts remain open.
+**Exit evidence:** Frozen 125-test suite, CI configuration, isolated installed-wheel CLI/MCP, wheel+sdist/twine, exact dependency lock, Docker MCP handshake, SQLite cleanup, and Station verification/lifecycle gate pass. Hosted CI/tag/GitHub Release/PyPI/Docker registry receipts remain open.
 
 ---
 

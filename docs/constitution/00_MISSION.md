@@ -16,7 +16,7 @@ Build the **most complete, zero-friction YouTube MCP server** — covering searc
 2. **Complete coverage** — Not just transcripts. Search, channels, playlists, trending, comments, metadata, and semantic corpus search. A broad read-only YouTube surface for agents; uploads, account management and bulk scraping remain non-goals.
 3. **Agent-native design** — Every tool returns structured JSON optimized for LLM consumption. Descriptions, schemas, and error messages are written for AI agents, not humans.
 4. **Graceful degradation** — yt-dlp as fallback (no keys needed for search/video_info/trending), YouTube Data API v3 as optional upgrade. Quota-exceeded falls through to the no-key path without breaking.
-5. **Modular open core** — A `tube_bridge/` Python package with clean module boundaries: server wiring, tool implementations, transport layer, persistent cache, and corpus engine. Launched from a thin root `server.py` that selects stdio or HTTP at runtime.
+5. **Modular open core** — A `tube_bridge/` Python package with clean module boundaries: server wiring, packaged CLI, tool implementations, transport layer, persistent cache, and corpus engine. `tube_bridge.cli:main` is the canonical installed launcher; root `server.py` is a compatibility wrapper.
 6. **Station-native** — First-class BrainOps lifecycle: TME, ADR, gates, vision-aligned development.
 
 ## Product Boundaries

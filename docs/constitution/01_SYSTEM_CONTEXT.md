@@ -17,15 +17,16 @@ An MCP (Model Context Protocol) server that lets AI agents interact with YouTube
 AI Agent (Claude / Codex / Hermes / Cursor)
   │
   │  MCP protocol (JSON-RPC) over:
-  │    • stdio (local child process, root server.py)
+  │    • stdio (local child process, installed `tube-bridge` or compatibility root server.py)
   │    • Streamable HTTP /mcp (remote, recommended, tube_bridge/transport.py)
   │    • SSE /sse (legacy, deprecated, tube_bridge/transport.py)
   │
   ▼
 tube-bridge (modular Python package)
   │
-  ├── server.py                    — Launch entrypoint: stdio (lines 26-27) or HTTP (lines 20-24)
-  ├── tube_bridge/server.py        — MCP tool registration (16 tools) + dispatch
+  ├── server.py                    — Source-checkout compatibility launcher
+  ├── tube_bridge/cli.py           — Canonical synchronous installed entrypoint: stdio or HTTP
+  ├── tube_bridge/server.py        — Single 16-tool catalog, MCP registration, HELP derivation + dispatch
   ├── tube_bridge/tools.py         — All tool implementations (async, cached, dual-source)
   ├── tube_bridge/transport.py     — HTTP/SSE ASGI routes only (no stdio) + optional Bearer auth + /health
   ├── tube_bridge/cache.py         — Persistent SQLite cache (cache.db)
@@ -48,13 +49,13 @@ tube-bridge (modular Python package)
 
 tube-bridge supports three transports, all built from the same MCP server instance:
 
-1. **stdio** — Implemented in root `server.py` (lines 26–27) via `mcp.server.stdio.stdio_server`. The MCP client spawns `python3 server.py` as a child process. Opens no inbound listening port.
+1. **stdio** — Selected by the packaged `tube-bridge` command (`tube_bridge.cli:main`), which runs the async MCP stdio loop through `asyncio.run()`. Root `server.py` delegates to the same CLI for source-checkout compatibility.
 
-2. **Streamable HTTP (`/mcp`)** — Built by `tube_bridge/transport.py` via `StreamableHTTPSessionManager` (stateless). Recommended for remote deployments. Launched with `python3 server.py --http`.
+2. **Streamable HTTP (`/mcp`)** — Built by `tube_bridge/transport.py` via `StreamableHTTPSessionManager` (stateless). Recommended for remote deployments. Launched with `tube-bridge --http`.
 
 3. **SSE (`/sse`, legacy)** — Built by `tube_bridge/transport.py` via `SseServerTransport`. Deprecated in favor of Streamable HTTP.
 
-`tube_bridge/transport.py` builds the HTTP/SSE ASGI routes only (`/mcp`, `/sse`, `/messages`, `/health`). It does not implement stdio; stdio is handled in the root `server.py`.
+`tube_bridge/transport.py` builds the HTTP/SSE ASGI routes (`/mcp`, `/sse`, `/messages`, `/health`); CLI runtime selection owns stdio.
 
 Additional endpoints:
 - **`/health`** — Always open. Returns tool count (16) and auth status.

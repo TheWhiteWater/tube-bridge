@@ -2,17 +2,18 @@
 
 ## Overview
 
-tube-bridge is a **modular Python package** (`tube_bridge/`) with a thin root launcher (`server.py`). It wraps three data sources behind a unified MCP interface with 16 tools:
+tube-bridge is a **modular Python package** (`tube_bridge/`) with a packaged synchronous CLI and a root compatibility launcher. It wraps three data sources behind a unified MCP interface with 16 tools:
 
 ```
 Agent (Claude / Codex / Hermes)
    │ MCP JSON-RPC over:
-   │   • stdio (root server.py → mcp.server.stdio)
+   │   • stdio (tube_bridge.cli → mcp.server.stdio)
    │   • Streamable HTTP /mcp (tube_bridge/transport.py)
    │   • SSE /sse (legacy, tube_bridge/transport.py)
    ▼
-server.py                       — Launch entrypoint: stdio (lines 26-27) or HTTP (lines 20-24)
-tube_bridge/server.py           — MCP wiring: list_tools() + call_tool() + _handle_tool()
+server.py                       — Source-checkout compatibility wrapper
+tube_bridge/cli.py              — Canonical synchronous installed CLI: stdio or HTTP
+tube_bridge/server.py           — Single 16-tool catalog, MCP wiring, HELP derivation + dispatch
 tube_bridge/tools.py            — 15 operational tool implementations (async, cached, dual-source); tube_bridge_help is handled directly in server.py
 tube_bridge/transport.py        — HTTP/SSE ASGI app builder + session manager + Bearer auth + /health
 tube_bridge/cache.py            — cache.db: persistent SQLite for transcripts + video metadata
@@ -26,10 +27,10 @@ tube_bridge/youtube/
 
 ## Transport Layer
 
-**Root launcher** (`server.py`, 31 lines):
-- Parses `--http`, `--port`, `--host` arguments.
-- stdio mode (lines 26–27): `stdio_server()` → `server.run(read_stream, write_stream, ...)`. This is where stdio transport is implemented, using `mcp.server.stdio.stdio_server`.
-- HTTP mode (lines 20–24): `transport.create_app(server, host, port)` → uvicorn.
+**Packaged CLI** (`tube_bridge/cli.py`):
+- Exposes synchronous `main()` for the `tube-bridge` console script and calls the async runtime via `asyncio.run()`.
+- Parses `--http`, `--port`, `--host`; selects MCP stdio or uvicorn HTTP.
+- Root `server.py` imports and delegates to this same entrypoint for source-checkout compatibility.
 
 **Transport builder** (`tube_bridge/transport.py`, 83 lines):
 - Builds a raw ASGI app routing `/mcp`, `/sse`, `/messages`, `/health`.
@@ -38,12 +39,12 @@ tube_bridge/youtube/
 - `/health`: Always-open JSON endpoint returning tool count (16) and auth status.
 - Auth: Optional Bearer token via `TUBE_BRIDGE_AUTH_KEY` env var. Applied to every remote route except `/health`, including `/mcp`, `/sse`, and `/messages`. No auth key = open access.
 - Lifespan: `http_manager.run()` started/stopped with ASGI lifespan events; session manager lifecycle is tied to the server process.
-- **Note:** `transport.py` builds HTTP/SSE ASGI routes only. It does not implement stdio transport; stdio is handled in the root `server.py`.
+- **Note:** `transport.py` builds HTTP/SSE ASGI routes only; packaged CLI runtime selection handles stdio.
 
 ## Tool Registration & Dispatch
 
-**Tool registration** (`tube_bridge/server.py` `list_tools()`, lines 67–248):
-- Registers exactly 16 MCP `Tool` objects with names, descriptions, and JSON input schemas.
+**Tool registration** (`tube_bridge/server.py`):
+- `TOOL_CATALOG` is the single authority for exactly 16 tool names, descriptions, handlers and JSON input schemas; `list_tools()` materializes MCP `Tool` objects from it.
 - 10 YouTube interaction tools + 5 corpus tools + 1 help tool.
 - Each tool schema declares required parameters, optional parameters with defaults, and type constraints. Not every schema contains enum constraints; schemas use standard JSON Schema `type` declarations (`string`, `integer`, `boolean`, `object`).
 
@@ -52,7 +53,7 @@ tube_bridge/youtube/
 - Errors are caught at three levels: `ValueError`, `RuntimeError`, and generic `Exception`.
 - `_handle_tool()` is a `match`/`case` block routing tool names to async implementation functions in `tube_bridge/tools.py`.
 
-**Source drift note:** `HELP_TEXT` at line 20 defines numeric `"tools": 11`, but a duplicate `"tools"` key at line 28 contains an 11-entry list (10 interaction + `tube_bridge_help`) that overwrites the numeric value at Python runtime; no numeric count field remains in the resolved dict. The runtime help list omits the 5 corpus tools. `list_tools()` authoritatively registers 10 interaction + 5 corpus + 1 help = 16 tools. `tube_bridge/__init__.py` docstring (line 3) claims "10 tools." Both are readiness issues requiring source correction.
+`HELP_TEXT` is derived from the same `TOOL_CATALOG`, so registration, dispatch and help cannot drift independently. Frozen schema/help/dispatch contracts validate all 16 entries.
 
 ## Tool Implementation Patterns
 
@@ -170,19 +171,13 @@ Two-layer cache for transcripts and video metadata:
 - 10-minute automatic corpus deletion — every corpus created on the demo is deleted 10 minutes after creation.
 - No persistent volume, backups, accounts, or durable transcript/corpus hosting.
 
-## Known Readiness / Source Drift
+## Release-Candidate Readiness
 
-These are documented inconsistencies between source and documentation; they should not be cited as current facts:
-
-1. **HELP_TEXT tool count** (`tube_bridge/server.py` line 20): Defines numeric `"tools": 11`, but a duplicate `"tools"` key at line 28 contains an 11-entry list (10 interaction + `tube_bridge_help`) that overwrites the numeric value at runtime; no numeric count field remains in the resolved dict. The runtime help list omits the 5 corpus tools. `list_tools()` correctly registers 16.
-
-2. **Package docstring** (`tube_bridge/__init__.py` line 3): Claims "10 tools." Should read 16.
-
-3. **Console entrypoint** (`pyproject.toml` line 17): `tube-bridge = "server:main"` references root `server.py`. Requires `pip install` verification before any PyPI publication claim.
-
-4. **No automated test suite:** `test_tools.py` is a live smoke script exercising 4 unique tools (search, video_info, trending, transcript — transcript is called in two modes). It imports `playlist` but does not call it. It is not an automated acceptance suite. No CI pipeline is configured.
-
-5. **Full-publication readiness not yet accepted:** Tracked in `docs/planning/PUBLICATION_READINESS.md`. Do not claim PyPI publication, completed CI, production acceptance, or any production-ready promise.
+1. One catalog defines all 16 registered tools, dispatch handlers and HELP metadata.
+2. Package documentation and the synchronous installed `tube_bridge.cli:main` entrypoint are verified from an isolated wheel.
+3. Ten frozen Python files produce 125 passing tests; CI is configured and `test_tools.py` remains optional live smoke.
+4. Wheel+sdist/twine, exact dependency lock, Docker MCP handshake and SQLite lifecycle contracts pass locally.
+5. External push, hosted CI, tag, GitHub Release, PyPI upload and Docker registry publication remain Operator-gated; demo hardening remains separate.
 
 ## Design Decisions
 
@@ -194,7 +189,7 @@ These are documented inconsistencies between source and documentation; they shou
 
 4. **Manual > ASR** — Transcript priority: manual subtitles first, auto-generated second.
 
-5. **Modular package** — Clean module boundaries: server wiring, tool implementations, transport, cache, corpus, and YouTube subpackage. Root `server.py` is a thin launcher selecting transport at runtime.
+5. **Modular package** — Clean module boundaries: server wiring/catalog, packaged CLI, tool implementations, transport, cache, corpus, and YouTube subpackage. Root `server.py` is only a compatibility wrapper.
 
 6. **Dual database files** — `cache.db` and `corpus.db` are separate SQLite databases with distinct schemas and lifecycles, sharing the same configurable directory.
 

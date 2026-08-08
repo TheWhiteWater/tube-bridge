@@ -116,7 +116,7 @@ Core release-candidate acceptance (Surface 1) has local evidence for C1–C5. Ex
 - [x] C1: one authoritative 16-tool catalog, derived HELP metadata and corrected package docs (P0)
 - [x] C2: 125 frozen deterministic tests PASS and CI workflow configured; hosted run pending authorized push (P0)
 - [x] C3: isolated wheel install, synchronous console entrypoint, installed MCP runtime, wheel+sdist and twine PASS; upload pending (P0)
-- [x] C4: independent documentation and implementation audits PASS (P0)
+- [x] C4: corrected-model independent documentation audit PASS; source/test conformance is tracked by Station methodology receipts (P0)
 - [x] C5: package metadata, bounded/public dependencies, exact SHA-256 lock, Docker consumption, MIT license and secret exclusion verified (P0)
 
 ### Disposable Demo Acceptance Gate (Independent of Core)

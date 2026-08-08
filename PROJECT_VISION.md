@@ -109,7 +109,7 @@ A browser extension is outside this project's scope and release gate. It must no
 - The packaged synchronous entrypoint is `tube_bridge.cli:main`.
 - Ten frozen Python test files produce 125 passing tests without changing the frozen hash.
 - Isolated wheel install, installed CLI/MCP handshake, wheel+sdist, `twine check`, SHA-256 dependency lock, and actual Docker authenticated MCP handshake pass.
-- Verification: `.brainops/methodology/verification/verification-WI-00028-python-local.json`; independent audit: `.brainops/methodology/audits/2026-08-08T10-12-45-292Z-6cc43e19-codex/station-codex-audit.json`.
+- Verification: `.brainops/methodology/verification/verification-WI-00028-python-local.json`; Station lifecycle hash/gate/persistence receipts are complete. Final independent conformance is recorded separately and must not be inferred from intermediate audit receipts.
 
 ## Publication Readiness
 

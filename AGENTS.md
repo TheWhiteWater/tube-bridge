@@ -124,7 +124,7 @@ python3 test_tools.py          # live smoke script only
 1. `TOOL_CATALOG` is the single runtime source for 16 registered tools and derived HELP metadata.
 2. Package documentation states 16 tools.
 3. The installed synchronous entrypoint is `tube_bridge.cli:main`; isolated wheel install and MCP runtime are verified.
-4. Frozen suite, Docker handshake, build/twine and independent audit pass. External publication remains Operator-gated.
+4. Frozen suite, Docker handshake and build/twine pass through Station verification and lifecycle gate receipts. External publication remains Operator-gated.
 
 ## Key Docs
 

@@ -5,7 +5,7 @@
 | **MCP** | Model Context Protocol — JSON-RPC protocol for AI agent ↔ tool communication. tube-bridge implements stdio, HTTP (Streamable HTTP), and SSE transports. |
 | **Streamable HTTP** | Stateless MCP transport at `/mcp` (built via `StreamableHTTPSessionManager`). Recommended for remote deployments. Replaces legacy SSE. |
 | **SSE (legacy)** | Server-Sent Events MCP transport at `/sse` with `/messages` POST handler. Deprecated in favor of Streamable HTTP. Retained for backward compatibility. |
-| **stdio transport** | MCP transport over stdin/stdout. MCP client spawns `python3 server.py` as a child process. Implemented in root `server.py` via `mcp.server.stdio`. |
+| **stdio transport** | MCP transport over stdin/stdout. MCP client normally spawns the installed `tube-bridge` command (`tube_bridge.cli:main`); root `server.py` is a source-checkout compatibility wrapper. |
 | **dual-source** | tube-bridge architecture pattern: YouTube Data API v3 primary → yt-dlp fallback. Used for search, video_info, and trending. Quota exhaustion falls through gracefully. |
 | **Data API v3** | YouTube's official REST API; requires `YOUTUBE_API_KEY` from Google Cloud Console. Provides search/video_info/trending results with richer metadata and unlocks comments, channel search, and channel info. Default allocation: 100 search.list calls/day, 100 videos.insert calls/day, and 10,000 units/day combined for other endpoints, subject to change. Additional allocation uses YouTube's audit/extension process. |
 | **Data API setup** | Users obtain a `YOUTUBE_API_KEY` from Google Cloud Console and set it as an environment variable. 13 of 16 tools work without it; 3 require it. No API key is bundled or committed. |

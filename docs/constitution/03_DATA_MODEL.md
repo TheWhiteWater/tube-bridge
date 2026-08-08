@@ -191,7 +191,7 @@ API-only. Subscriber enrichment via separate `channels.list` call. Client-side `
 
 ### tube_bridge_help
 
-Returns `HELP_TEXT` dict from `server.py` 17–59 as-is. At runtime the Python dict resolves `"tools": 11` then `"tools": [...]` (11-item list: 10 YouTube interaction + `tube_bridge_help`); the list overwrites the numeric. The authoritative tool count is `list_tools()` = 16 (10 interaction + 5 corpus + 1 help).
+Returns `HELP_TEXT`, which is derived from the same 16-entry `TOOL_CATALOG` used by MCP registration and dispatch (10 YouTube interaction + 5 corpus + 1 help). The response includes an authoritative numeric count and complete tool metadata without duplicate keys.
 
 Source: `server.py` 17–59, 67–248.
 
