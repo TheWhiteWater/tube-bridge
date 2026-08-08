@@ -1,0 +1,91 @@
+{
+  "kind": "brainops.frozen_tests_manifest",
+  "version": "0.1",
+  "project": "tube-bridge",
+  "project_path": "/home/ali/Workspace/BrainOps/Projects/tube-bridge",
+  "lifecycle_run_id": "tdd-wi-00037-ttl-race-addendum-001",
+  "work_item_id": "WI-00037",
+  "test_files": [
+    {
+      "path": "tests/conftest.py",
+      "sha256": "d2c45bf7e4636cb8995f1cca323835d05d9c5b7e0a0d43c1324a5fefdf73bdf6",
+      "bytes": 7956
+    },
+    {
+      "path": "tests/mcp_client_smoke.py",
+      "sha256": "f6e5acc9d07a6fa4014049c46dd18dc87bfe89d423c828a32ee21b3854ce40b4",
+      "bytes": 4879
+    },
+    {
+      "path": "tests/test_cli_and_release_contract.py",
+      "sha256": "f897701b7c3b70eb0e3dbdd0c2b5c8086a85b9efb6789bdcdcb86bad509cf26c",
+      "bytes": 21682
+    },
+    {
+      "path": "tests/test_demo_integration.py",
+      "sha256": "1ed6e100e0c297402f2e88c7115325f6d78b655f16d3041aa7b905acc56a6585",
+      "bytes": 14272
+    },
+    {
+      "path": "tests/test_demo_policy.py",
+      "sha256": "db8f07e7396a6940f5e264da96d3a96a8cdb496197a147b12e8e0aba12042ae8",
+      "bytes": 8116
+    },
+    {
+      "path": "tests/test_demo_transport_context.py",
+      "sha256": "b00e8d329cf41658ac7da44c4f0b3f73cc67b60879ef3cdfc8af688c61bab434",
+      "bytes": 9642
+    },
+    {
+      "path": "tests/test_demo_ttl.py",
+      "sha256": "313c324c09537160ad836c26cc5c4f20145084ee840cbbe9e651bf360e7b5e09",
+      "bytes": 13345
+    },
+    {
+      "path": "tests/test_demo_ttl_race_recovery.py",
+      "sha256": "ef51b0d7a30e6b83415649d4a9f4e7efdfb576339b1db4653b80267e498e5b22",
+      "bytes": 6057
+    },
+    {
+      "path": "tests/test_distribution_integration.py",
+      "sha256": "100f5d862bbdc49f81d2b92456750eeca174ebb9e4a1c40f64868f81ef41ca42",
+      "bytes": 21404
+    },
+    {
+      "path": "tests/test_docker_runtime.py",
+      "sha256": "fb781fc1f8effff93dff6c99d0efd21d79cd91cc9955f1d85f3f4894bf9802ae",
+      "bytes": 3183
+    },
+    {
+      "path": "tests/test_mcp_integration.py",
+      "sha256": "ea8565a26b28fb7be2f1844484cd27daa8b14aaec638f6062f2236b5c26dce3b",
+      "bytes": 12404
+    },
+    {
+      "path": "tests/test_sqlite_lifecycle.py",
+      "sha256": "03438d77ae8c808c39124942c534b119834a4c17e20040f283370e1790109031",
+      "bytes": 28879
+    },
+    {
+      "path": "tests/test_tool_contract.py",
+      "sha256": "d825f276cb736e75e8213e227f9fe2749532c6fd59de41af372f8e6f1af29309",
+      "bytes": 15841
+    },
+    {
+      "path": "tests/test_tool_dispatch.py",
+      "sha256": "3bfb48298a43f4c7dae7e954cdba9304a01d5b7ff170b27197cb6ca7f1db9e26",
+      "bytes": 17623
+    },
+    {
+      "path": "tests/test_transport_contract.py",
+      "sha256": "3738254bcd4f8f32a80ec44c2b74929ab58a0d627521f48baa9c1131934baed9",
+      "bytes": 14726
+    }
+  ],
+  "created_by_agent_id": "W-1028",
+  "created_session_id": "S-01024",
+  "created_at": "2026-08-08T13:54:48.732510+00:00",
+  "workaround": "Python-aware explicit SHA-256 manifest for TTL race addendum after independent PASS.",
+  "frozen_test_commit": "4bbc677",
+  "test_contract_audit": ".brainops/methodology/audits/2026-08-08T13-54-20-130Z-a45f518a-codex/station-codex-audit.json"
+}
