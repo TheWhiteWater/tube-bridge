@@ -25,7 +25,7 @@
 - [x] All 10 YouTube tools registered in source (`list_tools()`)
 - [x] Dual-source fallback implemented in source (`tube_bridge/tools.py`)
 - [x] Cache layer implemented in source (`cache.db` for transcripts and metadata)
-- [ ] Source HELP_TEXT correction needed: its 11-entry list omits five corpus tools and duplicate key overwrites numeric count; must reflect 16 registered tools
+- [x] HELP metadata is derived from the single 16-entry `TOOL_CATALOG`
 
 ---
 
@@ -38,7 +38,7 @@
 **Implementation:**
 - `tube_bridge/transport.py` — StreamableHTTP session manager, SSE transport, auth middleware, `/messages` handler (line 77–78), auth check at line 66
 - `server.py` — entrypoint: argument parsing, transport dispatch (stdio vs HTTP)
-- `pyproject.toml` — project metadata and console entrypoint (publication unverified)
+- `pyproject.toml` — verified project metadata and packaged synchronous console entrypoint
 
 **Depends on:** Block A
 
@@ -48,7 +48,7 @@
 - [x] 3 transports (stdio, `/mcp`, `/sse`) plus `/messages` handler and `/health` route implemented in source
 - [x] Bearer auth implemented in source: protects every remote route except `/health` (transport.py line 66)
 - [x] Railway demo endpoint deployed
-- [ ] Source installation and entrypoint verification: `pip install .` from source checkout and console entrypoint `tube-bridge = "server:main"` not yet verified (C3, P0)
+- [x] Isolated wheel installation and packaged `tube_bridge.cli:main` entrypoint verified (C3, P0)
 - [ ] Public hardening: 5-operation limit enforcement and 10-minute corpus TTL not yet implemented (D1–D5, P0)
 
 **Test Hash:** — *(no hash — tests not written)*
@@ -114,27 +114,28 @@
 
 ### Block E: Tests, CI, and Package Verification
 
-**Status:** Open
+**Status:** Local release candidate accepted; external publication pending Operator gate
 
-**What:** Automated test suite, CI pipeline, and source-install/entrypoint verification for the open-core library. Full publication targets GitHub release, PyPI package, Docker image, and documented demo.
+**What:** Frozen automated suite, CI configuration, package/install/entrypoint verification, exact dependency lock and Docker runtime acceptance for the self-hosted core.
 
 **Current State:**
-- `test_tools.py` is a 4-unique-tool live smoke script (exercises `youtube_search`, `youtube_get_video_info`, `youtube_get_trending`, `youtube_get_transcript`) against real YouTube. It is network-dependent and NOT suitable as a deterministic PR CI gate.
-- No CI pipeline is configured.
-- No coverage metrics exist.
-- `pyproject.toml` exists with console entrypoint `tube-bridge = "server:main"`; source installation, entrypoint, PyPI build/metadata/upload, and clean-environment installation are unverified. PyPI is already part of the fixed full-publication target.
+- 125 deterministic frozen tests pass; `test_tools.py` remains an optional network-dependent smoke.
+- GitHub Actions CI is configured; no hosted run is claimed before authorized push.
+- `tube_bridge.cli:main` is verified through an isolated installed wheel and real MCP initialize/tools-list.
+- Wheel+sdist build, `twine check`, exact SHA-256 release lock, Docker health/auth/MCP handshake and SQLite connection cleanup pass.
+- External tag, GitHub Release, PyPI upload and Docker registry push have not occurred.
 
 **Depends on:** Blocks A, B, C
 
 **Exit Criteria:**
-- [ ] Deterministic unit/contract tests with mocked upstreams (must not depend on live YouTube/network) (C2, P0)
-- [ ] CI pipeline running deterministic tests on PRs (C2, P0)
-- [ ] Existing `test_tools.py` 4-tool live smoke retained as optional/manual integration evidence or separately scheduled; not the sole CI gate
-- [ ] Full tool coverage test suite (current 4/16 tools exercised in smoke; remainder untested)
-- [ ] Source installation and entrypoint verification: `pip install .` from source checkout, console entrypoint `tube-bridge` verified, then PyPI build/metadata/upload and clean-environment installation verified (C3, P0)
-- [ ] No invented coverage percentages, SLAs, or CI claims
+- [x] Deterministic unit/contract tests with mocked upstreams (C2, P0)
+- [x] CI workflow configured; hosted run explicitly pending authorized push (C2, P0)
+- [x] Existing `test_tools.py` retained as optional/manual evidence, not the CI gate
+- [x] All 16 registered tool schemas/help/dispatch covered
+- [x] Isolated wheel install, console entrypoint, installed MCP, artifacts and metadata verified (C3, P0)
+- [x] No invented coverage percentages, SLAs, hosted CI or publication claims
 
-**Test Hash:** — *(no hash — automated test suite not yet written)*
+**Test Hash:** `.brainops/methodology/frozen-tests/frozen-tdd-wi-00028-core-publication-001-python.json` (10 files; Station hash verification PASS)
 
 ---
 

@@ -1,7 +1,7 @@
 # Project Vision — tube-bridge
 
 **Last updated:** 2026-08-08
-**Status:** MIT self-hosted individual MCP. Railway is a disposable try-before-install demo. Full-publication readiness not yet accepted.
+**Status:** MIT self-hosted individual MCP. Core release candidate accepted locally; external publication and disposable-demo hardening remain separately gated.
 
 ## North Star
 
@@ -103,16 +103,16 @@ Grabbit is a completely separate MCP. There is no connector, dependency, shared 
 
 A browser extension is outside this project's scope and release gate. It must not be architected, planned, or documented here.
 
-## Known Code/Docs Inconsistencies
+## Core Release-Candidate Evidence
 
-These are documented readiness issues requiring source correction; they should not be interpreted as current facts:
-
-- `tube_bridge/server.py` line 20: `HELP_TEXT` defines numeric `"tools": 11` but the duplicate `"tools"` key on line 28 (an 11-entry object listing 10 interaction tools + help) overwrites the numeric value at runtime. The help list omits the 5 corpus tools. `list_tools()` registers 16 tools (10 YouTube interaction + 5 corpus + 1 help). Source correction needed.
-- `tube_bridge/__init__.py` docstring (lines 1–5) claims "10 tools." Source correction needed.
-- `pyproject.toml` line 17: console entrypoint `tube-bridge = "server:main"` requires `pip install` verification before any PyPI publication claim.
+- One runtime `TOOL_CATALOG` defines all 16 tools and derives HELP metadata; stale 10/11-tool claims are removed.
+- The packaged synchronous entrypoint is `tube_bridge.cli:main`.
+- Ten frozen Python test files produce 125 passing tests without changing the frozen hash.
+- Isolated wheel install, installed CLI/MCP handshake, wheel+sdist, `twine check`, SHA-256 dependency lock, and actual Docker authenticated MCP handshake pass.
+- Verification: `.brainops/methodology/verification/verification-WI-00028-python-local.json`; independent audit: `.brainops/methodology/audits/2026-08-08T10-12-45-292Z-6cc43e19-codex/station-codex-audit.json`.
 
 ## Publication Readiness
 
-- **Full-publication readiness is not yet accepted.** Full open-source distribution means GitHub release, PyPI package, Docker image, and documented demo. Readiness remains unaccepted until source/test/package verification.
+- **Local core release candidate is accepted; external full publication is not yet accepted.** Push, hosted CI, tag, GitHub Release, PyPI upload, and Docker registry publication require explicit Operator authorization.
 - Architecture direction recorded in `docs/adr/001-demo-api-quota-and-product-boundary.md`.
 - No production-ready promise, no coverage percentage, no SLA, no pricing, no launch venue, no legal conclusion is asserted.

@@ -91,7 +91,7 @@ Both databases live under the same configurable directory but are distinct files
 python3 test_tools.py          # live smoke script only
 ```
 
-`test_tools.py` is a live smoke script that exercises search, video_info, trending, and transcript against real YouTube. It is **not** an automated acceptance suite and does not cover all 16 tools. No CI pipeline is currently configured. Source/test changes require independent verification and acceptance before merge.
+`test_tools.py` remains an optional live smoke. The acceptance suite is the frozen `tests/` tree: 125 deterministic tests covering all 16 tools, package/install, SQLite lifecycle, real MCP transport, and Docker. `.github/workflows/ci.yml` is configured; hosted evidence requires an authorized push.
 
 ## Operational Guardrails
 
@@ -112,20 +112,19 @@ python3 test_tools.py          # live smoke script only
 
 ### Source/Test Changes
 - Source and test changes require corresponding tests and independent acceptance.
-- `test_tools.py` is a smoke script; extending test coverage is a P1 readiness item.
+- `test_tools.py` is an optional live smoke; the frozen deterministic suite is the acceptance authority.
 - Verify against runtime source (`tube_bridge/server.py` `list_tools()`) before citing tool counts.
 
 ### Publication Readiness
 - **Full-publication readiness is not yet accepted.** Do not claim PyPI publication, completed CI, production acceptance, one-click deployment, legal compliance, or any production-ready promise.
 - Documented readiness issues (P0/P1/P2) are tracked in `docs/planning/PUBLICATION_READINESS.md`.
 
-## Known Code Inconsistencies (Readiness Issues)
+## Core Release-Candidate State
 
-These are documented for correction; do not cite them as current facts:
-
-1. `tube_bridge/server.py` line 20: `HELP_TEXT` defines numeric `"tools": 11` but the duplicate `"tools"` key on line 28 (an 11-entry object listing 10 interaction tools + help) overwrites the numeric value at runtime. The help list omits the 5 corpus tools. `list_tools()` registers 16 tools (10 YouTube interaction + 5 corpus + 1 help).
-2. `tube_bridge/__init__.py` docstring (line 3) claims "10 tools."
-3. `pyproject.toml` line 17: console entrypoint `tube-bridge = "server:main"` requires `pip install` verification before any PyPI publication claim.
+1. `TOOL_CATALOG` is the single runtime source for 16 registered tools and derived HELP metadata.
+2. Package documentation states 16 tools.
+3. The installed synchronous entrypoint is `tube_bridge.cli:main`; isolated wheel install and MCP runtime are verified.
+4. Frozen suite, Docker handshake, build/twine and independent audit pass. External publication remains Operator-gated.
 
 ## Key Docs
 

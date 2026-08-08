@@ -203,7 +203,7 @@ python3 server.py --http --port 8080 --host 0.0.0.0
 - **Disposable Railway demo** — `tube-bridge-production.up.railway.app` is a try-before-install demo only. Not a SaaS or managed product.
 - **Demo Data API access** uses an isolated Google Cloud project with server-side configuration, completely separate from Operator personal/development keys. Exactly 5 Data API v3 operations per client/IP. Exhaustion affects only the disposable demo.
 - **Demo corpus TTL** — corpora created on the demo are automatically deleted 10 minutes after creation. No persistent volume, backups, accounts, or durable transcript/corpus hosting.
-- **No PyPI publication, CI pipeline, or production-ready claims.** `test_tools.py` is a live smoke script, not an automated acceptance suite.
+- **Core release candidate verified locally, not externally published.** The frozen 125-test suite, clean wheel install, installed CLI/MCP, Docker handshake, wheel+sdist and twine checks pass. CI is configured; no PyPI upload, tag, hosted CI receipt, or registry publication is claimed.
 
 ### Full Publication Scope
 Full open-source distribution means: GitHub release, PyPI package, Docker image, and documented demo. Readiness remains unaccepted until source/test/package verification is complete.
@@ -225,7 +225,7 @@ Full open-source distribution means: GitHub release, PyPI package, Docker image,
 python3 test_tools.py
 ```
 
-This is a live smoke script that exercises search, video_info, trending, and transcript against real YouTube. It validates that the tool pipeline works end-to-end but is not an automated acceptance suite. No CI pipeline is currently configured.
+This remains an optional live smoke against YouTube. Formal acceptance uses `python3 -m pytest tests -q`; the frozen suite contains 125 deterministic tests. GitHub Actions CI is configured but requires an authorized push before a hosted run can be cited.
 
 ## Known Limitations
 

@@ -1,7 +1,7 @@
 # Publication Readiness Checklist — tube-bridge
 
 **Last updated:** 2026-08-08
-**Status:** Decision-ready table for Operator/Architect review. Full-publication readiness is not yet accepted. Commercial extension and Grabbit connector surfaces removed per ADR-001.
+**Status:** Core release candidate accepted locally under frozen TDD. External full-publication readiness is not yet accepted: push, remote CI, tag, GitHub Release, PyPI upload, and Docker registry publication require a separate Operator gate.
 
 ## How to Read This Table
 
@@ -31,11 +31,11 @@ The following conditions permanently block any publication that would violate th
 
 | # | Area | Priority | Status | Owner Role | Evidence / Exit Criterion |
 |---|------|:---:|--------|------------|---------------------------|
-| C1 | HELP_TEXT / package-docstring count drift | P0 | Open | Architect | `tube_bridge/server.py` line 20: numeric `"tools": 11` is overwritten by an 11-entry runtime `"tools"` list (lines 28–51) that omits 5 corpus tools. No separate numeric count field exists. `tube_bridge/__init__.py` docstring line 3 claims "10 tools." Target: 10 YouTube interaction + 5 corpus + 1 help = 16. Both must be corrected to reflect the authoritative count of 16 registered in `list_tools()`. |
-| C2 | Deterministic tests and CI | P0 | Open | Operator | Deterministic unit/contract tests with mocked upstreams (must not depend on live YouTube). CI pipeline running on PRs. Existing `test_tools.py` 4-tool live smoke retained as optional manual integration evidence, not the sole CI gate. |
-| C3 | Installation, entrypoint, and registry verification | P0 | Open | Architect | `pip install .` verified from source checkout. Console entrypoint `tube-bridge = "server:main"` (`pyproject.toml` line 17) verified. PyPI build, metadata, upload, and clean-environment install verified for the full-publication target. |
+| C1 | HELP_TEXT / package-docstring count drift | P0 | Resolved | Architect | `TOOL_CATALOG` is the single runtime registry for 16 tools; HELP metadata is derived from it and package docs state 16. Frozen tool/schema/dispatch tests pass. |
+| C2 | Deterministic tests and CI | P0 | Local Resolved / Remote CI Pending | Operator | 125 frozen deterministic tests pass, including SQLite lifecycle, actual MCP handshakes and Docker. `.github/workflows/ci.yml` is configured; a green hosted run requires the separately authorized push. |
+| C3 | Installation, entrypoint, and registry verification | P0 | Local Resolved / Publication Pending | Architect | Packaged synchronous `tube_bridge.cli:main`, isolated wheel install, installed CLI/MCP handshake, wheel+sdist build and `twine check` pass. Actual PyPI upload is an external release action. |
 | C4 | Independent docs audit | P0 | Resolved | Auditor | Current corrected-model Station Codex audit passed: `.brainops/methodology/audits/2026-08-08T06-30-02-732Z-f614f821-codex/station-codex-audit.json`. It verifies continuation-safe documentation coherence only; it does not accept source, tests, package, demo implementation, or publication. Two intermediate FAIL receipts (`2026-08-08T06-24-15-276Z-76db5398` and `2026-08-08T06-26-29-240Z-6941e798`) were remediated and retained as audit trail. The older independent report is explicitly marked historical/superseded. |
-| C5 | Release configuration and license review | P0 | Open | Architect | `pyproject.toml` reviewed for publication readiness (version, metadata, dependencies, classifiers). MIT license file present and accurate. No bundled secrets. |
+| C5 | Release configuration and license review | P0 | Resolved | Architect | PEP 517/setuptools metadata, MIT license, bounded MCP compatibility, full SHA-256 runtime lock, reproducible Docker consumption, and no bundled auth values verified. |
 
 ## Launch Surface 2: Disposable Try-Before-Install Demo
 
@@ -72,8 +72,8 @@ The following conditions permanently block any publication that would violate th
 - **Demo decisions resolved (ADR-001):** Isolated Google Cloud project separate from personal use; exactly 5 Data API operations per client/IP; corpora auto-delete 10 minutes after creation; no persistent volume, accounts, backups, durable transcripts, SaaS, or managed hosting. Implementation remains open.
 - **README and architecture sync:** Complete. README.md, PROJECT_VISION.md, docs/constitution/02_ARCHITECTURE.md, and 01_SYSTEM_CONTEXT.md are synchronized with shipped source.
 - **Official doc audit:** Current corrected-model PASS at `.brainops/methodology/audits/2026-08-08T06-30-02-732Z-f614f821-codex/station-codex-audit.json`; C4 resolved for documentation coherence only. Source/test/package/demo/publication gates remain independent and open.
-- **Deterministic tests and CI:** Pending (C2, P0).
-- **Install/entrypoint/package route:** Pending (C3, P0).
+- **Deterministic tests and CI:** 125 local frozen tests PASS; hosted CI pending authorized push (C2).
+- **Install/entrypoint/package route:** local artifact/CLI/MCP/twine verification PASS; external publication pending (C3).
 - **Full-publication readiness remains unaccepted.**
 - **Active Station items:** WI-00027 (documentation synchronization), DIR-004-publication-productization (TME operating map direction).
 - **ADR-001:** Accepted as architecture direction; not launch approval.

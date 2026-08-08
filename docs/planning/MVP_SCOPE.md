@@ -74,8 +74,8 @@ Total tools registered in `tube_bridge/server.py` `list_tools()`: **10 YouTube i
 | Separate cache.db / corpus.db | **Shipped** | `tube_bridge/cache.py` line 13, `tube_bridge/corpus.py` line 15 (source-verified) |
 | Local embedding inference | **Shipped** | `tube_bridge/corpus.py` uses fastembed; inference code present in source (source-verified; formal runtime acceptance open) |
 | Railway demo exists | **Deployed** | Confirmed endpoint deployed |
-| Automated test suite / CI | **Not shipped** | Core C2 P0. `test_tools.py` is a 4-unique-tool live smoke script (search, video_info, trending, transcript); no full suite, no CI pipeline configured |
-| PyPI / install / entrypoint verification | **Unverified** | Core C3 P0. `pyproject.toml` exists with console entrypoint `tube-bridge = \"server:main\"`; source install, entrypoint, PyPI build/metadata/upload, and clean-environment install are not yet verified |
+| Automated test suite / CI | **Local verified; hosted run pending push** | Core C2: 125 frozen deterministic tests pass and GitHub Actions is configured. `test_tools.py` remains optional live smoke |
+| PyPI / install / entrypoint verification | **Local verified; upload pending** | Core C3: packaged `tube_bridge.cli:main`, isolated wheel install, installed MCP runtime, wheel+sdist and twine checks pass; no PyPI upload claimed |
 | Demo public access controls | **Decision resolved, not implemented** | Demo D1–D2 P0. Per ADR-001: dedicated GCP project, exactly 5 Data API ops per client/IP. Enforcement not deployed |
 | Observability and monitoring | **Decision resolved, not implemented** | Demo D3 P0. Counters/errors for 5-op limit and 10-min TTL. Not deployed |
 | Policy / privacy / retention | **Decision resolved, implementation open** | Demo D4 P0. Per ADR-001: no persistent volume, accounts, backups, or durable transcript/corpus hosting. A concise demo data-handling/deletion notice is required; the transient model does not waive applicable privacy, copyright, or YouTube policy obligations |
@@ -111,13 +111,13 @@ The following items are verified against source code (`tube_bridge/` package). I
 
 ### Core Library Acceptance Gate (Independent of Demo)
 
-Core library acceptance (Surface 1) requires C1–C5 P0 evidence. C4 is resolved by the current corrected-model PASS receipt at `.brainops/methodology/audits/2026-08-08T06-30-02-732Z-f614f821-codex/station-codex-audit.json`. This resolves documentation coherence only and does not imply runtime/source/test/package/demo acceptance. C1, C2, C3, C5 remain unresolved. Core can be accepted independently of the disposable demo. Existing GitHub availability is not revoked.
+Core release-candidate acceptance (Surface 1) has local evidence for C1–C5. External publication remains independently Operator-gated: hosted CI, tag, GitHub Release, PyPI upload and Docker registry push are not yet claimed. Core remains independent of the disposable demo.
 
-- [ ] C1: HELP_TEXT / package-docstring count drift corrected to reflect 16 tools (P0)
-- [ ] C2: Deterministic tests and CI — unit/contract tests with mocked upstreams; CI pipeline running on PRs (P0)
-- [ ] C3: Installation, entrypoint, and publication verification — `pip install .` from source checkout; console entrypoint `tube-bridge` verified; PyPI build/metadata/upload and clean-environment install verified (P0)
-- [x] C4: Independent docs audit — corrected-model PASS at `.brainops/methodology/audits/2026-08-08T06-30-02-732Z-f614f821-codex/station-codex-audit.json`. Docs coherence verified; runtime/source/test/package/demo/publication acceptance remains separate. (P0)
-- [ ] C5: Release configuration and license review — `pyproject.toml` reviewed for publication; MIT license accurate; no bundled secrets (P0)
+- [x] C1: one authoritative 16-tool catalog, derived HELP metadata and corrected package docs (P0)
+- [x] C2: 125 frozen deterministic tests PASS and CI workflow configured; hosted run pending authorized push (P0)
+- [x] C3: isolated wheel install, synchronous console entrypoint, installed MCP runtime, wheel+sdist and twine PASS; upload pending (P0)
+- [x] C4: independent documentation and implementation audits PASS (P0)
+- [x] C5: package metadata, bounded/public dependencies, exact SHA-256 lock, Docker consumption, MIT license and secret exclusion verified (P0)
 
 ### Disposable Demo Acceptance Gate (Independent of Core)
 
