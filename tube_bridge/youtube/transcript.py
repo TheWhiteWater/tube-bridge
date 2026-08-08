@@ -1,4 +1,4 @@
-"""tube-bridge — YouTube transcript extraction (youtube-transcript-api)."""
+"""tube-bridge - YouTube transcript extraction (youtube-transcript-api)."""
 
 import os
 from typing import Any
@@ -30,12 +30,15 @@ def get_transcript(video_id: str, lang: str | None = None) -> tuple[list[dict], 
     """Get transcript segments. Returns (segments, language_code, is_generated).
     Prioritizes manual subtitles over auto-generated (ASR)."""
     api = _get_api()
+    last_error: Exception | None = None
 
     def _try_fetch(transcript_obj) -> list[dict] | None:
+        nonlocal last_error
         try:
             fetched = transcript_obj.fetch()
             return [{"text": s.text, "start": s.start, "duration": s.duration} for s in fetched]
-        except Exception:
+        except Exception as e:
+            last_error = e
             return None
 
     try:
@@ -52,19 +55,27 @@ def get_transcript(video_id: str, lang: str | None = None) -> tuple[list[dict], 
             if segments:
                 return segments, t.language_code, t.is_generated
 
-    except (TranscriptsDisabled, NoTranscriptFound):
-        pass
-    except Exception:
-        pass
+    except (TranscriptsDisabled, NoTranscriptFound) as e:
+        last_error = e
+    except Exception as e:
+        last_error = e
 
     try:
         languages = [lang] if lang else None
         transcript = api.fetch(video_id, languages=languages)
         segments = [{"text": s.text, "start": s.start, "duration": s.duration} for s in transcript]
         return segments, lang or "unknown", False
-    except Exception:
-        pass
+    except Exception as e:
+        last_error = e
 
+    # A confirmed "this video has no captions" (TranscriptsDisabled/NoTranscriptFound) is
+    # indistinguishable, otherwise, from every other failure mode (IP block, network error,
+    # proxy misconfiguration) -- all of which used to collapse into the same generic message.
+    # Surface the real cause whenever it's something other than a confirmed absence of captions.
+    if last_error is not None and not isinstance(last_error, (TranscriptsDisabled, NoTranscriptFound)):
+        raise RuntimeError(
+            f"No transcript found for video {video_id}: {type(last_error).__name__}: {last_error}"
+        ) from last_error
     raise RuntimeError(f"No transcript found for video {video_id}")
 
 
@@ -81,5 +92,11 @@ def get_available_languages(video_id: str) -> list[dict]:
                 "is_generated": t.is_generated,
             })
         return langs
-    except Exception:
+    except (TranscriptsDisabled, NoTranscriptFound):
         return []
+    except Exception as e:
+        # Same distinction as get_transcript: don't let a block/network failure masquerade
+        # as "this video simply has no captions" (an empty list looks identical to callers).
+        raise RuntimeError(
+            f"Could not list transcript languages for video {video_id}: {type(e).__name__}: {e}"
+        ) from e
