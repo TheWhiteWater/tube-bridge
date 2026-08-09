@@ -18,11 +18,11 @@ Users deploy their own instance and own credentials, storage, quota, retention, 
 | # | Area | Priority | Status | Evidence / Exit Criterion |
 |---|---|:---:|---|---|
 | C1 | Tool/help/schema consistency | P0 | Resolved | One `TOOL_CATALOG` defines exactly 16 tools and derived help metadata. |
-| C2 | Deterministic tests and CI | P0 | In verification | Original 125-test core freeze plus five ADR-003 retirement tests pass locally/through Station; final hosted Python 3.12/3.13 CI for the transition is pending. |
+| C2 | Deterministic tests and CI | P0 | Resolved | Original 125-test core freeze plus five ADR-003 retirement tests pass locally/through Station; source CI `31296821898` and final docs CI `31297316331` pass on Python 3.12/3.13. |
 | C3 | Packaging and installed runtime | P0 | Resolved | Wheel/sdist, twine, isolated install, synchronous CLI, installed MCP runtime and exact dependency lock pass. |
 | C4 | Container distribution | P0 | Resolved | Public GHCR image and authenticated MCP handshake pass. |
 | C5 | Secret and license review | P0 | Resolved | MIT license; no bundled API/proxy/Bearer credentials. |
-| C6 | Documentation alignment | P0 | In verification | Public docs must describe self-hosting only and ADR-003 as active. |
+| C6 | Documentation alignment | P0 | Resolved | Six bounded documentation packs independently pass with self-hosting only and ADR-003 active. |
 | C7 | Historical release metadata | P1 | Resolved | Functional `v1.0.0` remains unyanked and explicitly metadata-superseded by current `v1.0.2`. |
 
 ## No-Go Conditions
@@ -35,7 +35,7 @@ Users deploy their own instance and own credentials, storage, quota, retention, 
 
 ## Private Operator Railway
 
-The existing Railway service is personal infrastructure, not a launch surface. Final WI-00060 deployment verification is pending:
+The existing Railway service is personal infrastructure, not a launch surface. Deployment `dd031af0-de10-49ff-aca8-97c7dc00e1fe` is privately verified:
 
 - static `TUBE_BRIDGE_AUTH_KEY` protects MCP routes;
 - OAuth/demo/trusted-proxy variables are absent;

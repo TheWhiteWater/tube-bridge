@@ -33,7 +33,7 @@
 
 ## Block D — Verification
 
-**Status:** Complete for published core; WI-00060 final verification pending
+**Status:** Complete
 
 - original 125-test core freeze;
 - five-test self-hosted-only retirement contract;
@@ -43,7 +43,7 @@
 
 ## Block E — Documentation and Release History
 
-**Status:** In synchronization under WI-00060
+**Status:** Complete
 
 - self-hosting-only public language;
 - current release `v1.0.2`;
@@ -53,7 +53,7 @@
 
 ## Block F — Retire Hosted Demo and OAuth
 
-**Status:** In verification
+**Status:** Complete
 
 ### Completed
 
@@ -64,14 +64,14 @@
 - [x] Core transport/API/server behavior restored while preserving transcript fix.
 - [x] Corpus schema compatibility retained while demo TTL behavior removed.
 
-### Remaining
+### Final Evidence
 
-- [ ] Independent source audit.
-- [ ] Bounded documentation audits.
-- [ ] Hosted CI.
-- [ ] Deploy simplified source to private Railway.
-- [ ] Verify unauthenticated `401`, authenticated MCP initialize, no OAuth routes and no demo health surface.
-- [ ] Cancel/supersede WI-00047 and WI-00057; close WI-00060.
+- [x] Independent source audit PASS.
+- [x] Six bounded documentation audit packs PASS.
+- [x] Source and final-doc hosted CI PASS.
+- [x] Simplified source deployed privately as `dd031af0-de10-49ff-aca8-97c7dc00e1fe`.
+- [x] Unauthenticated `401`, authenticated MCP initialize/help, Pi extension, absent OAuth routes and exact non-demo health surface verified.
+- [ ] Station status finalization: cancel/supersede WI-00047 and WI-00057, then close WI-00060.
 
 ## Dependency Graph
 

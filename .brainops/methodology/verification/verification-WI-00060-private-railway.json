@@ -1,0 +1,41 @@
+{
+  "kind": "tube_bridge.private_operator_railway_verification",
+  "created_at": "2026-08-09T05:47:33.449783+00:00",
+  "deployment_id": "dd031af0-de10-49ff-aca8-97c7dc00e1fe",
+  "source_commit": "0acc86b4f5ac2efb3d2b938ff9069e5fcdd29c51",
+  "checks": {
+    "retired_variable_names_absent": [
+      "TUBE_BRIDGE_CLIENT_IP_HEADER",
+      "TUBE_BRIDGE_DEMO_MODE",
+      "TUBE_BRIDGE_OAUTH_INVITES_JSON",
+      "TUBE_BRIDGE_OAUTH_SIGNING_KEY",
+      "TUBE_BRIDGE_PUBLIC_BASE_URL",
+      "TUBE_BRIDGE_TRUSTED_PROXY_HOPS",
+      "TUBE_BRIDGE_TRUST_PROXY_HEADERS"
+    ],
+    "static_bearer_preserved": true,
+    "upstream_key_and_proxy_preserved": true,
+    "health_exact_private_surface": {
+      "status": "ok",
+      "server": "tube-bridge",
+      "tools": 16,
+      "auth": "enabled"
+    },
+    "unauthenticated_mcp_status": 401,
+    "oauth_routes_with_valid_bearer": [
+      404,
+      404,
+      404,
+      404,
+      404
+    ],
+    "authenticated_initialize_status": 200,
+    "authenticated_help_status": 200,
+    "pi_extension_new_process_connected": true
+  },
+  "non_claims": [
+    "Private Operator infrastructure, not a public endpoint or demo.",
+    "No credentials or variable values included.",
+    "No browser Claude compatibility claim."
+  ]
+}

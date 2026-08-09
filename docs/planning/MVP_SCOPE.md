@@ -1,6 +1,6 @@
 # MVP Scope — tube-bridge
 
-**Status:** Self-hosted core shipped and published; ADR-003 retirement transition in verification.
+**Status:** Self-hosted core shipped and published; ADR-003 retirement transition verified.
 
 ## Included
 
@@ -56,7 +56,7 @@ Thirteen are keyless-capable. Three require the user's `YOUTUBE_API_KEY`.
 | cache/corpus SQLite lifecycle | Shipped | Core SQLite tests plus ADR-003 compatibility contract |
 | packaging and installed CLI | Published | Wheel/sdist/twine, isolated install and PyPI checks |
 | container | Published | GHCR pull and MCP handshake |
-| self-hosted-only retirement | In verification | Five-test frozen WI-00060 contract |
+| self-hosted-only retirement | Verified | Five-test frozen WI-00060 contract, independent source/docs audits, hosted CI and private Railway receipt |
 
 ## Definition of Done
 
@@ -67,7 +67,7 @@ Thirteen are keyless-capable. Three require the user's `YOUTUBE_API_KEY`.
 - [x] GitHub, PyPI and GHCR publication.
 - [x] Original 125-test core freeze.
 - [x] ADR-003 accepted and 5-test retirement contract frozen.
-- [ ] Final source/docs audits, hosted CI and private Railway verification for WI-00060.
+- [x] Final source/docs audits, hosted CI and private Railway verification for WI-00060.
 
 ## Public Product Statement
 
