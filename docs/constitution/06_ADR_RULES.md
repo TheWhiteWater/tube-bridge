@@ -53,9 +53,9 @@ Decisions are role-based, not tied to any specific agent identity:
 | ADR | Status | Title | Supersedes |
 |-----|--------|-------|------------|
 | [ADR-001](../adr/001-demo-api-quota-and-product-boundary.md) | **Accepted** | Demo API Access, Quota Boundary, and Self-Hosted Product Boundary | — |
-| [ADR-002](../adr/002-demo-oauth-test-identity.md) | **Accepted for frozen-TDD implementation** | Demo OAuth Compatibility and Pseudonymous Test Identity | — |
+| [ADR-002](../adr/002-demo-oauth-test-identity.md) | **Accepted** | Demo OAuth Compatibility and Pseudonymous Test Identity | — |
 
-ADR-001 records the accepted architecture direction for demo access, quota boundaries, and the self-hosted product boundary. ADR-002 authorizes an optional OAuth compatibility addendum for the same Disposable Demo surface; it does not create a third product surface, account system, or quota identity. An accepted ADR is architecture direction, **not launch approval**. Per-surface/addendum acceptance requires all relevant P0 items in `docs/planning/PUBLICATION_READINESS.md` to be resolved, plus Operator/Architect sign-off. The existing Core Full Publication and Bearer-protected Disposable Demo remain accepted while WI-00047's OAuth addendum is pending. There is no commercial extension, product gateway, or Grabbit connector surface.
+ADR-001 records the accepted architecture direction for demo access, quota boundaries, and the self-hosted product boundary. ADR-002 authorizes an optional OAuth compatibility addendum for the same Disposable Demo surface; it does not create a third product surface, account system, or quota identity. The ADR-002 source and Railway protocol handshake are implemented and independently verified, but an accepted ADR is architecture direction, **not launch approval**: real Claude Custom Connector UI acceptance and Operator/Architect sign-off remain before WI-00047/D7 can close. The existing Core Full Publication and Bearer-protected Disposable Demo remain accepted while that addendum gate is pending. There is no commercial extension, product gateway, or Grabbit connector surface.
 
 ## ADR Lifecycle
 

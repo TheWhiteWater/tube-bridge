@@ -56,13 +56,19 @@ docker run --rm -p 8080:8080 ghcr.io/thewhitewater/tube-bridge:latest
 - **`/mcp`** — Streamable HTTP (recommended for remote deployments)
 - **`/sse`** — SSE (legacy; deprecated)
 - **`/health`** — Health check (always open)
+- **OAuth discovery/flow** — Optional `/.well-known/oauth-*` and `/oauth/*` routes when configured
 - **stdio** — Direct child process for local MCP clients
 
 ### Optional Auth
 
-Set `TUBE_BRIDGE_AUTH_KEY` to enable Bearer-token protection on all remote routes except `/health` (/mcp, /sse, /messages). The `/health` endpoint remains open. If not set, open access (for local dev).
+Remote HTTP supports two deployment-level mechanisms; `/health` remains public:
 
-MCP client config with auth:
+1. **Static Bearer** — set `TUBE_BRIDGE_AUTH_KEY`. Header-capable clients send `Authorization: Bearer <key>` to `/mcp`, `/sse`, or `/messages`.
+2. **Invite-gated OAuth** — set all of `TUBE_BRIDGE_PUBLIC_BASE_URL`, `TUBE_BRIDGE_OAUTH_SIGNING_KEY`, and `TUBE_BRIDGE_OAUTH_INVITES_JSON`. The server exposes Authorization Code + PKCE `S256`, protected-resource/authorization-server discovery, and a deprecated DCR compatibility path for clients such as Claude Custom Connector. Invite records contain only unique SHA-256 digests and assign a pseudonymous `operator` or `tester` role.
+
+OAuth is fail-closed on partial or malformed configuration, issues eight-hour access tokens without refresh tokens, and keeps five-minute authorization state/codes only in process memory. Roles affect aggregate observability only; they do not bypass or reset the Railway-observed-IP Data API allowance. If neither mechanism is configured, self-hosted HTTP remains open as before. Never place `TUBE_BRIDGE_AUTH_KEY` in an OAuth Client Secret field.
+
+Header-capable client config:
 ```json
 {
   "mcpServers": {
@@ -76,6 +82,8 @@ MCP client config with auth:
   }
 }
 ```
+
+For a Claude Custom Connector, enter only `https://your-app.example.com/mcp` and leave OAuth Client ID/Secret empty so discovery and public-client registration can run. The browser authorization page then asks for a separately provisioned high-entropy invite code.
 
 ## YouTube Data API v3 (Optional)
 
@@ -110,7 +118,8 @@ tube_bridge/
 ├── server.py          # MCP wiring: tool registration + dispatch
 ├── tools.py           # All tool implementations (async, cached, retry)
 ├── cli.py             # Runtime selection: stdio or HTTP
-├── transport.py       # Streamable HTTP + SSE ASGI routes, auth, identity, health
+├── transport.py       # Streamable HTTP + SSE routes, auth dispatch, identity, health
+├── oauth.py           # Optional invite-gated OAuth/DCR/PKCE adapter and role metrics
 ├── cache.py           # Persistent SQLite cache (cache.db) for transcripts + video metadata
 ├── corpus.py          # Semantic search (corpus.db, sqlite-vec + fastembed)
 └── youtube/
@@ -143,13 +152,16 @@ railway up --service tube-bridge --detach
 # Set in Railway dashboard → Variables:
 #   YOUTUBE_API_KEY  (uses isolated demo GCP project, separate from Operator keys)
 #   TUBE_BRIDGE_PROXY (recommended for transcripts from datacenter IPs)
-#   TUBE_BRIDGE_AUTH_KEY (optional, protects all remote routes except /health)
+#   TUBE_BRIDGE_AUTH_KEY (optional static Bearer; preserved for Pi/header clients)
+#   TUBE_BRIDGE_PUBLIC_BASE_URL=https://your-app.example.com
+#   TUBE_BRIDGE_OAUTH_SIGNING_KEY (optional; at least 32 high-entropy bytes)
+#   TUBE_BRIDGE_OAUTH_INVITES_JSON (optional; operator/tester records with SHA-256 digests only)
 #   TUBE_BRIDGE_DEMO_MODE=1
 #   TUBE_BRIDGE_TRUST_PROXY_HEADERS=1
 #   TUBE_BRIDGE_CLIENT_IP_HEADER=x-real-ip
 ```
 
-**Active demo controls:** exactly 5 attempted Data API v3 operations per observed client IP for the current process lifetime; the sixth receives a structured rejection. Keyless operations do not consume the allowance. Railway's overwritten `X-Real-IP` is the trusted identity source; client-supplied `X-Forwarded-For` is not trusted on the production demo. Counters are salted/HMAC-keyed and memory-only, with no time reset; a process restart resets them.
+**Active demo controls:** exactly 5 attempted Data API v3 operations per observed client IP for the current process lifetime; the sixth receives a structured rejection. Keyless operations do not consume the allowance. Railway's overwritten `X-Real-IP` is the trusted identity source; client-supplied `X-Forwarded-For` is not trusted on the production demo. Counters are salted/HMAC-keyed and memory-only, with no time reset; a process restart resets them. The optional OAuth protocol is deployed with separate Operator and external-Tester invites; its live DCR/PKCE/MCP handshake, static-Bearer coexistence, aggregate role deltas, and unchanged quota counters are verified. Real Claude UI connector acceptance remains a separate final gate.
 
 **Demo data handling:** the application does not write raw client IPs to its SQLite files or application access logs, and `/health` exposes aggregate counters only. There are no accounts, persistent volumes, or backups. Corpus content and vectors are stored only on ephemeral deployment storage. Frozen clocks prove transactional deletion at the persisted 600-second deadline; non-invasive live sampling first observed complete absence 1.577 seconds after that deadline. Self-hosted mode is unchanged and persistent by default.
 
@@ -212,6 +224,7 @@ python3 server.py --http --port 8080 --host 0.0.0.0
 - **Disposable Railway demo** — `tube-bridge-production.up.railway.app` is a controlled try-before-install demo only. Not a SaaS or managed product.
 - **Disposable-demo P0 controls are active and accepted.** The production deployment enforces the 5-operation process-lifetime allowance from Railway-overwritten `X-Real-IP`, uses privacy-preserving memory-only counters, has no volume/backups/accounts, and uses a persisted 600-second corpus deadline with deterministic deadline deletion and live absence observed at the first +1.577-second sample.
 - **Published self-hosted core.** GitHub Release, PyPI package, and public GHCR image are live. Frozen 125-test core acceptance, clean install, installed CLI/MCP, Docker handshake, wheel+sdist, twine, and hosted CI checks pass.
+- **OAuth addendum is deployed but separately gated.** Deterministic source/security contracts, hosted CI, and the live Railway OAuth handshake pass. Do not claim Claude Custom Connector UI acceptance until the real connector completes authorization and a tool call.
 
 ### Full Publication Scope
 The self-hosted core is fully published through GitHub Release, PyPI, and GHCR. The separately gated disposable Railway demo now has accepted quota, privacy, restart-reset, and corpus-retention controls. Neither surface carries an SLA or managed-hosting promise. Conditional quota-extension and proxy-reliability work is reviewed before broad announcement and at its documented usage/availability triggers; Railway persistence/backups is N/A while the demo remains no-volume and non-durable.
@@ -226,6 +239,7 @@ The self-hosted core is fully published through GitHub Release, PyPI, and GHCR. 
 - `PROJECT_VISION.md` — product boundaries, tool baseline, open-core scope.
 - `docs/planning/PUBLICATION_READINESS.md` — readiness checklist (P0/P1/P2 items, no-go gates).
 - `docs/adr/001-demo-api-quota-and-product-boundary.md` — architecture direction for demo isolation, fixed 5-operation limit, 10-minute corpus TTL, self-hosted boundary, and full-publication scope.
+- `docs/adr/002-demo-oauth-test-identity.md` — optional OAuth compatibility, invite roles, privacy, and unchanged IP-quota boundary.
 
 ## Testing
 
@@ -233,7 +247,7 @@ The self-hosted core is fully published through GitHub Release, PyPI, and GHCR. 
 python3 test_tools.py
 ```
 
-This remains an optional live smoke against YouTube. Formal acceptance uses `python3 -m pytest tests -q`; the current frozen suite contains 209 deterministic tests. Hosted GitHub Actions CI passes on Python 3.12 and 3.13.
+This remains an optional live smoke against YouTube. Formal acceptance uses `python3 -m pytest tests -q`; the current cumulative suite contains 273 deterministic tests: the original 125-test core freeze, the accepted demo/race/identity contracts, and the 64-test OAuth addendum. Hosted GitHub Actions CI passes on Python 3.12 and 3.13.
 
 ## Known Limitations
 

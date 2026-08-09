@@ -1,9 +1,10 @@
 # ADR-002: Demo OAuth Compatibility and Pseudonymous Test Identity
 
-**Status:** Accepted for frozen-TDD implementation  
-**Date:** 2026-08-09  
-**Authority:** Operator/Architect  
+**Status:** Accepted
+**Date:** 2026-08-09
+**Authority:** Operator/Architect
 **WorkItem:** WI-00047
+**Implementation state:** Source, deterministic, hosted-CI, and live Railway protocol gates pass; real Claude Custom Connector UI acceptance and final sign-off remain.
 
 ## Context
 
@@ -113,7 +114,7 @@ It exposes no invite IDs, client IDs, subject values, tokens, authorization code
 
 ### Positive
 
-- Claude Custom Connector can use the Railway MCP through its native OAuth flow.
+- The Railway MCP exposes the native OAuth protocol flow required for Claude Custom Connector compatibility; real Claude UI acceptance remains a separate gate.
 - Pi and header-capable clients continue using the existing static Bearer key.
 - Operator and external tester traffic are distinguishable through privacy-preserving aggregates.
 - Unique invite codes can be issued and revoked by changing Railway configuration without adding accounts.

@@ -28,8 +28,8 @@ tube-bridge (modular Python package)
   ├── tube_bridge/cli.py           — Canonical synchronous installed entrypoint: stdio or HTTP
   ├── tube_bridge/server.py        — Single 16-tool catalog, MCP registration, HELP derivation + dispatch
   ├── tube_bridge/tools.py         — All tool implementations (async, cached, dual-source)
-  ├── tube_bridge/transport.py     — HTTP/SSE ASGI routes, current Bearer routing + /health
-  ├── tube_bridge/oauth.py         — planned WI-00047 OAuth adapter; not implemented or deployed yet
+  ├── tube_bridge/transport.py     — HTTP/SSE ASGI routes, static/OAuth dispatch + /health
+  ├── tube_bridge/oauth.py         — Optional invite-gated OAuth/DCR/PKCE adapter + role aggregates
   ├── tube_bridge/cache.py         — Persistent SQLite cache (cache.db)
   ├── tube_bridge/corpus.py        — Semantic search (corpus.db, sqlite-vec + fastembed)
   └── tube_bridge/youtube/
@@ -58,17 +58,17 @@ tube-bridge supports three transports, all built from the same MCP server instan
 
 `tube_bridge/transport.py` builds the HTTP/SSE ASGI routes (`/mcp`, `/sse`, `/messages`, `/health`); CLI runtime selection owns stdio.
 
-ADR-002 accepts the following **planned WI-00047 protocol endpoints; they are not active until frozen-TDD implementation and deployment acceptance**:
+ADR-002 defines the following optional protocol endpoints. They are implemented and active on the Railway demo; full WI-00047 acceptance still requires a real Claude Custom Connector authorization and tool call:
 - `/.well-known/oauth-protected-resource` and `/.well-known/oauth-protected-resource/mcp`
 - `/.well-known/oauth-authorization-server`
 - `/oauth/register`, `/oauth/authorize`, and `/oauth/token`
 
 Authorization boundaries:
-- **Current `/health`** — Always open. Returns tool count, auth status, and existing demo aggregates. WI-00047 must add only aggregate operator/tester counts after its separate gate passes.
-- **Current static Bearer compatibility** — `TUBE_BRIDGE_AUTH_KEY` protects `/mcp`, `/sse`, and `/messages`; WI-00047 must preserve it and classify it as Operator traffic.
-- **Planned optional OAuth compatibility** — ADR-002 authorizes Authorization Code + mandatory PKCE `S256`, dynamic MCP client registration, and deployment-issued invite codes for pseudonymous `operator`/`tester` subjects. Discovery/authorization/token routes will be public protocol surfaces; dynamic registration alone grants no MCP access.
-- **Planned fail-closed remote routes** — After WI-00047 acceptance, if static Bearer or OAuth is configured, protected routes require one valid access mechanism. If neither is configured, self-hosted HTTP remains open as before.
-- **Quota separation** — OAuth roles are observability-only and must not replace Railway-observed IP identity or change ADR-001's five-operation process-lifetime allowance.
+- **`/health`** — Always open. Returns tool/auth status, existing demo quota aggregates, and aggregate-only Operator/Tester/unique-OAuth-subject counts.
+- **Static Bearer compatibility** — `TUBE_BRIDGE_AUTH_KEY` protects `/mcp`, `/sse`, and `/messages` and is classified as Operator traffic.
+- **Optional OAuth compatibility** — Complete OAuth configuration enables Authorization Code + mandatory PKCE `S256`, a deprecated dynamic-registration compatibility path, and deployment-issued invites for pseudonymous `operator`/`tester` subjects. Discovery/authorization/token routes are public protocol surfaces; registration alone grants no MCP access.
+- **Fail-closed remote routes** — If static Bearer or OAuth is configured, protected routes require one valid access mechanism. Partial OAuth configuration fails app creation. If neither mechanism is configured, self-hosted HTTP remains open as before.
+- **Quota separation** — OAuth roles are observability-only and do not replace Railway-observed IP identity or change ADR-001's five-operation process-lifetime allowance.
 
 ## Outbound Sources & Trust Boundaries
 
@@ -106,6 +106,6 @@ tube-bridge makes outbound calls to three distinct sources. All API keys, tokens
 ## Product Boundaries
 
 - **Core (MIT self-hosted)** — All 16 MCP tools, all transports, all cache/corpus logic. Zero registration for 13 tools. Users bring their own `YOUTUBE_API_KEY` for the 3 API-dependent tools.
-- **Demo (Railway, disposable)** — Controlled try-before-install endpoint at `tube-bridge-production.up.railway.app`, not SaaS or managed hosting. WI-00029 accepted isolated server-side configuration, Railway-overwritten `X-Real-IP`, exactly 5 attempted Data API operations per observed IP/process, memory-only privacy-preserving counters, 10-minute transactional corpus deletion, and no volume/backups/accounts/durable hosting. ADR-002 permits an independently gated OAuth compatibility layer with invite-backed pseudonymous test roles; it does not add accounts, persistence, quota bypass, or managed identity.
+- **Demo (Railway, disposable)** — Controlled try-before-install endpoint at `tube-bridge-production.up.railway.app`, not SaaS or managed hosting. WI-00029 accepted isolated server-side configuration, Railway-overwritten `X-Real-IP`, exactly 5 attempted Data API operations per observed IP/process, memory-only privacy-preserving counters, 10-minute transactional corpus deletion, and no volume/backups/accounts/durable hosting. The separately gated ADR-002 adapter is now deployed and live-protocol verified with invite-backed pseudonymous test roles; it adds no accounts, persistence, quota bypass, or managed identity. Real Claude UI acceptance remains pending.
 - **Grabbit (separate MCP)** — Completely separate MCP. No connector, dependency, shared service, code integration, or implementation roadmap exists between tube-bridge and Grabbit. An example agent usage sequence may show the agent using tube-bridge to find videos and then separately using Grabbit to save links — that is the full extent of any documented relationship.
 - **Browser extension** — Outside this project's scope and release gate. Not architected, planned, or documented here.

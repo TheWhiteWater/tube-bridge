@@ -233,6 +233,22 @@ Deletes per-corpus vector table, all chunks, added-video records, and the corpus
 
 ---
 
+## Optional OAuth Process-Memory Model
+
+OAuth adds no SQLite table or durable identity record. `tube_bridge/oauth.py` uses these bounded deployment/process structures:
+
+- **Invite configuration:** up to 64 unique `{id, role, secret_sha256}` records. `role` is exactly `operator` or `tester`; only lowercase SHA-256 digests are configured. Plaintext invite codes are provisioning material, not application state.
+- **Stateless client ID:** HMAC-authenticated payload containing version, issuance time, and the exact registered redirect URI strings. It grants no access by itself.
+- **Pending authorization request:** random request ID → five-minute `exp`, canonical `iss`/resource, signed client ID, exact redirect, unchanged state, PKCE challenge, and CSRF value. Memory-only and purged on expiry.
+- **One-time authorization code:** random opaque key → the same issuer/client/redirect/resource/PKCE binding plus role and keyed opaque subject. Memory-only, five-minute expiry, and removed before token validation so even a failed exchange consumes it.
+- **Access token:** stateless HMAC-authenticated payload with version, exact `iss`/`aud`, opaque `sub`, role, scope `mcp:tools`, `iat`, eight-hour `exp`, and random `jti`. No refresh token exists.
+- **Authenticated principal:** in-request `{role, subject | None, method}`. The static Bearer maps to `operator` with no OAuth subject.
+- **Health aggregates:** process-memory Operator request count, Tester request count, and a set-derived unique OAuth subject count. `/health` exposes only counts, never subject/client/invite/token/code/redirect values.
+
+OAuth identity and demo quota identity are deliberately separate. The OAuth subject is never persisted or mapped to a raw/hashed client IP; ADR-001 accounting continues to use only the trusted Railway-observed IP bucket.
+
+---
+
 ## Storage Schema
 
 ### cache.db

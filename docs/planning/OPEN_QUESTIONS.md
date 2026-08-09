@@ -35,17 +35,17 @@ Unresolved questions and blocking decisions. Resolved historical questions recor
 **Evidence:** `tube_bridge/server.py` `list_tools()` registers `youtube_search_channels`; `tube_bridge/tools.py` `search_channels()` delegates to `api.search_channels()`.
 
 ### Q7: Claude connector authorization and tester distinction
-**Status:** Architecture resolved by ADR-002; implementation pending WI-00047.
+**Status:** Architecture/source/deployment resolved; real Claude UI acceptance pending WI-00047.
 **Owner:** Operator/Architect.
-**Resolution:** Keep the existing static Bearer path for Pi/header-capable clients and add an optional deployment-only OAuth Authorization Code + PKCE adapter for Claude Custom Connector. Dynamic client registration does not grant access; a high-entropy deployment invite selects a pseudonymous `operator` or `tester` role. No accounts, durable identities, quota bypass, or identity vendor is introduced. Canonical OAuth URLs come only from `TUBE_BRIDGE_PUBLIC_BASE_URL`; malformed/partial OAuth configuration fails startup. Registration and form bounds, token lifetime, redirect validation, and aggregate-counting semantics are fixed in ADR-002.
-**Gate:** Do not claim the OAuth endpoints or Claude connector are active until frozen tests, independent source audit, Railway handshake, and real connector acceptance pass.
-**Evidence:** ADR-002; WI-00047; current Claude failure is `/sse` without a header while authenticated Pi `/mcp` succeeds.
+**Resolution:** Keep the existing static Bearer path for Pi/header-capable clients and add an optional deployment-only OAuth Authorization Code + PKCE adapter for Claude Custom Connector. Dynamic client registration does not grant access; a high-entropy deployment invite selects a pseudonymous `operator` or `tester` role. No accounts, durable identities, quota bypass, or identity vendor is introduced. Canonical OAuth URLs come only from `TUBE_BRIDGE_PUBLIC_BASE_URL`; malformed/partial OAuth configuration fails startup. Registration/form bounds, token lifetime, exact redirect/resource/issuer binding, and aggregate-counting semantics follow ADR-002.
+**Gate:** OAuth endpoints may be described as active and protocol-verified, but do not claim Claude Custom Connector acceptance until the real UI authorizes and completes a tool call. The stale Claude Code `/sse` entry without a header is a separate local-client cleanup item.
+**Evidence:** ADR-002; authoritative 64-test frozen contract `e1d13f36`; source `acc7cf3`; independent source audit PASS; CI `31289547358`; Railway deployment `3667c56f-4487-435b-b8b4-b45ec2d5619c`; live OAuth/PKCE/role/static-Bearer receipt `verification-WI-00047-railway-oauth-live.json`.
 
 ---
 
 ## Blocking Questions (Resolved)
 
-All four original blocking questions are resolved per ADR-001. WI-00028 accepted core publication and WI-00029 accepted demo implementation/live controls. ADR-002 resolves the decisions for the optional Claude OAuth addendum, but WI-00047 remains an implementation gate for that new client surface; it does not revoke existing core or Bearer-demo acceptance.
+All four original blocking questions are resolved per ADR-001. WI-00028 accepted core publication and WI-00029 accepted demo implementation/live controls. ADR-002's optional OAuth source and Railway protocol flow are now implemented and verified; WI-00047 remains open only for real Claude UI acceptance and final sign-off. This does not revoke existing core or demo acceptance.
 
 ### B1: Consumer identity and usage budgets
 **Status:** Resolved and Implemented.
@@ -69,7 +69,7 @@ All four original blocking questions are resolved per ADR-001. WI-00028 accepted
 **Status:** Core Publication Resolved.
 **Owner:** Operator/Architect.
 **Resolution:** ADR-001 decision #7 is complete for both independent surfaces: GitHub Release, PyPI and public GHCR for self-hosted core; controlled Railway deployment for the disposable demo.
-**Exit evidence:** Core 125-test freeze, package/registry receipts, cumulative 209-test hosted CI, demo lifecycle/audits, and live Railway identity/quota/restart/TTL receipts pass.
+**Exit evidence:** Core 125-test freeze, package/registry receipts, accepted 209-test demo baseline, current cumulative 273-test hosted CI, demo lifecycle/audits, and live Railway identity/quota/restart/TTL receipts pass.
 
 ---
 

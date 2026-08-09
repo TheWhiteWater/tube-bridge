@@ -1,0 +1,41 @@
+{
+  "kind": "tube_bridge.wi47_railway_oauth_live_verification",
+  "version": "1.0",
+  "created_at": "2026-08-09T02:19:27.006855+00:00",
+  "deployment_id": "3667c56f-4487-435b-b8b4-b45ec2d5619c",
+  "source_commit": "acc7cf3d38726cdb1051b26df604041328995863",
+  "endpoint": "https://tube-bridge-production.up.railway.app/mcp",
+  "checks": {
+    "health_public": true,
+    "rfc9728_root_and_path_discovery": true,
+    "rfc8414_authorization_server_metadata": true,
+    "rfc9207_issuer_on_callback": true,
+    "dcr_public_client": true,
+    "authorization_code_pkce_s256": true,
+    "operator_invite_flow": true,
+    "tester_invite_flow": true,
+    "oauth_mcp_initialize": true,
+    "static_bearer_coexistence": true,
+    "unauthenticated_challenge": true,
+    "aggregate_role_deltas": {
+      "operator_requests": 2,
+      "tester_requests": 1,
+      "unique_oauth_subjects": 2
+    },
+    "quota_counters_unchanged_by_auth_handshake": true,
+    "demo_limit_unchanged": 5,
+    "corpus_ttl_unchanged_seconds": 600,
+    "health_secret_scan": "pass",
+    "application_log_secret_scan": "pass"
+  },
+  "initialize_statuses": {
+    "operator_oauth_initialize": 200,
+    "tester_oauth_initialize": 200,
+    "static_bearer_initialize": 200
+  },
+  "non_claims": [
+    "No claim about Railway edge logs.",
+    "No real Claude UI connector acceptance in this receipt.",
+    "No account, durable identity, quota bypass, or managed hosting added."
+  ]
+}

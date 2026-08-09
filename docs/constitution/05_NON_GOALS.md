@@ -47,7 +47,7 @@ Grabbit is a completely separate MCP. There is no connector, dependency, shared 
 
 The following are **not promised** until their respective readiness gates are passed (tracked in `docs/planning/PUBLICATION_READINESS.md`):
 
-- **Unlimited public demo access** — explicitly excluded. The currently accepted disposable demo is bounded to 5 attempted Data API operations per Railway-observed IP/process and uses the static Operator Bearer key. If WI-00047 later passes its separate gate, invite-authorized OAuth access tokens become an additional accepted transport credential; until then they are not claimed active. OAuth roles must not bypass or reset the IP allowance.
+- **Unlimited public demo access** — explicitly excluded. The accepted disposable demo remains bounded to 5 attempted Data API operations per Railway-observed IP/process. Static Operator Bearer and the deployed invite-authorized OAuth protocol are transport credentials, not quota identities; OAuth roles cannot bypass or reset the IP allowance. Real Claude Custom Connector UI acceptance is still required before the OAuth addendum is marked fully accepted.
 - **YouTube Data API quota beyond default allocation** — no additional allocation beyond the default has been documented as requested or granted. YouTube's official docs identify the audit/extension process; no purchasable quota tier was identified.
 - **Legal clearance** — no legal review, copyright compliance assessment, or terms-of-service analysis has been completed. Users are responsible for their own compliance.
 - **Proxy reliability** — the `TUBE_BRIDGE_PROXY` feature is operational, but no uptime SLA, throughput guarantee, or reliability promise is made for any specific proxy service.

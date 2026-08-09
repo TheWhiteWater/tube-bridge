@@ -20,6 +20,7 @@
 | [PUBLICATION_READINESS.md](planning/PUBLICATION_READINESS.md) | Two-surface readiness checklist with gates |
 | [OPEN_QUESTIONS.md](planning/OPEN_QUESTIONS.md) | Resolved questions and blocking decisions |
 | [ADR-001](adr/001-demo-api-quota-and-product-boundary.md) | Demo API access, quota boundary, self-hosted product boundary |
+| [ADR-002](adr/002-demo-oauth-test-identity.md) | Optional OAuth compatibility and pseudonymous Operator/Tester identity |
 | [v1.0.0 metadata hygiene audit](audits/2026-08-09-v1.0.0-release-metadata-hygiene.md) | Historical release disposition and public verification |
 
 ## Tool Inventory
@@ -33,9 +34,9 @@ Search, video_info, and trending upgrade to higher-quality Data API v3 results w
 
 ## State
 
-- **Architecture:** ADR-001 accepted and implemented — demo API identity/quota, 10-minute corpus boundary, and self-hosted product separation.
-- **Current WorkItems:** WI-00027 documentation synchronization, WI-00028 core publication, WI-00029 disposable-demo hardening, and WI-00034 release metadata hygiene are complete.
+- **Architecture:** ADR-001 is accepted/implemented for demo identity/quota/TTL and product separation. ADR-002 is accepted/implemented for optional OAuth compatibility without changing quota identity or adding accounts.
+- **Current WorkItems:** WI-00027 documentation synchronization, WI-00028 core publication, WI-00029 disposable-demo hardening, and WI-00034 release metadata hygiene are complete. WI-00047 remains active only for real Claude Custom Connector UI acceptance/final sign-off; WI-00049 records audited frozen-harness corrections.
 - **TME direction:** DIR-004-publication-productization is complete; there is no active P0 direction.
 - **Core publication:** Accepted and externally verified through GitHub Release, PyPI, public GHCR, hosted CI, clean install, and registry-image MCP checks. Historical `v1.0.0` remains functional and unyanked but is explicitly marked superseded for release metadata by current `v1.0.2`.
-- **Disposable demo:** Independently accepted D1–D5 P0 controls: Railway-overwritten identity, 5 attempted Data API operations/IP/process, aggregate privacy-preserving observability, no durable storage, and transactional 10-minute corpus deletion. Conditional P1 operations remain triaged. No commercial extension, product gateway, Grabbit connector, or browser-extension roadmap exists.
+- **Disposable demo:** Independently accepted D1–D5 P0 controls: Railway-overwritten identity, 5 attempted Data API operations/IP/process, aggregate privacy-preserving observability, no durable storage, and transactional 10-minute corpus deletion. The optional OAuth adapter is source-audited, CI-green and live-protocol verified with Operator/Tester invites and static-Bearer coexistence; real Claude UI acceptance remains pending. Conditional P1 operations remain triaged. No commercial extension, product gateway, Grabbit connector, or browser-extension roadmap exists.
 - **Last updated:** 2026-08-09

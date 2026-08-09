@@ -47,7 +47,7 @@
 
 **Exit Criteria:**
 - [x] 3 transports (stdio, `/mcp`, `/sse`) plus `/messages` handler and `/health` route implemented in source
-- [x] Bearer auth implemented in `tube_bridge.transport`: protects every remote route except `/health`
+- [x] Static Bearer auth implemented in `tube_bridge.transport`: protects `/mcp`, `/sse`, and `/messages`; `/health` and enabled OAuth protocol endpoints are intentionally public
 - [x] Railway demo endpoint deployed
 - [x] Isolated wheel installation and packaged `tube_bridge.cli:main` entrypoint verified (C3, P0)
 - [x] Public hardening: Railway-overwritten identity, 5-operation enforcement, privacy-preserving aggregates and 10-minute corpus TTL accepted (D1–D5, P0)
@@ -120,7 +120,7 @@
 **What:** Frozen automated suite, CI configuration, package/install/entrypoint verification, exact dependency lock and Docker runtime acceptance for the self-hosted core.
 
 **Current State:**
-- The original core freeze remains 125 deterministic tests; the cumulative source/demo suite is 209 deterministic tests. `test_tools.py` remains an optional network-dependent smoke.
+- The original core freeze remains 125 deterministic tests; the accepted demo baseline reached 209 tests and the current cumulative suite including the 64-test OAuth addendum is 273 deterministic tests. `test_tools.py` remains an optional network-dependent smoke.
 - GitHub Actions CI passes on Python 3.12 and 3.13.
 - `tube_bridge.cli:main` is verified locally and from a clean PyPI installation.
 - Wheel+sdist, `twine check`, exact SHA-256 lock, SQLite cleanup, public GHCR pull, health/auth and authenticated MCP handshake pass.
@@ -142,13 +142,13 @@
 
 ### Block F: Disposable Demo Implementation
 
-**Status:** Complete — D1–D5 P0 accepted; D6 remains conditional P1
+**Status:** D1–D5 P0 accepted; D6 remains conditional P1; D7 OAuth source/live protocol complete with real Claude UI gate pending
 
-**What:** Controlled try-before-install demo with isolated server-side upstream configuration, exactly 5 attempted Data API operations per observed IP/process, aggregate observability, a published disposable-data boundary, and transactional 10-minute corpus deletion. No persistent volume, accounts, backups, durable hosting, SaaS, or managed-hosting promise.
+**What:** Controlled try-before-install demo with isolated server-side upstream configuration, exactly 5 attempted Data API operations per observed IP/process, aggregate observability, a published disposable-data boundary, transactional 10-minute corpus deletion, and an optional invite-gated OAuth compatibility addendum. No persistent volume, accounts, backups, durable hosting, SaaS, managed identity, or managed-hosting promise.
 
 **Depends on:** Blocks A, B, C (complete)
 
-**Evidence:** Frozen-TDD manifests for WI-00029 and its bounded race/identity addenda; 209 deterministic tests; hosted Python 3.12/3.13 CI; independent source audits; live Railway one-bucket spoof probe, five-allow/sixth-reject result, restart reset, no-volume deployment manifest, known-IP log absence, and non-invasive SQLite TTL inspection.
+**Evidence:** Frozen-TDD manifests for WI-00029 and its bounded race/identity addenda; accepted 209-test demo baseline; hosted Python 3.12/3.13 CI; independent source audits; live Railway one-bucket spoof probe, five-allow/sixth-reject result, restart reset, no-volume deployment manifest, known-IP log absence, and non-invasive SQLite TTL inspection. WI-00047 adds authoritative OAuth hash `e1d13f36`, source `acc7cf3`, CI `31289547358`, independent source PASS, and live deployment `3667c56f-4487-435b-b8b4-b45ec2d5619c` protocol/role/static-Bearer evidence.
 
 **Exit Criteria:**
 - [x] Isolated Google Cloud project provisioned with server-side upstream config (P0, D1)
@@ -157,8 +157,10 @@
 - [x] Self-hosted boundary and disposable demo data-handling notice documented (P0, D4)
 - [x] 10-minute corpus deletion implemented, race-hardened, deterministically tested and live-observed (P0, D5)
 - [ ] YouTube API Services audit/quota-extension path (P1 conditional; non-blocking until the documented threshold is reached)
+- [x] Optional OAuth discovery/DCR/PKCE, exact bindings, invite roles, aggregate privacy, static-Bearer coexistence and unchanged IP quota pass source/CI/live-protocol gates (D7)
+- [ ] Real Claude Custom Connector UI authorization and tool call plus final Operator/Architect sign-off (D7 final gate)
 
-**Test Hashes:** `.brainops/methodology/frozen-tests/frozen-tdd-wi-00029-demo-hardening-001-python.json` plus WI-00037, WI-00039 and WI-00041 addendum manifests (all Station hash verification PASS).
+**Test Hashes:** `.brainops/methodology/frozen-tests/frozen-tdd-wi-00029-demo-hardening-001-python.json` plus WI-00037, WI-00039 and WI-00041 addendum manifests; OAuth authoritative manifest `.brainops/methodology/frozen-tests/frozen-20260809014528-test_oauth_contract.py.json` (all current hashes Station-verified).
 
 ---
 
@@ -176,7 +178,7 @@ A (Interaction Engine) ──→ B (Transports/Deploy)
 - B and C are parallel after A; both shipped.
 - D (docs sync) is complete; corrected-model Codex documentation audit passed.
 - E (tests/CI/package publication) is complete for the self-hosted core and depends on A, B, C.
-- F (disposable demo) depends on B and C; D1–D5 implementation and acceptance are complete.
+- F (disposable demo) depends on B and C; D1–D5 acceptance is complete. D7's OAuth implementation/protocol evidence passes, with only the real Claude UI/final-sign-off gate open.
 - No extension or Grabbit implementation items exist.
 
 ## Gates (Mandatory Checkpoints)
@@ -185,7 +187,8 @@ Final checkpoint state:
 - [x] ADR-001 records the architecture decisions; no additional ADR was triggered by mechanical hardening
 - [x] Evidence verified against shipped code, frozen tests, hosted CI, Operator decisions and live Railway probes
 - [x] Documentation updated for product scope, implementation and acceptance boundaries
-- [x] Publication readiness checklist reviewed; core and demo P0 gates closed, conditional demo P1 items retained
+- [x] Publication readiness checklist reviewed; core and original demo P0 gates closed, conditional demo P1 items retained
+- [ ] D7 OAuth addendum final acceptance: real Claude Custom Connector authorization/tool call and Operator/Architect sign-off
 
 ## Publication Readiness Authority
 

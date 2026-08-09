@@ -21,7 +21,8 @@ tube_bridge/
 ├── server.py          # MCP wiring: 16-tool registration (list_tools) + dispatch (call_tool)
 ├── tools.py           # All tool implementations (async, cached, dual-source)
 ├── cli.py             # Argument parsing and stdio-vs-HTTP runtime selection
-├── transport.py       # Streamable HTTP/SSE ASGI routes + Bearer auth + identity + health
+├── transport.py       # Streamable HTTP/SSE routing + static/OAuth auth + identity + health
+├── oauth.py           # Optional invite-gated OAuth/DCR/PKCE adapter + role aggregates
 ├── cache.py           # Persistent SQLite cache (cache.db) — transcript + video metadata tables
 ├── corpus.py          # Semantic search (corpus.db) — sqlite-vec vectors + fastembed (local)
 └── youtube/
@@ -75,7 +76,9 @@ Both databases live under the same configurable directory but are distinct files
 - **Streamable HTTP** (`/mcp`) — recommended for remote deployments.
 - **SSE** (`/sse`) — legacy, deprecated in favor of Streamable HTTP.
 - **`/health`** — always open, returns tool count and auth status.
-- **Optional Bearer auth** — `TUBE_BRIDGE_AUTH_KEY` env var protects all remote routes except `/health` (`/mcp`, `/sse`, `/messages`). Sourced by `_get_auth_key()` in `tube_bridge/transport.py`.
+- **Static Bearer auth** — `TUBE_BRIDGE_AUTH_KEY` protects `/mcp`, `/sse`, and `/messages`, remains valid for Pi/header-capable clients, and counts as Operator traffic.
+- **Optional OAuth** — the complete three-variable OAuth configuration enables public discovery/DCR/authorize/token routes and invite-gated Authorization Code + PKCE `S256`. Invite JSON stores SHA-256 digests only and assigns pseudonymous `operator`/`tester` roles. Partial configuration fails closed.
+- **Separation** — OAuth roles only affect aggregate auth metrics; they never bypass, reset, or replace ADR-001's Railway-observed-IP allowance. If neither auth mechanism is configured, self-host HTTP remains open.
 
 ## Conventions
 
@@ -92,7 +95,7 @@ Both databases live under the same configurable directory but are distinct files
 python3 test_tools.py          # live smoke script only
 ```
 
-`test_tools.py` remains an optional live smoke. The original core freeze is 125 tests; the cumulative acceptance tree is 209 deterministic tests covering all 16 tools, package/install, SQLite lifecycle/races, demo identity/quota/TTL, real MCP transport, and Docker. `.github/workflows/ci.yml` passes on Python 3.12 and 3.13.
+`test_tools.py` remains an optional live smoke. The original core freeze is 125 tests; the current cumulative acceptance tree is 273 deterministic tests, including the accepted demo/race/identity contracts and the separately frozen 64-test OAuth addendum. `.github/workflows/ci.yml` passes on Python 3.12 and 3.13.
 
 ## Operational Guardrails
 
@@ -100,15 +103,16 @@ python3 test_tools.py          # live smoke script only
 - `PROJECT_VISION.md` — product boundaries, tool baseline, open-core scope.
 - `docs/planning/PUBLICATION_READINESS.md` — per-surface readiness checklist; core publication and disposable-demo P0 controls are independently accepted.
 - `docs/adr/001-demo-api-quota-and-product-boundary.md` — accepted architecture and implementation outcome for demo access, quota/TTL, and product separation.
+- `docs/adr/002-demo-oauth-test-identity.md` — optional OAuth compatibility, invite roles, privacy, and unchanged quota identity.
 
 ### No Direct Client-Side Upstream Access Material
 - tube-bridge obtains optional API keys, tokens, and proxy URLs from environment variables at runtime.
-- Do NOT bundle, embed, commit, or ship any API key, secret, or access material in the repository.
+- Do NOT bundle, embed, commit, print, or ship any API key, OAuth signing key, plaintext invite, token, secret, or access material in the repository.
 - Prior README claims implying bundled credentials are stale and have been corrected.
 
 ### Core vs Demo vs Grabbit Boundary
 - **Core (MIT):** All 16 tools, all transports, cache/corpus logic — open source, zero registration for 13 tools.
-- **Demo (Railway, disposable):** Controlled try-before-install only. Active WI-00029 controls are exactly 5 attempted Data API operations per Railway-overwritten `X-Real-IP`/process, memory-only privacy-preserving counters, 10-minute transactional corpus deletion, and no durable storage/accounts/volume/backups. Never present this as SaaS, an SLA, or managed hosting.
+- **Demo (Railway, disposable):** Controlled try-before-install only. Active WI-00029 controls are exactly 5 attempted Data API operations per Railway-overwritten `X-Real-IP`/process, memory-only privacy-preserving counters, 10-minute transactional corpus deletion, and no durable storage/accounts/volume/backups. The WI-00047 OAuth adapter is deployed and live-protocol verified with Operator/Tester invites, but real Claude Custom Connector UI acceptance is still pending. Never present this as SaaS, an SLA, managed identity, or managed hosting.
 - **[Grabbit MCP](https://grabbitapp.com) (separate companion; endpoint `https://mcp.grabbitapp.com/api/mcp`):** Completely separate MCP. No connector, dependency, shared service, code integration, or implementation roadmap exists. An example agent usage sequence may show the agent using tube-bridge to find videos and then separately using Grabbit to save links — that is the full extent of any documented relationship.
 
 ### Source/Test Changes
@@ -119,7 +123,8 @@ python3 test_tools.py          # live smoke script only
 ### Publication Readiness
 - **Core publication is accepted:** GitHub Release, PyPI, public GHCR, hosted CI, external install and container MCP checks are recorded.
 - **Disposable-demo P0 is independently accepted:** frozen-TDD, hosted CI and live Railway identity/quota/restart/TTL evidence are recorded.
-- Do not extend either claim to a production SLA, legal conclusion, durable managed hosting, or one-click service promise. Conditional demo P1/P2 items remain tracked in `docs/planning/PUBLICATION_READINESS.md`.
+- **OAuth addendum is not yet fully accepted:** source audit, hosted CI and live Railway protocol evidence pass; a real Claude Custom Connector authorization and tool call remain mandatory before closing WI-00047/D7.
+- Do not extend any claim to a production SLA, legal conclusion, durable managed hosting, managed accounts, or one-click service promise. Conditional demo P1/P2 items remain tracked in `docs/planning/PUBLICATION_READINESS.md`.
 
 ## Core Release-Candidate State
 
@@ -136,6 +141,7 @@ python3 test_tools.py          # live smoke script only
 | Project Vision | PROJECT_VISION.md |
 | Publication Readiness | docs/planning/PUBLICATION_READINESS.md |
 | ADR-001 (Demo/Quota/Boundary) | docs/adr/001-demo-api-quota-and-product-boundary.md |
+| ADR-002 (OAuth/Test Identity) | docs/adr/002-demo-oauth-test-identity.md |
 | Architecture | docs/constitution/02_ARCHITECTURE.md |
 | Data Model | docs/constitution/03_DATA_MODEL.md |
 | Non-Goals | docs/constitution/05_NON_GOALS.md |

@@ -1,7 +1,7 @@
 # Project Vision — tube-bridge
 
 **Last updated:** 2026-08-09
-**Status:** MIT self-hosted individual MCP. Core v1 is published on GitHub, PyPI, and GHCR; the separately gated disposable-demo P0 controls are deployed and accepted.
+**Status:** MIT self-hosted individual MCP. Core v1 is published on GitHub, PyPI, and GHCR; disposable-demo P0 controls are accepted. The optional OAuth tester-identity addendum is deployed and protocol-verified, with real Claude Custom Connector UI acceptance still pending.
 
 ## North Star
 
@@ -45,9 +45,11 @@ The MCP server registers exactly 16 tools from `TOOL_CATALOG` via `tube_bridge/s
 
 ### Auth (optional)
 
-- `TUBE_BRIDGE_AUTH_KEY` env var enables Bearer-token protection on all remote routes except `/health` (/mcp, /sse, /messages).
-- If not set, open access (for local dev).
-- Source: `_get_auth_key()` and `_check_auth()` in `tube_bridge/transport.py`.
+- `TUBE_BRIDGE_AUTH_KEY` remains the static Bearer mechanism for Pi and other header-capable clients and is classified as Operator traffic.
+- Setting all three OAuth variables (`TUBE_BRIDGE_PUBLIC_BASE_URL`, `TUBE_BRIDGE_OAUTH_SIGNING_KEY`, `TUBE_BRIDGE_OAUTH_INVITES_JSON`) enables the invite-gated Authorization Code + PKCE adapter in `tube_bridge/oauth.py`. Partial or malformed configuration fails startup.
+- Dynamic registration alone grants no access. High-entropy invite digests select deployment-local pseudonymous `operator` or `tester` roles; authorization state/codes and role metrics are process-memory only.
+- OAuth roles are an aggregate observability dimension, not quota identity. ADR-001's five attempted Data API operations per Railway-observed IP/process remain unchanged.
+- If neither static Bearer nor OAuth is configured, self-hosted HTTP remains open for local development.
 
 ### Data API Client
 
@@ -62,8 +64,8 @@ The MCP server registers exactly 16 tools from `TOOL_CATALOG` via `tube_bridge/s
 
 ### Security Model
 
-- Code obtains optional values (API keys, tokens, proxy URLs) from environment variables at runtime.
-- No API key, secret, or access material is bundled, embedded, committed, or shipped in the repository.
+- Code obtains optional values (API keys, tokens, proxy URLs, OAuth signing material and invite digests) from environment variables at runtime.
+- No API key, plaintext invite, signing key, token, secret, or access material is bundled, embedded, committed, or shipped in the repository.
 - The publication policy forbids bundling such material; prior README claims implying bundled access material are stale and have been corrected.
 
 ## Demo Endpoint
@@ -71,7 +73,8 @@ The MCP server registers exactly 16 tools from `TOOL_CATALOG` via `tube_bridge/s
 - **Railway-hosted disposable demo:** `tube-bridge-production.up.railway.app`. This is solely a controlled try-before-install demo, never a SaaS or managed transcript-hosting product.
 - **Accepted controls:** exactly 5 attempted official Data API operations per Railway-observed client IP for the current process lifetime; memory-only salted/HMAC buckets; structured sixth-operation rejection; restart reset; persisted 600-second corpus deadlines with exact deterministic deletion and first live absence observation at +1.577 seconds.
 - **Trusted identity:** production uses Railway-overwritten `X-Real-IP`. A live adversarial probe varied both client-supplied `X-Real-IP` and `X-Forwarded-For`; all requests remained one observed bucket. Production does not trust client-controlled XFF.
-- **Retention/privacy:** no persistent volume, backups, accounts, or durable hosted corpus. Raw IPs are not stored in SQLite or application logs; `/health` exposes aggregate counters only. Self-hosted users remain unaffected and bring their own keys/storage.
+- **Retention/privacy:** no persistent volume, backups, accounts, or durable hosted corpus. Raw IPs are not stored in SQLite or application logs; `/health` exposes aggregate quota and role counters only. Self-hosted users remain unaffected and bring their own keys/storage.
+- **OAuth addendum:** Railway deployment `3667c56f-4487-435b-b8b4-b45ec2d5619c` serves public standards discovery plus invite-gated DCR/Authorization Code/PKCE. Live Operator OAuth, Tester OAuth, existing static Bearer, and MCP initialize checks pass without changing quota counters. This is not an account system, and real Claude UI connector acceptance remains a separate gate.
 - **No shared upstream access material** may be distributed to consumers.
 - IPRoyal residential proxy (`TUBE_BRIDGE_PROXY` env var, pay-as-you-go) is configured as the transcript bot-detection workaround; reliability remains a conditional operational concern rather than a durability promise.
 
@@ -114,7 +117,7 @@ A browser extension is outside this project's scope and release gate. It must no
 ## Disposable Demo Acceptance Evidence
 
 - Frozen-TDD source cycles cover allowance accounting at the Data API boundary, async/thread/MCP/SSE identity propagation, trusted-header fail-closed behavior, privacy, restart reconciliation, nearest-deadline cleanup, rollback, deadline-crossing races, worker recovery, and atomic expiry selection.
-- Current deterministic suite: 209 passing tests; hosted CI passes on Python 3.12 and 3.13.
+- The accepted demo baseline produced 209 passing tests. With the separately frozen 64-test OAuth addendum, the current cumulative suite is 273 deterministic tests; hosted CI passes on Python 3.12 and 3.13.
 - Live Railway probe: five operations allowed, structured sixth rejection, one bucket despite six spoofed `X-Real-IP`/XFF values; process restart reset all aggregate counters to zero.
 - Live non-invasive TTL probe: persisted deadline delta was exactly 600 seconds; Railway filesystem inspection first observed complete relational/vector deletion 1.577 seconds after the deadline without invoking a corpus API.
 - Railway deployment manifest shows no volume mount; application logs contained none of the known probe IP values.
@@ -123,6 +126,7 @@ A browser extension is outside this project's scope and release gate. It must no
 
 - **Self-hosted core publication is accepted.** GitHub Release, PyPI package, public GHCR image, hosted CI, and post-publication install/container receipts are present.
 - **Disposable demo P0 acceptance is separately complete.** It does not change the self-hosted core contract and provides no SLA, account continuity, durable storage, or managed-hosting promise.
+- **OAuth source and live protocol verification pass, but UI acceptance remains pending.** Do not mark WI-00047/D7 complete until a real Claude Custom Connector authorizes and completes a tool call.
 - **Conditional operations remain explicit:** D6/X1 quota-extension work is reviewed before broad announcement and when demand approaches default allocation; X2 proxy reliability is reviewed before broad announcement and on an Operator-observed availability-threshold breach; X3 persistence/backups is N/A while the demo remains no-volume and non-durable.
-- Architecture and implementation outcome are recorded in `docs/adr/001-demo-api-quota-and-product-boundary.md`.
+- Architecture and implementation outcomes are recorded in ADR-001 and `docs/adr/002-demo-oauth-test-identity.md`.
 - No coverage percentage, SLA, pricing, launch venue, or legal conclusion is asserted.

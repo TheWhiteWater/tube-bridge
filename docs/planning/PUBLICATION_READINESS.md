@@ -1,7 +1,7 @@
 # Publication Readiness Checklist — tube-bridge
 
 **Last updated:** 2026-08-09
-**Status:** The published self-hosted core and existing Bearer-protected disposable Railway demo remain accepted. The optional Claude Custom Connector OAuth addendum is architecture-approved but not implemented or accepted; WI-00047 is its separate gate.
+**Status:** The published self-hosted core and accepted disposable Railway demo remain unchanged. The optional Claude Custom Connector OAuth addendum is implemented, deployed, source-audited, CI-green, and live-protocol verified; WI-00047/D7 remains open only for real Claude connector UI authorization/tool-call acceptance and final sign-off.
 
 ## How to Read This Table
 
@@ -50,7 +50,7 @@ The following conditions permanently block any publication that would violate th
 | D4 | Policy, privacy, copyright, retention, and deletion | P0 | Resolved | Operator | README publishes the demo data-handling/deletion notice. The application never persists raw IPs; process-random salted HMAC buckets exist only in memory. Railway manifest has no volume; there are no backups/accounts/durable hosting promises. Applicable external policy obligations remain. |
 | D5 | Corpus exposure, persistence, and retention choice | P0 | Resolved | Operator | Deterministic clocks prove deletion at the persisted 600-second deadline; startup reconciliation, nearest-deadline worker, transactional relational/vector deletion, rollback and race tests pass. Non-invasive live sampling first observed complete absence 1.577 seconds after the deadline without invoking corpus APIs. Self-hosted storage remains persistent. |
 | D6 | YouTube API Services audit/quota-extension path | P1 | Acknowledged | Operator | Official audit/extension path is documented; no request or grant is claimed. Review before any broad demo announcement and immediately if demand approaches the default allocation; becomes P0 if the ceiling is hit first. |
-| D7 | Claude Custom Connector OAuth and test-role distinction | P0 for new OAuth surface | In Progress | Operator / Architect | ADR-002 accepted. WI-00047 must freeze and pass discovery, DCR, exact redirects, invite gate, PKCE, token security, canonical-origin/config validation, aggregate role metrics, Bearer/self-host regressions, Railway handshake, and real Claude connector acceptance. Existing Bearer demo acceptance is not revoked while D7 is pending. |
+| D7 | Claude Custom Connector OAuth and test-role distinction | P0 for OAuth addendum | Awaiting real connector acceptance | Operator / Architect | ADR-002 accepted. Authoritative frozen contract `e1d13f36` (64 tests), source commit `acc7cf3`, independent source PASS, CI run `31289547358`, and Railway deployment `3667c56f-4487-435b-b8b4-b45ec2d5619c` pass discovery, DCR, exact redirects, invite gate, PKCE, token/config security, aggregate role metrics, Bearer coexistence, unchanged quota counters, and live MCP initialize. Exit still requires a real Claude Custom Connector authorization and tool call. Existing demo acceptance is not revoked while D7 is pending. |
 
 ## Conditional / Cross-Surface Items
 
@@ -74,9 +74,9 @@ The following conditions permanently block any publication that would violate th
 - **Demo decisions implemented (ADR-001):** Isolated server-side setup; exactly 5 attempted Data API operations per Railway-observed IP/process; 10-minute corpus deadlines; no persistent volume, accounts, backups, durable hosting, SaaS, or managed hosting.
 - **README and architecture sync:** README, Project Vision, ADR-001 and planning state now describe active controls and their bounded evidence.
 - **Audit lineage:** Corrected-model/core receipts remain historical evidence. Demo frozen-TDD includes independent test/source audits plus Station verification, hosted CI and live Railway receipts.
-- **Deterministic tests and CI:** Core acceptance remains the original 125-test freeze; the cumulative suite is 209 deterministic tests with hosted Python 3.12/3.13 CI PASS.
+- **Deterministic tests and CI:** Core acceptance remains the original 125-test freeze. The accepted demo baseline reached 209 tests; the current cumulative suite including the separately frozen OAuth addendum is 273 deterministic tests with hosted Python 3.12/3.13 CI PASS.
 - **Install/entrypoint/package route:** PyPI install, CLI/MCP, artifacts/twine and public GHCR runtime PASS (C3).
-- **Both existing surfaces are accepted independently.** The demo acceptance adds no SLA, account continuity, managed-hosting, or durability claim. The optional OAuth connector is a separately gated addendum and is not yet claimed active.
+- **Both existing surfaces are accepted independently.** The demo acceptance adds no SLA, account continuity, managed-hosting, or durability claim. OAuth protocol endpoints are now active on the demo, but the connector addendum is not called fully accepted until the real Claude UI gate passes.
 - **Release history hygiene:** WI-00034 is complete. Functional PyPI `1.0.0` remains unyanked; GitHub `v1.0.0` now carries an explicit documentation-metadata supersession notice pointing to current `v1.0.2`.
-- **Station items:** WI-00028 core publication, WI-00029 demo hardening, and WI-00034 metadata hygiene are complete. WI-00047 is active for the optional OAuth connector addendum; conditional P1 items D6/X1/X2 remain triaged and non-blocking absent their documented thresholds.
+- **Station items:** WI-00028 core publication, WI-00029 demo hardening, and WI-00034 metadata hygiene are complete. WI-00047 is active with only real Claude connector acceptance/final sign-off remaining; WI-00049 records the audited frozen-harness corrections. Conditional P1 items D6/X1/X2 remain triaged and non-blocking absent their documented thresholds.
 - **ADR-001:** Accepted and implemented; lifecycle/live evidence, not the ADR alone, supplies demo acceptance.

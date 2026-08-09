@@ -41,7 +41,7 @@ Total tools registered in `tube_bridge/server.py` `list_tools()`: **10 YouTube i
 
 ### Auth
 
-- Optional Bearer-token protection on **every remote route except `/health`** via `TUBE_BRIDGE_AUTH_KEY` environment variable. This includes `/mcp`, `/sse`, and `/messages`. If the env var is not set, open access (local dev). `/health` is always open regardless of auth configuration.
+- Optional static Bearer protection on the three remote MCP routes (`/mcp`, `/sse`, `/messages`) via `TUBE_BRIDGE_AUTH_KEY`; `/health` is always public. When OAuth is enabled, its discovery, registration, authorization and token endpoints are intentionally public protocol routes while MCP routes remain protected. If neither auth mechanism is set, self-hosted HTTP remains open for local development.
 
 ### Data Sources
 
@@ -74,9 +74,10 @@ Total tools registered in `tube_bridge/server.py` `list_tools()`: **10 YouTube i
 | Separate cache.db / corpus.db | **Shipped** | Distinct `tube_bridge.cache.DB_PATH` and `tube_bridge.corpus.DB_PATH` authorities (source-verified) |
 | Local embedding inference | **Shipped** | `tube_bridge/corpus.py` uses fastembed; inference code present in source (source-verified; formal runtime acceptance open) |
 | Railway demo exists | **Deployed** | Confirmed endpoint deployed |
-| Automated test suite / CI | **Verified** | Core C2 retains its 125-test freeze; cumulative source/demo suite is 209 deterministic tests with hosted Python 3.12/3.13 CI PASS. `test_tools.py` remains optional live smoke |
+| Automated test suite / CI | **Verified** | Core C2 retains its 125-test freeze; the accepted demo baseline reached 209 tests and the current cumulative suite with the 64-test OAuth addendum is 273 deterministic tests with hosted Python 3.12/3.13 CI PASS. `test_tools.py` remains optional live smoke |
 | PyPI / install / entrypoint verification | **Published and verified** | Core C3: PyPI install, packaged `tube_bridge.cli:main`, installed MCP runtime, wheel+sdist/twine, and public GHCR runtime pass |
 | Demo public access controls | **Accepted** | Dedicated server-side config; Railway-overwritten `X-Real-IP`; one bucket across spoof attempts; exactly 5 allows and structured sixth rejection; restart reset |
+| Optional OAuth test identity | **Deployed; final UI gate pending** | Invite-gated DCR/Authorization Code/PKCE, Operator/Tester aggregates, static-Bearer coexistence and unchanged quota counters pass deterministic/source/CI/live-protocol gates; real Claude Custom Connector authorization/tool call remains |
 | Observability and monitoring | **Accepted** | Aggregate `/health` counters, structured policy errors, no raw identity persistence, application access log disabled; known probe identities absent from Railway application logs |
 | Policy / privacy / retention | **Accepted** | README data-handling notice; no persistent volume, accounts, backups, or durable hosting promise. Transient operation does not waive external policy obligations |
 | Corpus exposure and persistence mode | **Accepted** | Persisted 600-second deadline, nearest-deadline/reconciliation worker, transactional relational/vector deletion, deterministic race coverage, and live non-invasive deletion observation. Self-hosted storage remains persistent |
@@ -105,7 +106,8 @@ The following core items are verified against source, frozen tests, installed ar
 - [x] All 3 transports (stdio, `/mcp` Streamable HTTP, `/sse` legacy) plus `/messages` handler and `/health` route (source-verified)
 - [x] Separate `cache.db` and `corpus.db` implemented in source
 - [x] Local embedding inference (fastembed) implemented in source; formal runtime acceptance open
-- [x] Optional Bearer auth on every remote route except `/health` (source-verified via `_get_auth_key()`/`_check_auth()` in `tube_bridge.transport`)
+- [x] Static Bearer auth on `/mcp`, `/sse`, and `/messages` with public `/health` remains compatible
+- [x] Optional fail-closed OAuth/DCR/PKCE adapter, invite roles and aggregate-only auth metrics implemented and Railway protocol-verified
 - [x] Railway demo endpoint deployed
 - [x] MIT license; open-core source on GitHub
 
@@ -131,6 +133,7 @@ Disposable demo acceptance (Surface 2) has D1–D5 P0 evidence. D6 and X1–X2 r
 - [ ] D6/X1: YouTube audit/quota-extension path (P1 conditional); review before broad announcement and when demand approaches default allocation; becomes P0 if the ceiling is hit first
 - [ ] X2: Proxy reliability (P1 conditional); review before broad announcement and on an Operator-observed availability-threshold breach
 - [x] X3: Railway persistence/backups N/A for the accepted no-volume, non-durable demo
+- [ ] D7: OAuth source/CI/Railway handshake complete; real Claude Custom Connector UI authorization and tool call plus final sign-off remain
 
 ### Publication Scope
 
