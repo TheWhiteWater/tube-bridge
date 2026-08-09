@@ -455,12 +455,16 @@ class OAuthService:
                 raise ValueError()
             redirects = [self._validate_redirect(r) for r in redirects]
             name = data.get("client_name", "MCP client")
+            grant_types = data.get("grant_types", ["authorization_code"])
             if (
                 not isinstance(name, str)
                 or len(name) > MAX_CLIENT_NAME
                 or data.get("token_endpoint_auth_method", "none") != "none"
-                or data.get("grant_types", ["authorization_code"])
-                != ["authorization_code"]
+                or grant_types
+                not in (
+                    ["authorization_code"],
+                    ["authorization_code", "refresh_token"],
+                )
                 or data.get("response_types", ["code"]) != ["code"]
             ):
                 raise ValueError()

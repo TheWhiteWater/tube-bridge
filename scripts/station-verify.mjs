@@ -8,6 +8,7 @@ for (const path of [
   "tube_bridge/oauth.py",
   "tube_bridge/transport.py",
   "tests/test_oauth_contract.py",
+  "tests/test_oauth_claude_dcr_compat.py",
 ]) {
   const digest = createHash("sha256").update(readFileSync(path)).digest("hex");
   console.log(`sha256 ${digest}  ${path}`);
