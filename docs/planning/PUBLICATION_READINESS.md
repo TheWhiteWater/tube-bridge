@@ -1,7 +1,7 @@
 # Publication Readiness — tube-bridge
 
 **Last updated:** 2026-08-09
-**Status:** Self-hosted-only v1.0.3 is published. WI-00067 publication evidence is complete; terminal conformance and Station closure are pending.
+**Status:** Self-hosted-only v1.0.3 is published. WI-00067 is closed after final conformance PASS.
 
 ## Public Surface
 
@@ -22,7 +22,7 @@ Users deploy their own instance and own credentials, storage, quota, retention, 
 | C3 | Packaging and installed runtime | P0 | Resolved | PyPI/GitHub wheel and sdist share verified registry hashes; twine, complete-archive scan, clean install and installed MCP help/version/16-tool checks pass. |
 | C4 | Container distribution | P0 | Resolved | GHCR `1.0.3`, `1.0` and `latest` resolve to digest `sha256:e5a5a735501a5a9f7be5b6a4a66981c959e7736bd6303e9829e1484c27cbaf58`; pulled-image MCP help/version/16-tool checks pass. |
 | C5 | Secret and license review | P0 | Resolved | MIT license; no bundled API/proxy/Bearer credentials. |
-| C6 | Documentation alignment | P0 | Final gate | Three bounded v1.0.3 candidate packs pass; terminal post-publication sync/conformance remains before WI-00067 closure. |
+| C6 | Documentation alignment | P0 | Resolved | Bounded candidate and post-publication packs pass; final Station-built conformance `5e992014` accepts WI-00067 closure. |
 | C7 | Historical release metadata | P1 | Resolved | Functional history remains unyanked; the v1.0.2 GitHub release now identifies current `v1.0.3` as its superseding release. |
 
 ## No-Go Conditions
@@ -54,4 +54,4 @@ Its hostname and credentials are not published as a demo.
 
 ## Exit Rule
 
-WI-00067 closes only when C1–C7 are resolved, hosted branch and tag workflows are green, downloaded registry artifacts pass inspection, documentation audits pass, and the private Operator Railway remains closed. There is no second demo acceptance surface.
+C1–C7 are resolved: hosted branch/tag workflows are green, downloaded registry artifacts pass inspection, documentation/final conformance audits pass, and the private Operator Railway remains closed. There is no second demo acceptance surface.

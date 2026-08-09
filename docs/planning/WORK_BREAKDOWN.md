@@ -2,7 +2,7 @@
 
 **Active authority:** ADR-003
 **Completed transition:** WI-00060
-**Active release gate:** WI-00067
+**Completed release:** WI-00067
 
 ## Block A — Interaction Engine
 
@@ -34,18 +34,18 @@
 
 ## Block D — Verification
 
-**Status:** Complete through public v1.0.3; terminal WI-00067 conformance pending
+**Status:** Complete through accepted public v1.0.3
 
 - original 125-test core freeze;
 - five-test self-hosted-only retirement contract;
 - two-test private-endpoint help remediation;
 - five-test v1.0.3 artifact contract, including whole-wheel/sdist private-metadata scans;
 - local 137-test, build/twine, isolated install, Docker and MCP candidate checks pass;
-- hosted branch/tag runs `31302040564` and `31302178955` pass; terminal release conformance remains pending for WI-00067.
+- hosted branch/tag runs `31302040564` and `31302178955` pass; final conformance `5e992014` accepts WI-00067 closure.
 
 ## Block E — Documentation and Release History
 
-**Status:** v1.0.3 published; terminal WI-00067 conformance pending
+**Status:** Complete; v1.0.3 published and accepted
 
 - self-hosting-only public language;
 - current release `v1.0.3` is live on GitHub, PyPI and GHCR;
@@ -79,7 +79,7 @@
 
 ## Block G — Publish v1.0.3 Self-Hosted Artifacts
 
-**Status:** Publication complete; final conformance/Station closure pending
+**Status:** Complete; WI-00067 closed
 
 - [x] Operator authorized GitHub Release, PyPI and GHCR publication.
 - [x] Deterministic release contract and test-literal hygiene correction frozen and audited.
@@ -89,7 +89,7 @@
 - [x] Tag `v1.0.3`; release workflow publishes GitHub/PyPI/GHCR.
 - [x] Download/pull all public artifacts and verify version/help/16 tools/no private metadata.
 - [x] Append and verify the `v1.0.2` GitHub supersession notice without yanking history.
-- [ ] Terminal docs/TME/Station closure.
+- [x] Terminal docs/TME/Station closure.
 
 ## Dependency Graph
 

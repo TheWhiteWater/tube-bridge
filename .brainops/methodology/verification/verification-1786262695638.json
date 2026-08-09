@@ -1,0 +1,23 @@
+{
+  "ok": true,
+  "version": "0.1",
+  "kind": "brainops.methodology_verification",
+  "project": "tube-bridge",
+  "project_path": "/home/ali/Workspace/BrainOps/Projects/tube-bridge",
+  "command": [
+    "node",
+    "scripts/station-verify.mjs",
+    "--json"
+  ],
+  "command_ref": "node scripts/station-verify.mjs --json",
+  "status": "passed",
+  "exit_code": 0,
+  "signal": null,
+  "duration_ms": 9148,
+  "stdout_tail": "sha256 ad6017dd3fa55c68d1582c910b97f2a1912c04421f419bd695808697fcf8402a  tube_bridge/server.py\nsha256 618a79a899fe13656b5716264bfe3012e8ea3e9d9c2672dca0bddb3e663c7876  tube_bridge/transport.py\nsha256 27aa9a844639da84f140e35599b2d53a40694d44a32e6679f4f74b6e2beb654c  tube_bridge/corpus.py\nsha256 6736ffcb9ef89091214df11a6d641ea12f2a875d20c6bea70e85fb2d46724e86  tube_bridge/youtube/transcript.py\nsha256 d6c80f00450b42b9d8cc7f167bc5908be93d00c60529ebc2e78653b74167439c  tests/test_self_hosted_only_contract.py\nsha256 13f0ca65d6bf11b651af669f266f22e263370a20c889a1708a90824f94a1b41d  tests/test_private_endpoint_not_distributed.py\nsha256 c3583e5f98e26b355ac73c96405e0b0a46cb4176289ea752f55d9fa1e76eba0b  tests/test_v1_0_3_release_contract.py\nsha256 c2e2278f3f802abcbca107491f79e3ccd5eac1a71a2ccb970d01b37ba1a60fa9  .brainops/methodology/frozen-tests/frozen-tdd-wi-00028-core-publication-001-python.json\nsha256 dd2680329fb9cb39e7c63afcddd25202869082a57f7693db74be7027ba20aa2a  .brainops/methodology/frozen-tests/frozen-20260809051810-test_self_hosted_only_contract.py.json\nsha256 71219b309bd79d5990df5725e4e4dcda4ff58a058910a6c3176708c3879f78e6  .brainops/methodology/frozen-tests/frozen-20260809073048-tests.json\nsha256 03624c9df3598d47d556fad6879da622e6c2832ffdd14401a0c8481944815a23  .brainops/methodology/frozen-tests/supersession-20260809073048-release-test-literal-hygiene.json\n\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m [ 58%]\n\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m                      [100%]\u001b[0m\n\u001b[32m\u001b[32m\u001b[1m123 passed\u001b[0m\u001b[32m in 8.01s\u001b[0m\u001b[0m\n",
+  "stderr_tail": "",
+  "artifact_ref": ".brainops/methodology/verification/verification-1786262695638.json",
+  "created_by_agent_id": "W-1028",
+  "created_session_id": "S-01024",
+  "created_at": "2026-08-09T08:04:55.638Z"
+}
