@@ -34,11 +34,18 @@ Unresolved questions and blocking decisions. Resolved historical questions recor
 **Resolution:** `youtube_search_channels` is registered in `list_tools()`. It requires `YOUTUBE_API_KEY` and uses Data API v3 exclusively. Supports subscriber count filters (`min_subscribers`, `max_subscribers`) and `order` parameter. No yt-dlp fallback exists for channel search.
 **Evidence:** `tube_bridge/server.py` `list_tools()` registers `youtube_search_channels`; `tube_bridge/tools.py` `search_channels()` delegates to `api.search_channels()`.
 
+### Q7: Claude connector authorization and tester distinction
+**Status:** Architecture resolved by ADR-002; implementation pending WI-00047.
+**Owner:** Operator/Architect.
+**Resolution:** Keep the existing static Bearer path for Pi/header-capable clients and add an optional deployment-only OAuth Authorization Code + PKCE adapter for Claude Custom Connector. Dynamic client registration does not grant access; a high-entropy deployment invite selects a pseudonymous `operator` or `tester` role. No accounts, durable identities, quota bypass, or identity vendor is introduced. Canonical OAuth URLs come only from `TUBE_BRIDGE_PUBLIC_BASE_URL`; malformed/partial OAuth configuration fails startup. Registration and form bounds, token lifetime, redirect validation, and aggregate-counting semantics are fixed in ADR-002.
+**Gate:** Do not claim the OAuth endpoints or Claude connector are active until frozen tests, independent source audit, Railway handshake, and real connector acceptance pass.
+**Evidence:** ADR-002; WI-00047; current Claude failure is `/sse` without a header while authenticated Pi `/mcp` succeeds.
+
 ---
 
 ## Blocking Questions (Resolved)
 
-All four blocking questions are resolved per ADR-001. WI-00028 accepted core publication and WI-00029 accepted demo implementation/live controls. No blocking decisions remain.
+All four original blocking questions are resolved per ADR-001. WI-00028 accepted core publication and WI-00029 accepted demo implementation/live controls. ADR-002 resolves the decisions for the optional Claude OAuth addendum, but WI-00047 remains an implementation gate for that new client surface; it does not revoke existing core or Bearer-demo acceptance.
 
 ### B1: Consumer identity and usage budgets
 **Status:** Resolved and Implemented.

@@ -28,7 +28,8 @@ tube-bridge (modular Python package)
   ├── tube_bridge/cli.py           — Canonical synchronous installed entrypoint: stdio or HTTP
   ├── tube_bridge/server.py        — Single 16-tool catalog, MCP registration, HELP derivation + dispatch
   ├── tube_bridge/tools.py         — All tool implementations (async, cached, dual-source)
-  ├── tube_bridge/transport.py     — HTTP/SSE ASGI routes only (no stdio) + optional Bearer auth + /health
+  ├── tube_bridge/transport.py     — HTTP/SSE ASGI routes, current Bearer routing + /health
+  ├── tube_bridge/oauth.py         — planned WI-00047 OAuth adapter; not implemented or deployed yet
   ├── tube_bridge/cache.py         — Persistent SQLite cache (cache.db)
   ├── tube_bridge/corpus.py        — Semantic search (corpus.db, sqlite-vec + fastembed)
   └── tube_bridge/youtube/
@@ -57,9 +58,17 @@ tube-bridge supports three transports, all built from the same MCP server instan
 
 `tube_bridge/transport.py` builds the HTTP/SSE ASGI routes (`/mcp`, `/sse`, `/messages`, `/health`); CLI runtime selection owns stdio.
 
-Additional endpoints:
-- **`/health`** — Always open. Returns tool count (16) and auth status.
-- **Optional Bearer auth** — `TUBE_BRIDGE_AUTH_KEY` protects every remote route except `/health`, including `/mcp`, `/sse`, and `/messages`. `/health` remains open. Source authority: `_get_auth_key()`/`_check_auth()` in `tube_bridge/transport.py`.
+ADR-002 accepts the following **planned WI-00047 protocol endpoints; they are not active until frozen-TDD implementation and deployment acceptance**:
+- `/.well-known/oauth-protected-resource` and `/.well-known/oauth-protected-resource/mcp`
+- `/.well-known/oauth-authorization-server`
+- `/oauth/register`, `/oauth/authorize`, and `/oauth/token`
+
+Authorization boundaries:
+- **Current `/health`** — Always open. Returns tool count, auth status, and existing demo aggregates. WI-00047 must add only aggregate operator/tester counts after its separate gate passes.
+- **Current static Bearer compatibility** — `TUBE_BRIDGE_AUTH_KEY` protects `/mcp`, `/sse`, and `/messages`; WI-00047 must preserve it and classify it as Operator traffic.
+- **Planned optional OAuth compatibility** — ADR-002 authorizes Authorization Code + mandatory PKCE `S256`, dynamic MCP client registration, and deployment-issued invite codes for pseudonymous `operator`/`tester` subjects. Discovery/authorization/token routes will be public protocol surfaces; dynamic registration alone grants no MCP access.
+- **Planned fail-closed remote routes** — After WI-00047 acceptance, if static Bearer or OAuth is configured, protected routes require one valid access mechanism. If neither is configured, self-hosted HTTP remains open as before.
+- **Quota separation** — OAuth roles are observability-only and must not replace Railway-observed IP identity or change ADR-001's five-operation process-lifetime allowance.
 
 ## Outbound Sources & Trust Boundaries
 
@@ -78,7 +87,7 @@ tube-bridge makes outbound calls to three distinct sources. All API keys, tokens
 
 ### Trust Boundaries
 
-- **No bundled credentials** — All sensitive values (API keys, proxy URLs, auth tokens) are read from environment variables at runtime. No key is committed to the repository.
+- **No bundled credentials** — All sensitive values (API keys, proxy URLs, static auth tokens, OAuth signing key, invite-code digests) are read from environment variables at runtime. No plaintext invite, key, token, or credential is committed to the repository.
 - **Graceful degradation** — When `YOUTUBE_API_KEY` is absent or quota is exhausted, tools fall back to yt-dlp for search, video_info, and trending. Tools that require the Data API (comments, channel search, channel info) return a clear error message.
 - **Subprocess isolation** — yt-dlp runs as a subprocess with configurable timeouts. Rationale: explicit timeout control, captured stdout/stderr, 2-retry with exponential backoff, and process isolation. Failures are captured and surfaced as structured errors, not as crashes.
 - **Transcript pipeline independence** — Transcripts are obtained via `youtube-transcript-api`, not through the Data API (which does not provide transcript text). A proxy (`TUBE_BRIDGE_PROXY`) can be configured to work around datacenter IP bot detection.
@@ -97,6 +106,6 @@ tube-bridge makes outbound calls to three distinct sources. All API keys, tokens
 ## Product Boundaries
 
 - **Core (MIT self-hosted)** — All 16 MCP tools, all transports, all cache/corpus logic. Zero registration for 13 tools. Users bring their own `YOUTUBE_API_KEY` for the 3 API-dependent tools.
-- **Demo (Railway, disposable)** — Controlled try-before-install endpoint at `tube-bridge-production.up.railway.app`, not SaaS or managed hosting. WI-00029 accepted isolated server-side configuration, Railway-overwritten `X-Real-IP`, exactly 5 attempted Data API operations per observed IP/process, memory-only privacy-preserving counters, 10-minute transactional corpus deletion, and no volume/backups/accounts/durable hosting.
+- **Demo (Railway, disposable)** — Controlled try-before-install endpoint at `tube-bridge-production.up.railway.app`, not SaaS or managed hosting. WI-00029 accepted isolated server-side configuration, Railway-overwritten `X-Real-IP`, exactly 5 attempted Data API operations per observed IP/process, memory-only privacy-preserving counters, 10-minute transactional corpus deletion, and no volume/backups/accounts/durable hosting. ADR-002 permits an independently gated OAuth compatibility layer with invite-backed pseudonymous test roles; it does not add accounts, persistence, quota bypass, or managed identity.
 - **Grabbit (separate MCP)** — Completely separate MCP. No connector, dependency, shared service, code integration, or implementation roadmap exists between tube-bridge and Grabbit. An example agent usage sequence may show the agent using tube-bridge to find videos and then separately using Grabbit to save links — that is the full extent of any documented relationship.
 - **Browser extension** — Outside this project's scope and release gate. Not architected, planned, or documented here.

@@ -22,7 +22,7 @@ yt-dlp can download videos, but tube-bridge is a **read-only metadata and transc
 tube-bridge is **read-only**. No upload, no comment posting, no playlist editing, no channel management, no account creation or modification. It observes YouTube content but does not mutate it.
 
 ### UI / Dashboard
-No web UI, admin panel, or dashboard. tube-bridge is an MCP server for AI agents. CLI tooling, if ever built, would be a separate project.
+No product web UI, admin panel, account portal, or dashboard. tube-bridge is an MCP server for AI agents. A deployment may expose the minimal browser form required to complete an OAuth authorization-code flow for a controlled test connector; that protocol surface is not a product UI or managed account system. CLI tooling, if ever built, would be a separate project.
 
 ### Bulk scraping
 Designed for agent use (dozens of calls per session). Not optimized for thousands of parallel requests. No scraping pipelines, no scheduled harvests, no bulk export.
@@ -31,7 +31,7 @@ Designed for agent use (dozens of calls per session). Not optimized for thousand
 Transcripts are returned as-is in the requested language. No translation, sentiment analysis, keyword extraction, summarization, or any NLP processing. The agent's LLM handles all interpretation.
 
 ### Authentication / user accounts (core)
-No built-in user accounts, registration, login, or identity management in the open-core. The only auth mechanism is an optional `TUBE_BRIDGE_AUTH_KEY` Bearer token protecting remote transport endpoints — a deployment-level access control, not a user-account system.
+No built-in user accounts, public user signup, durable profiles, email login, or managed identity service in the open-core. Self-hosted HTTP may use the optional `TUBE_BRIDGE_AUTH_KEY` deployment-level Bearer control. ADR-002 additionally permits an optional OAuth compatibility adapter for controlled HTTP test deployments: dynamic MCP client registration still requires a high-entropy deployment-issued invite, identities are pseudonymous `operator`/`tester` roles, and no identity record is durable. Neither mechanism is a user-account system.
 
 ### Billing / subscriptions / entitlements
 No payment processing, subscription management, trial enforcement, or usage metering. tube-bridge is an MIT self-hosted MCP with no commercial extension, SaaS, accounts, billing, or managed hosting.
@@ -47,7 +47,7 @@ Grabbit is a completely separate MCP. There is no connector, dependency, shared 
 
 The following are **not promised** until their respective readiness gates are passed (tracked in `docs/planning/PUBLICATION_READINESS.md`):
 
-- **Unlimited public demo access** — explicitly excluded. The active disposable demo is bounded to 5 attempted Data API operations per Railway-observed IP/process, uses Bearer transport auth, and makes no availability promise.
+- **Unlimited public demo access** — explicitly excluded. The currently accepted disposable demo is bounded to 5 attempted Data API operations per Railway-observed IP/process and uses the static Operator Bearer key. If WI-00047 later passes its separate gate, invite-authorized OAuth access tokens become an additional accepted transport credential; until then they are not claimed active. OAuth roles must not bypass or reset the IP allowance.
 - **YouTube Data API quota beyond default allocation** — no additional allocation beyond the default has been documented as requested or granted. YouTube's official docs identify the audit/extension process; no purchasable quota tier was identified.
 - **Legal clearance** — no legal review, copyright compliance assessment, or terms-of-service analysis has been completed. Users are responsible for their own compliance.
 - **Proxy reliability** — the `TUBE_BRIDGE_PROXY` feature is operational, but no uptime SLA, throughput guarantee, or reliability promise is made for any specific proxy service.
