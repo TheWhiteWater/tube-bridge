@@ -1,0 +1,200 @@
+{
+  "kind": "tube_bridge.private_railway_mcp_live_smoke",
+  "version": "0.1",
+  "work_item_id": "WI-00072",
+  "started_at": "2026-08-09T08:29:08.874310+00:00",
+  "completed_at": "2026-08-09T08:29:38.358181+00:00",
+  "credential_handling": "Railway CLI dynamic retrieval; endpoint and Bearer value omitted from output and receipt.",
+  "expected_tool_count": 16,
+  "called_all_16_tools": true,
+  "overall_status": "PASS",
+  "failed_checks": [],
+  "cleanup": {
+    "attempted": true,
+    "passed": true,
+    "post_delete_list_called": true,
+    "post_delete_empty": true
+  },
+  "results": [
+    {
+      "name": "mcp_initialize_and_list_tools",
+      "status": "PASS",
+      "elapsed_seconds": 0,
+      "summary": {
+        "server_name": "tube-bridge",
+        "catalog_count": 16,
+        "exact_catalog": true
+      }
+    },
+    {
+      "name": "tube_bridge_help",
+      "status": "PASS",
+      "elapsed_seconds": 0.474,
+      "summary": {
+        "version": "1.0.3",
+        "tool_count": 16,
+        "deploy_field_present": false,
+        "private_hostname_present": false
+      }
+    },
+    {
+      "name": "youtube_search",
+      "status": "PASS",
+      "elapsed_seconds": 0.817,
+      "summary": {
+        "source": "YouTube Data API v3",
+        "total_results": 2
+      }
+    },
+    {
+      "name": "youtube_search_channels",
+      "status": "PASS",
+      "elapsed_seconds": 0.807,
+      "summary": {
+        "source": "YouTube Data API v3",
+        "total_results": 2
+      }
+    },
+    {
+      "name": "youtube_get_channel_info",
+      "status": "PASS",
+      "elapsed_seconds": 0.592,
+      "summary": {
+        "channel_id_matches": true,
+        "video_count_present": true
+      }
+    },
+    {
+      "name": "youtube_get_video_info",
+      "status": "PASS",
+      "elapsed_seconds": 0.475,
+      "summary": {
+        "video_id_matches": true,
+        "title_present": true
+      }
+    },
+    {
+      "name": "youtube_get_trending",
+      "status": "PASS",
+      "elapsed_seconds": 0.552,
+      "summary": {
+        "source": "YouTube Data API v3 (mostPopular, US)",
+        "total_results": 2
+      }
+    },
+    {
+      "name": "youtube_get_channel_videos",
+      "status": "PASS",
+      "elapsed_seconds": 5.845,
+      "summary": {
+        "total_videos": 2,
+        "warning_present": false
+      }
+    },
+    {
+      "name": "youtube_get_playlist",
+      "status": "PASS",
+      "elapsed_seconds": 3.477,
+      "summary": {
+        "total_videos": 2,
+        "warning_present": false
+      }
+    },
+    {
+      "name": "youtube_get_transcript",
+      "status": "PASS",
+      "elapsed_seconds": 0.476,
+      "summary": {
+        "video_id_matches": true,
+        "segment_count": 61,
+        "language_present": true
+      }
+    },
+    {
+      "name": "youtube_get_available_languages",
+      "status": "PASS",
+      "elapsed_seconds": 9.609,
+      "summary": {
+        "video_id_matches": true,
+        "total_languages": 6
+      }
+    },
+    {
+      "name": "youtube_get_comments",
+      "status": "PASS",
+      "elapsed_seconds": 1.204,
+      "summary": {
+        "video_id_matches": true,
+        "total_comments": 2
+      }
+    },
+    {
+      "name": "corpus_create",
+      "status": "PASS",
+      "elapsed_seconds": 0.514,
+      "summary": {
+        "status": "created",
+        "chunks": null
+      }
+    },
+    {
+      "name": "corpus_add",
+      "status": "PASS",
+      "elapsed_seconds": 0.571,
+      "summary": {
+        "status": "indexed",
+        "chunks": 4
+      }
+    },
+    {
+      "name": "corpus_search",
+      "status": "PASS",
+      "elapsed_seconds": 0.481,
+      "summary": {
+        "total_results": 2
+      }
+    },
+    {
+      "name": "corpus_list",
+      "status": "PASS",
+      "elapsed_seconds": 0.48,
+      "summary": {
+        "total": 1
+      }
+    },
+    {
+      "name": "corpus_delete",
+      "status": "PASS",
+      "elapsed_seconds": 0.513,
+      "summary": {
+        "status": "deleted",
+        "chunks": null
+      }
+    },
+    {
+      "name": "corpus_list",
+      "status": "PASS",
+      "elapsed_seconds": 0.476,
+      "summary": {
+        "total": 0,
+        "post_delete_empty": true
+      }
+    }
+  ],
+  "authoritative_run": {
+    "runner_ref": ".brainops/methodology/verification/wi72-private-railway-live-smoke-runner.py",
+    "runner_sha256": "e6948e065a9aefd92b0d077eec4a4105543a3b6064c6034514d9ab3788bec5fe",
+    "command": "<disposable-release-venv>/bin/python .brainops/methodology/verification/wi72-private-railway-live-smoke-runner.py",
+    "exit_code": 0,
+    "stdout_contract": "Sanitized JSON only; overall FAIL causes nonzero process exit."
+  },
+  "auth_boundary": {
+    "health_status": 200,
+    "unauthenticated_mcp_status": 401,
+    "authenticated_mcp": "PASS",
+    "authenticated_oauth_route_status": 404
+  },
+  "deployment_id": "9c824868-b34b-47ef-bc86-e2f12fb5b751",
+  "evidence_policy": "This complete rerun is authoritative. Earlier exploratory harness output is not acceptance evidence.",
+  "content_policy": "No endpoint, Bearer key, YouTube API key, proxy credential, transcript text, comment text, titles, authors, descriptions or raw error body is stored."
+}
