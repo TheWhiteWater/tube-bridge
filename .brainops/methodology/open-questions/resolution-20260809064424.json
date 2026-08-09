@@ -1,0 +1,49 @@
+{
+  "kind": "brainops.open_questions_resolution",
+  "version": "0.1",
+  "project": "tube-bridge",
+  "project_path": "/home/ali/Workspace/BrainOps/Projects/tube-bridge",
+  "summary": "ADR-003 resolves all active product-boundary questions: self-hosted public distribution only, retired demo/OAuth/tester surfaces, and non-distributed private Operator Railway infrastructure.",
+  "all_blocking_cleared": true,
+  "decisions": [
+    {
+      "question_id": "Q5-hosted-demo",
+      "status": "resolved",
+      "rationale": "ADR-003 retires the public hosted-demo product surface; no active demo production code, configuration, tests, or public access claim remains.",
+      "evidence_refs": [
+        "docs/adr/003-self-hosted-only-private-operator-railway.md",
+        "docs/planning/OPEN_QUESTIONS.md"
+      ]
+    },
+    {
+      "question_id": "Q6-browser-oauth-testers",
+      "status": "resolved",
+      "rationale": "ADR-003 retires OAuth, dynamic client registration, invites, and Operator/Tester roles; WI-00047 and WI-00057 are terminal superseded/cancelled.",
+      "evidence_refs": [
+        "docs/adr/003-self-hosted-only-private-operator-railway.md",
+        "docs/adr/002-demo-oauth-test-identity.md"
+      ]
+    },
+    {
+      "question_id": "Q7-private-operator-railway",
+      "status": "resolved",
+      "rationale": "The remaining Railway service is private Operator infrastructure protected by static Bearer authentication and is not distributed as a product endpoint.",
+      "evidence_refs": [
+        "docs/adr/003-self-hosted-only-private-operator-railway.md",
+        ".brainops/methodology/verification/verification-WI-00064-private-help-live.json"
+      ]
+    },
+    {
+      "question_id": "Q8-public-distribution",
+      "status": "resolved",
+      "rationale": "The only public product is the MIT self-hosted MCP distributed through GitHub, PyPI, and GHCR; each user installs and operates their own server.",
+      "evidence_refs": [
+        "README.md",
+        "docs/planning/PUBLICATION_READINESS.md"
+      ]
+    }
+  ],
+  "created_by_agent_id": "W-1028",
+  "created_session_id": "S-01024",
+  "created_at": "2026-08-09T06:44:24.783Z"
+}

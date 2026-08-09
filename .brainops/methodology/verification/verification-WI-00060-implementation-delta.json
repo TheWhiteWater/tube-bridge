@@ -1,0 +1,63 @@
+{
+  "kind": "brainops.implementation_apply_delta",
+  "version": "0.1",
+  "project": "tube-bridge",
+  "work_item_id": "WI-00060",
+  "accepted_authority": "docs/adr/003-self-hosted-only-private-operator-railway.md",
+  "frozen_contract": {
+    "manifest": ".brainops/methodology/frozen-tests/frozen-20260809051810-test_self_hosted_only_contract.py.json",
+    "test_sha256": "d6c80f00450b42b9d8cc7f167bc5908be93d00c60529ebc2e78653b74167439c"
+  },
+  "implementation": {
+    "commit": "df021f9a60d1ad4255fca898e7d4f18096b9cc9d",
+    "parent_contract_commit": "efea7518f348ff223cd88f6e748032b59fd58678",
+    "removed_source": [
+      "tube_bridge/demo_policy.py",
+      "tube_bridge/demo_ttl.py",
+      "tube_bridge/oauth.py"
+    ],
+    "removed_tests": [
+      "tests/test_demo_identity_header_selector.py",
+      "tests/test_demo_integration.py",
+      "tests/test_demo_policy.py",
+      "tests/test_demo_transport_context.py",
+      "tests/test_demo_ttl.py",
+      "tests/test_demo_ttl_atomic_selection.py",
+      "tests/test_demo_ttl_race_recovery.py",
+      "tests/test_oauth_claude_dcr_compat.py",
+      "tests/test_oauth_contract.py"
+    ],
+    "modified_source": [
+      "tube_bridge/cli.py",
+      "tube_bridge/corpus.py",
+      "tube_bridge/server.py",
+      "tube_bridge/transport.py",
+      "tube_bridge/youtube/api.py"
+    ],
+    "behavior_after_apply": [
+      "No demo quota, IP identity, forced corpus TTL, OAuth, DCR, invite or role runtime remains.",
+      "Static optional Bearer authentication remains for remote MCP routes.",
+      "Self-hosted core behavior, transcript error semantics and nullable expires_at compatibility remain."
+    ]
+  },
+  "remediation_addendum": {
+    "frozen_manifest": ".brainops/methodology/frozen-tests/frozen-20260809061346-test_private_endpoint_not_distributed.py.json",
+    "test_sha256": "2f48c05090d0b26d0e6367f610ee90e77c38a3eb0e0809d3989dd100015dfbcb",
+    "implementation_commit": "c6565519c0090ed4a70eb2dd6a9392513b109b14",
+    "runtime_delta": "Removed HELP_TEXT.deploy_url and changed help version from 1.0.0 to package version 1.0.2; no tool catalog, schema, dispatch or transport behavior changed.",
+    "source_audit": ".brainops/methodology/audits/2026-08-09T06-30-44-458Z-9753db1a-codex/station-codex-audit.json"
+  },
+  "documentation_apply": {
+    "commits": [
+      "0acc86b4f5ac2efb3d2b938ff9069e5fcdd29c51",
+      "776f7cdc7643b66cf6ecd6908c9c3d69fd1fa251",
+      "de366df2ffcf3b57aaa9bafa80f376b8d8032409",
+      "c0c3d355273e1d2d586355b48cf63045f5bd8a07"
+    ],
+    "final_doc_audit": ".brainops/methodology/audits/2026-08-09T06-33-17-278Z-0ae9559e-codex/station-codex-audit.json"
+  },
+  "evaluated_tree_commit": "c0c3d355273e1d2d586355b48cf63045f5bd8a07",
+  "created_at": "2026-08-09T06:45:00Z",
+  "created_by_agent_id": "W-1028",
+  "created_session_id": "S-01024"
+}
