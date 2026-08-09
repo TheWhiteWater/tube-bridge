@@ -1,0 +1,33 @@
+{
+  "kind": "tube_bridge.wi64_private_help_live_verification",
+  "created_at": "2026-08-09T06:28:05.081890+00:00",
+  "source_commit": "c6565519c0090ed4a70eb2dd6a9392513b109b14",
+  "deployment_id": "e72b3f76-c846-407b-98e0-30210416063c",
+  "checks": {
+    "health": {
+      "status": "ok",
+      "server": "tube-bridge",
+      "tools": 16,
+      "auth": "enabled"
+    },
+    "unauthenticated_mcp_status": 401,
+    "authenticated_help_status": 200,
+    "help_version": "1.0.2",
+    "deploy_url_absent": true,
+    "private_hostname_absent": true
+  },
+  "hosted_ci": {
+    "run_id": 31298551526,
+    "head_sha": "c6565519c0090ed4a70eb2dd6a9392513b109b14",
+    "conclusion": "success",
+    "jobs": {
+      "test-and-package (3.12)": "success; 132 passed",
+      "test-and-package (3.13)": "success; 132 passed"
+    },
+    "url": "https://github.com/TheWhiteWater/tube-bridge/actions/runs/31298551526"
+  },
+  "non_claims": [
+    "No credential values recorded.",
+    "Private infrastructure is not a public product endpoint."
+  ]
+}
