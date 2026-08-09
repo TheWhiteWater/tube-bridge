@@ -1,7 +1,7 @@
 # Work Breakdown — tube-bridge
 
 **Active authority:** ADR-003
-**Current transition:** WI-00060
+**Completed transition:** WI-00060
 
 ## Block A — Interaction Engine
 
@@ -54,7 +54,7 @@
 
 ## Block F — Retire Hosted Demo and OAuth
 
-**Status:** Implementation/evidence complete; WI-00060 `ready_for_gate`
+**Status:** Complete; WI-00060 closed after final conformance PASS
 
 ### Completed
 
@@ -74,7 +74,7 @@
 - [x] Unauthenticated `401`, authenticated MCP initialize/help, Pi extension, absent OAuth routes and exact non-demo health surface verified.
 - [x] WI-00047 and WI-00057 recorded terminal as superseded/cancelled by ADR-003.
 - [x] WI-00064 removed the final hard-coded private hostname from MCP help; source audit, hosted CI and private live verification pass.
-- [ ] Refreshed WI-00060 final conformance verdict and Station closure.
+- [x] WI-00060 final conformance PASS and Station closure.
 
 ## Dependency Graph
 

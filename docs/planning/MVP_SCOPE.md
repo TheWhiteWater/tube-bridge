@@ -1,6 +1,6 @@
 # MVP Scope — tube-bridge
 
-**Status:** Self-hosted core shipped and published; ADR-003 retirement evidence verified, with WI-00060 refreshed final conformance/closure pending.
+**Status:** Self-hosted core shipped and published; ADR-003 retirement is verified and WI-00060 is closed.
 
 ## Included
 
@@ -70,7 +70,7 @@ Thirteen are keyless-capable. Three require the user's `YOUTUBE_API_KEY`.
 - [x] ADR-003 accepted and 5-test retirement contract frozen.
 - [x] Final source/docs audits, hosted CI and private Railway verification for WI-00060.
 - [x] WI-00064 private-endpoint help remediation audit, CI and private redeploy.
-- [ ] WI-00060 refreshed final conformance verdict and Station closure.
+- [x] WI-00060 final conformance PASS and Station closure.
 
 ## Public Product Statement
 

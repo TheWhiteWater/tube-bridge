@@ -39,7 +39,7 @@
 - Auth: optional static Bearer for self-hosted HTTP.
 - Storage: user-managed cache/corpus databases with no forced TTL.
 - Tests: original 125-test core freeze, five ADR-003 retirement tests, and two private-endpoint help tests (132 total).
-- Active WorkItem: WI-00060 is at final gate after source/docs/CI/private-Railway verification.
+- Completed WorkItem: WI-00060 closed after source/docs/CI/private-Railway verification and final conformance PASS.
 - Historical demo/OAuth WorkItems WI-00047 and WI-00057 are terminal with superseded/cancelled resolutions and do not define current product behavior.
 - Grabbit is a completely separate MCP.
 

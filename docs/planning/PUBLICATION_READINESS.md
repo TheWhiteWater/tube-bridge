@@ -1,7 +1,7 @@
 # Publication Readiness — tube-bridge
 
 **Last updated:** 2026-08-09
-**Status:** Self-hosted core published. No hosted-demo surface exists. WI-00060 evidence is complete and `ready_for_gate`; refreshed final conformance/closure is pending.
+**Status:** Self-hosted core published. No hosted-demo surface exists. WI-00060 is closed after final conformance PASS.
 
 ## Public Surface
 
