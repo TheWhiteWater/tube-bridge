@@ -10,7 +10,7 @@ import hashlib
 import importlib
 import json
 import re
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, urlencode, urlparse
 
 import httpx
 import pytest
@@ -647,7 +647,11 @@ async def test_token_rejects_missing_or_duplicate_resource(monkeypatch, mode):
         ]
         if mode == "duplicate":
             fields += [("resource", RESOURCE), ("resource", RESOURCE)]
-        response = await client.post("/oauth/token", data=fields)
+        response = await client.post(
+            "/oauth/token",
+            content=urlencode(fields),
+            headers={"content-type": "application/x-www-form-urlencoded"},
+        )
     assert response.status_code == 400
     assert response.json()["error"] == "invalid_grant"
 
