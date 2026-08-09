@@ -1,0 +1,25 @@
+{
+  "kind": "brainops.private_deployment_verification",
+  "version": "0.1",
+  "project": "tube-bridge",
+  "work_item_id": "WI-00067",
+  "deployment_id": "9c824868-b34b-47ef-bc86-e2f12fb5b751",
+  "deployment_status": "SUCCESS",
+  "checks": {
+    "retired_demo_oauth_proxy_variables_absent": true,
+    "static_bearer_variable_present": true,
+    "health_status": 200,
+    "health_has_no_demo_or_oauth_fields": true,
+    "unauthenticated_mcp_status": 401,
+    "authenticated_mcp_initialize": "PASS",
+    "authenticated_tool_count": 16,
+    "mcp_help_version": "1.0.3",
+    "mcp_help_deploy_field_present": false,
+    "mcp_help_railway_hostname_present": false,
+    "authenticated_oauth_route_status": 404
+  },
+  "boundary": "Private Operator infrastructure only; no hostname, credential, demo or tester access is published in this receipt.",
+  "created_at": "2026-08-09T08:15:00Z",
+  "created_by_agent_id": "W-1028",
+  "created_session_id": "S-01024"
+}
