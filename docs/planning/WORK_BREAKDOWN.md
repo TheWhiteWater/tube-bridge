@@ -34,21 +34,21 @@
 
 ## Block D — Verification
 
-**Status:** Established core complete; v1.0.3 release gate active
+**Status:** Complete through public v1.0.3; terminal WI-00067 conformance pending
 
 - original 125-test core freeze;
 - five-test self-hosted-only retirement contract;
 - two-test private-endpoint help remediation;
 - five-test v1.0.3 artifact contract, including whole-wheel/sdist private-metadata scans;
 - local 137-test, build/twine, isolated install, Docker and MCP candidate checks pass;
-- hosted branch/tag CI and terminal release audit remain pending for WI-00067.
+- hosted branch/tag runs `31302040564` and `31302178955` pass; terminal release conformance remains pending for WI-00067.
 
 ## Block E — Documentation and Release History
 
-**Status:** v1.0.3 candidate prepared; external evidence pending
+**Status:** v1.0.3 published; terminal WI-00067 conformance pending
 
 - self-hosting-only public language;
-- candidate that becomes the current release `v1.0.3` only after the active registry gate passes;
+- current release `v1.0.3` is live on GitHub, PyPI and GHCR;
 - functional `v1.0.0`/`v1.0.2` unyanked history preserved;
 - ADR-001 hosted-demo clauses and ADR-002 marked superseded;
 - private infrastructure excluded from public product claims.
@@ -79,16 +79,16 @@
 
 ## Block G — Publish v1.0.3 Self-Hosted Artifacts
 
-**Status:** Active; WI-00067
+**Status:** Publication complete; final conformance/Station closure pending
 
 - [x] Operator authorized GitHub Release, PyPI and GHCR publication.
 - [x] Deterministic release contract and test-literal hygiene correction frozen and audited.
 - [x] Local 137-test/build/twine/wheel-install/Docker/artifact-scan evidence passes.
-- [ ] Independent source conformance PASS on the final candidate.
-- [ ] Hosted branch CI PASS.
-- [ ] Tag `v1.0.3`; release workflow publishes GitHub/PyPI/GHCR.
-- [ ] Download/pull all public artifacts and verify version/help/16 tools/no private metadata.
-- [ ] Append and verify the `v1.0.2` GitHub supersession notice without yanking history.
+- [x] Independent source conformance PASS on the final candidate.
+- [x] Hosted branch CI PASS.
+- [x] Tag `v1.0.3`; release workflow publishes GitHub/PyPI/GHCR.
+- [x] Download/pull all public artifacts and verify version/help/16 tools/no private metadata.
+- [x] Append and verify the `v1.0.2` GitHub supersession notice without yanking history.
 - [ ] Terminal docs/TME/Station closure.
 
 ## Dependency Graph

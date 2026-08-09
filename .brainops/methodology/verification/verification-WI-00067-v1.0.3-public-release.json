@@ -1,0 +1,77 @@
+{
+  "kind": "brainops.public_release_verification",
+  "version": "0.1",
+  "project": "tube-bridge",
+  "work_item_id": "WI-00067",
+  "release_version": "1.0.3",
+  "source_commit": "fd8115773d1936cf6cb3c7d05f3bf76f9a08cc0d",
+  "tag": "v1.0.3",
+  "created_at": "2026-08-09T07:59:11.168463+00:00",
+  "created_by_agent_id": "W-1028",
+  "created_session_id": "S-01024",
+  "hosted_ci": {
+    "branch_run": 31302040564,
+    "branch_url": "https://github.com/TheWhiteWater/tube-bridge/actions/runs/31302040564",
+    "branch_jobs": [
+      "Python 3.12: 137 passed",
+      "Python 3.13: 137 passed"
+    ],
+    "release_run": 31302178955,
+    "release_url": "https://github.com/TheWhiteWater/tube-bridge/actions/runs/31302178955",
+    "release_jobs": {
+      "verify-and-build": "success",
+      "publish-pypi": "success",
+      "publish-container": "success",
+      "github-release": "success"
+    },
+    "release_tests": "137 passed",
+    "artifact_scanner": "verified 2 self-hosted-only release artifacts"
+  },
+  "github_release": {
+    "url": "https://github.com/TheWhiteWater/tube-bridge/releases/tag/v1.0.3",
+    "latest": true,
+    "tag_commit": "fd8115773d1936cf6cb3c7d05f3bf76f9a08cc0d",
+    "assets": {
+      "tube_bridge-1.0.3-py3-none-any.whl": {
+        "sha256": "41670da82b0c3a1a175823f848b867e5c3b9bee599b0f811d96a9dc10d1c3d16"
+      },
+      "tube_bridge-1.0.3.tar.gz": {
+        "sha256": "eeb95dbcb825b92f72f9898d81c620efe19196b98bc5233279a69aec4fffc948"
+      }
+    }
+  },
+  "pypi": {
+    "url": "https://pypi.org/project/tube-bridge/1.0.3/",
+    "version": "1.0.3",
+    "downloaded_wheel_and_sdist": true,
+    "digests_match_registry": true,
+    "artifact_scan": "PASS: no deploy_url or .railway.app bytes in complete wheel/sdist",
+    "installed_wheel_mcp": {
+      "distribution_version": "1.0.3",
+      "help_version": "1.0.3",
+      "tool_count": 16,
+      "private_metadata_absent": true
+    }
+  },
+  "ghcr": {
+    "image": "ghcr.io/thewhitewater/tube-bridge",
+    "tags": [
+      "1.0.3",
+      "1.0",
+      "latest"
+    ],
+    "shared_manifest_digest": "sha256:e5a5a735501a5a9f7be5b6a4a66981c959e7736bd6303e9829e1484c27cbaf58",
+    "pulled_image_mcp": {
+      "help_version": "1.0.3",
+      "tool_count": 16,
+      "private_metadata_absent": true
+    }
+  },
+  "history": {
+    "pypi_1_0_2_yanked": false,
+    "github_v1_0_2_supersession_notice": true,
+    "github_v1_0_2_url": "https://github.com/TheWhiteWater/tube-bridge/releases/tag/v1.0.2",
+    "disposition": "Immutable history retained; no yank/delete."
+  },
+  "secrets": "No secret value was printed, embedded or stored in this receipt."
+}

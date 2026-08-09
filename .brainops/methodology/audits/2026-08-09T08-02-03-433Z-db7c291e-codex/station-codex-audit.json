@@ -1,0 +1,103 @@
+{
+  "ok": true,
+  "kind": "brainops.methodology_audit",
+  "profile_id": "methodology.doc_audit",
+  "model_profile_id": "auditor.codex_headless",
+  "runtime_surface": "codex_headless",
+  "provider": "codex",
+  "model": "gpt-5.5",
+  "project": "tube-bridge",
+  "project_path": "/home/ali/Workspace/BrainOps/Projects/tube-bridge",
+  "target": {
+    "type": "artifact",
+    "source": "artifact_context"
+  },
+  "status": "passed",
+  "verdict": "PASS",
+  "summary": "The three WI-00067 documents are mutually consistent and accurately reflect the embedded v1.0.3 receipt: release/tag state, CI run IDs and 137-test results, GitHub/PyPI artifacts, GHCR tags and digest, installed 16-tool/version checks, private-metadata scans, and v1.0.2 supersession disposition align. They correctly keep WI-00067 open only for terminal documentation/TME conformance and Station closure.",
+  "audit_contract": {
+    "kind": "brainops.methodology_audit_contract",
+    "profile_id": "methodology.doc_audit",
+    "status": "recommended_template",
+    "purpose": "Check whether project methodology documents are coherent enough to become accepted planning evidence.",
+    "intended_use": [
+      "Use before freezing tests or accepting implementation work.",
+      "Treat this as a recommended checklist/template for the auditor, not as evidence by itself."
+    ],
+    "packet_template": [
+      {
+        "section": "project_identity",
+        "required": true,
+        "description": "Project name/path and WorkItem or lifecycle run being audited."
+      },
+      {
+        "section": "constitution_docs",
+        "required": true,
+        "description": "Mission, system context, architecture, glossary, non-goals, ADR rules, and planning docs where present."
+      },
+      {
+        "section": "open_questions",
+        "required": true,
+        "description": "Open questions and resolution/defer receipts."
+      },
+      {
+        "section": "scope_boundary",
+        "required": true,
+        "description": "What is inside/outside the current project or work block."
+      },
+      {
+        "section": "decision_evidence",
+        "required": false,
+        "description": "Relevant ADRs, TME entries, lifecycle gate results, and handoff notes."
+      }
+    ],
+    "audit_questions": [
+      "Is the project intent clear enough that a future agent after auto-compact can continue without silently changing the goal?",
+      "Are scope boundaries and non-goals explicit enough to detect methodology drift later?",
+      "Are terms and decisions grounded in documents instead of only in transcript memory?",
+      "Are blocking open questions resolved or explicitly deferred before implementation?"
+    ],
+    "pass_conditions": [
+      "Core intent, boundaries, terms, and decision process are documented and mutually consistent.",
+      "No blocking open question remains for the next planned implementation step.",
+      "The docs provide enough stable context for frozen tests or implementation planning."
+    ],
+    "fail_conditions": [
+      "Docs contradict each other on purpose, scope, public API, or acceptance criteria.",
+      "Critical requirements exist only in volatile chat/session context.",
+      "Implementation would require guessing unresolved behavior."
+    ],
+    "inconclusive_conditions": [
+      "Required docs or planning artifacts are missing from the packet.",
+      "The packet references files or receipts that are not supplied and cannot be inspected read-only."
+    ],
+    "forbidden_assumptions": [
+      "Do not accept docs because tests pass; this is a documentation gate.",
+      "Do not invent product goals not present in the supplied documents."
+    ],
+    "expected_output": {
+      "verdicts": [
+        "PASS",
+        "FAIL",
+        "INCONCLUSIVE"
+      ],
+      "required_fields": [
+        "VERDICT",
+        "SUMMARY",
+        "EVIDENCE_CHECKED",
+        "RESIDUAL_RISK"
+      ]
+    }
+  },
+  "output_dir": ".brainops/methodology/audits/2026-08-09T08-02-03-433Z-db7c291e-codex",
+  "receipt_path": ".brainops/methodology/audits/2026-08-09T08-02-03-433Z-db7c291e-codex/station-codex-audit.json",
+  "codex_runtime": {
+    "command": "codex exec --sandbox read-only --ephemeral --json",
+    "exit_code": 0,
+    "signal": null,
+    "duration_ms": 48048,
+    "stdout_tail": "{\"type\":\"thread.started\",\"thread_id\":\"019fe58a-5436-7a50-b429-1e65316bbdd2\"}\n{\"type\":\"turn.started\"}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_0\",\"type\":\"agent_message\",\"text\":\"VERDICT: PASS\\nSUMMARY: The three WI-00067 documents are mutually consistent and accurately reflect the embedded v1.0.3 receipt: release/tag state, CI run IDs and 137-test results, GitHub/PyPI artifacts, GHCR tags and digest, installed 16-tool/version checks, private-metadata scans, and v1.0.2 supersession disposition align. They correctly keep WI-00067 open only for terminal documentation/TME conformance and Station closure.\\nEVIDENCE_CHECKED: docs/planning/PUBLICATION_READINESS.md, docs/planning/WORK_BREAKDOWN.md, docs/INDEX.md, the embedded public-release receipt, source audit 95caf312 PASS, and three prepublication documentation PASS receipts.\\nRESIDUAL_RISK: Terminal conformance and Station closure remain outstanding; this audit does not itself complete or close WI-00067.\"}}\n{\"type\":\"turn.completed\",\"usage\":{\"input_tokens\":39953,\"cached_input_tokens\":9984,\"cache_write_input_tokens\":0,\"output_tokens\":1846,\"reasoning_output_tokens\":1660}}\n",
+    "stderr_tail": "2026-08-09T08:01:16.842021Z ERROR codex_rmcp_client::oauth::refresh_transaction: error=failed to refresh OAuth tokens for server supabase\n2026-08-09T08:01:17.183074Z ERROR codex_rmcp_client::oauth::refresh_transaction: error=failed to refresh OAuth tokens for server supabase\n"
+  },
+  "created_at": "2026-08-09T08:02:03.433Z"
+}

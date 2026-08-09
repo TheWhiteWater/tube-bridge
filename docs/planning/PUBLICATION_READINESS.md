@@ -1,7 +1,7 @@
 # Publication Readiness — tube-bridge
 
 **Last updated:** 2026-08-09
-**Status:** Self-hosted core published. No hosted-demo surface exists. WI-00067 is the active v1.0.3 release gate; local candidate checks pass, but hosted/tag/registry evidence is pending.
+**Status:** Self-hosted-only v1.0.3 is published. WI-00067 publication evidence is complete; terminal conformance and Station closure are pending.
 
 ## Public Surface
 
@@ -18,12 +18,12 @@ Users deploy their own instance and own credentials, storage, quota, retention, 
 | # | Area | Priority | Status | Evidence / Exit Criterion |
 |---|---|:---:|---|---|
 | C1 | Tool/help/schema consistency | P0 | Resolved | One `TOOL_CATALOG` defines exactly 16 tools and derived help metadata. |
-| C2 | Deterministic tests and CI | P0 | Release gate | Original 125-test core freeze plus five ADR-003 retirement tests, two private-endpoint help tests, and five v1.0.3 release-artifact tests pass (137 total); final hosted release evidence is required before WI-00067 closes. |
-| C3 | Packaging and installed runtime | P0 | Release gate | Local v1.0.3 wheel/sdist, twine, artifact scan, isolated install, synchronous CLI and installed MCP runtime pass; registry download evidence remains pending. |
-| C4 | Container distribution | P0 | Release gate | Local v1.0.3 image and MCP handshake pass; GHCR `1.0.3`/`1.0`/`latest` publication and pull evidence remain pending. |
+| C2 | Deterministic tests and CI | P0 | Resolved | 137 tests pass locally and on Python 3.12/3.13 branch run `31302040564`; tag release run `31302178955` also passes 137 tests and artifact scanning. |
+| C3 | Packaging and installed runtime | P0 | Resolved | PyPI/GitHub wheel and sdist share verified registry hashes; twine, complete-archive scan, clean install and installed MCP help/version/16-tool checks pass. |
+| C4 | Container distribution | P0 | Resolved | GHCR `1.0.3`, `1.0` and `latest` resolve to digest `sha256:e5a5a735501a5a9f7be5b6a4a66981c959e7736bd6303e9829e1484c27cbaf58`; pulled-image MCP help/version/16-tool checks pass. |
 | C5 | Secret and license review | P0 | Resolved | MIT license; no bundled API/proxy/Bearer credentials. |
-| C6 | Documentation alignment | P0 | Release gate | Existing ADR-003 documentation is accepted; bounded v1.0.3 release-candidate packs and terminal post-publication sync must pass. |
-| C7 | Historical release metadata | P1 | Release gate | Functional historical releases remain unyanked; after registry publication, the v1.0.2 GitHub notes will identify current `v1.0.3` as its superseding release. |
+| C6 | Documentation alignment | P0 | Final gate | Three bounded v1.0.3 candidate packs pass; terminal post-publication sync/conformance remains before WI-00067 closure. |
+| C7 | Historical release metadata | P1 | Resolved | Functional history remains unyanked; the v1.0.2 GitHub release now identifies current `v1.0.3` as its superseding release. |
 
 ## No-Go Conditions
 
