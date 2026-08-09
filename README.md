@@ -56,19 +56,13 @@ docker run --rm -p 8080:8080 ghcr.io/thewhitewater/tube-bridge:latest
 - **`/mcp`** — Streamable HTTP (recommended for remote deployments)
 - **`/sse`** — SSE (legacy; deprecated)
 - **`/health`** — Health check (always open)
-- **OAuth discovery/flow** — Optional `/.well-known/oauth-*` and `/oauth/*` routes when configured
 - **stdio** — Direct child process for local MCP clients
 
 ### Optional Auth
 
-Remote HTTP supports two deployment-level mechanisms; `/health` remains public:
+Set `TUBE_BRIDGE_AUTH_KEY` to protect `/mcp`, `/sse`, and `/messages`. Header-capable clients send `Authorization: Bearer <key>`. `/health` remains public. Without the variable, self-hosted HTTP is open.
 
-1. **Static Bearer** — set `TUBE_BRIDGE_AUTH_KEY`. Header-capable clients send `Authorization: Bearer <key>` to `/mcp`, `/sse`, or `/messages`.
-2. **Invite-gated OAuth** — set all of `TUBE_BRIDGE_PUBLIC_BASE_URL`, `TUBE_BRIDGE_OAUTH_SIGNING_KEY`, and `TUBE_BRIDGE_OAUTH_INVITES_JSON`. The server exposes Authorization Code + PKCE `S256`, protected-resource/authorization-server discovery, and a deprecated DCR compatibility path for clients such as Claude Custom Connector. Invite records contain only unique SHA-256 digests and assign a pseudonymous `operator` or `tester` role.
-
-OAuth is fail-closed on partial or malformed configuration, issues eight-hour access tokens without refresh tokens, and keeps five-minute authorization state/codes only in process memory. Roles affect aggregate observability only; they do not bypass or reset the Railway-observed-IP Data API allowance. If neither mechanism is configured, self-hosted HTTP remains open as before. Never place `TUBE_BRIDGE_AUTH_KEY` in an OAuth Client Secret field.
-
-Header-capable client config:
+Client config:
 ```json
 {
   "mcpServers": {
@@ -82,8 +76,6 @@ Header-capable client config:
   }
 }
 ```
-
-For a Claude Custom Connector, enter only `https://your-app.example.com/mcp` and leave OAuth Client ID/Secret empty so discovery and public-client registration can run. The browser authorization page then asks for a separately provisioned high-entropy invite code.
 
 ## YouTube Data API v3 (Optional)
 
@@ -118,8 +110,7 @@ tube_bridge/
 ├── server.py          # MCP wiring: tool registration + dispatch
 ├── tools.py           # All tool implementations (async, cached, retry)
 ├── cli.py             # Runtime selection: stdio or HTTP
-├── transport.py       # Streamable HTTP + SSE routes, auth dispatch, identity, health
-├── oauth.py           # Optional invite-gated OAuth/DCR/PKCE adapter and role metrics
+├── transport.py       # Streamable HTTP + SSE routes, optional Bearer auth, health
 ├── cache.py           # Persistent SQLite cache (cache.db) for transcripts + video metadata
 ├── corpus.py          # Semantic search (corpus.db, sqlite-vec + fastembed)
 └── youtube/
@@ -139,31 +130,7 @@ tube_bridge/
 
 ## Self-Hosting
 
-tube-bridge is an MIT self-hosted individual MCP — never a SaaS or managed transcript-hosting product. The Railway deployment below is solely a disposable try-before-install demo.
-
-### Railway (Disposable Demo)
-
-```bash
-git clone https://github.com/TheWhiteWater/tube-bridge
-cd tube-bridge
-railway init --name tube-bridge
-railway up --service tube-bridge --detach
-
-# Set in Railway dashboard → Variables:
-#   YOUTUBE_API_KEY  (uses isolated demo GCP project, separate from Operator keys)
-#   TUBE_BRIDGE_PROXY (recommended for transcripts from datacenter IPs)
-#   TUBE_BRIDGE_AUTH_KEY (optional static Bearer; preserved for Pi/header clients)
-#   TUBE_BRIDGE_PUBLIC_BASE_URL=https://your-app.example.com
-#   TUBE_BRIDGE_OAUTH_SIGNING_KEY (optional; at least 32 high-entropy bytes)
-#   TUBE_BRIDGE_OAUTH_INVITES_JSON (optional; operator/tester records with SHA-256 digests only)
-#   TUBE_BRIDGE_DEMO_MODE=1
-#   TUBE_BRIDGE_TRUST_PROXY_HEADERS=1
-#   TUBE_BRIDGE_CLIENT_IP_HEADER=x-real-ip
-```
-
-**Active demo controls:** exactly 5 attempted Data API v3 operations per observed client IP for the current process lifetime; the sixth receives a structured rejection. Keyless operations do not consume the allowance. Railway's overwritten `X-Real-IP` is the trusted identity source; client-supplied `X-Forwarded-For` is not trusted on the production demo. Counters are salted/HMAC-keyed and memory-only, with no time reset; a process restart resets them. The optional OAuth protocol is deployed with separate Operator and external-Tester invites; its live DCR/PKCE/MCP handshake, static-Bearer coexistence, aggregate role deltas, and unchanged quota counters are verified. Real Claude UI connector acceptance remains a separate final gate.
-
-**Demo data handling:** the application does not write raw client IPs to its SQLite files or application access logs, and `/health` exposes aggregate counters only. There are no accounts, persistent volumes, or backups. Corpus content and vectors are stored only on ephemeral deployment storage. Frozen clocks prove transactional deletion at the persisted 600-second deadline; non-invasive live sampling first observed complete absence 1.577 seconds after that deadline. Self-hosted mode is unchanged and persistent by default.
+tube-bridge is an MIT self-hosted individual MCP — not a hosted demo, SaaS, or managed transcript service. Each user installs and operates their own instance, credentials, storage, quotas, and retention.
 
 ### Docker
 
@@ -220,14 +187,12 @@ python3 server.py --http --port 8080 --host 0.0.0.0
 ## Product Boundary
 
 ### Current State
-- **MIT self-hosted library** — 16 MCP tools, all transports, cache/corpus logic. Available on GitHub.
-- **Disposable Railway demo** — `tube-bridge-production.up.railway.app` is a controlled try-before-install demo only. Not a SaaS or managed product.
-- **Disposable-demo P0 controls are active and accepted.** The production deployment enforces the 5-operation process-lifetime allowance from Railway-overwritten `X-Real-IP`, uses privacy-preserving memory-only counters, has no volume/backups/accounts, and uses a persisted 600-second corpus deadline with deterministic deadline deletion and live absence observed at the first +1.577-second sample.
-- **Published self-hosted core.** GitHub Release, PyPI package, and public GHCR image are live. Frozen 125-test core acceptance, clean install, installed CLI/MCP, Docker handshake, wheel+sdist, twine, and hosted CI checks pass.
-- **OAuth addendum is deployed but separately gated.** Deterministic source/security contracts, hosted CI, and the live Railway OAuth handshake pass. Do not claim Claude Custom Connector UI acceptance until the real connector completes authorization and a tool call.
+- **MIT self-hosted library** — 16 MCP tools, all transports, cache/corpus logic.
+- **Published core** — GitHub Release, PyPI package, and public GHCR image are live. Frozen 125-test core acceptance, clean install, installed CLI/MCP, Docker handshake, wheel+sdist, twine, and hosted CI pass.
+- **No hosted demo** — the project does not provide public hosted access, tester invites, accounts, managed storage, or an SLA. Install it yourself to evaluate it.
 
 ### Full Publication Scope
-The self-hosted core is fully published through GitHub Release, PyPI, and GHCR. The separately gated disposable Railway demo now has accepted quota, privacy, restart-reset, and corpus-retention controls. Neither surface carries an SLA or managed-hosting promise. Conditional quota-extension and proxy-reliability work is reviewed before broad announcement and at its documented usage/availability triggers; Railway persistence/backups is N/A while the demo remains no-volume and non-durable.
+The self-hosted core is fully published through GitHub Release, PyPI, and GHCR. That is the complete public product surface.
 
 ### What tube-bridge Is NOT
 - Not a SaaS or managed transcript-hosting product.
@@ -238,8 +203,8 @@ The self-hosted core is fully published through GitHub Release, PyPI, and GHCR. 
 ### Decision Sources
 - `PROJECT_VISION.md` — product boundaries, tool baseline, open-core scope.
 - `docs/planning/PUBLICATION_READINESS.md` — readiness checklist (P0/P1/P2 items, no-go gates).
-- `docs/adr/001-demo-api-quota-and-product-boundary.md` — architecture direction for demo isolation, fixed 5-operation limit, 10-minute corpus TTL, self-hosted boundary, and full-publication scope.
-- `docs/adr/002-demo-oauth-test-identity.md` — optional OAuth compatibility, invite roles, privacy, and unchanged IP-quota boundary.
+- `docs/adr/003-self-hosted-only-private-operator-railway.md` — active self-hosted-only product decision.
+- ADR-001's hosted-demo clauses and ADR-002 are historical and superseded.
 
 ## Testing
 
@@ -247,12 +212,11 @@ The self-hosted core is fully published through GitHub Release, PyPI, and GHCR. 
 python3 test_tools.py
 ```
 
-This remains an optional live smoke against YouTube. Formal acceptance uses `python3 -m pytest tests -q`; the current cumulative suite contains 273 deterministic tests: the original 125-test core freeze, the accepted demo/race/identity contracts, and the 64-test OAuth addendum. Hosted GitHub Actions CI passes on Python 3.12 and 3.13.
+This remains an optional live smoke against YouTube. Formal acceptance uses `python3 -m pytest tests -q`; the active suite contains 130 deterministic tests: the original 125-test core freeze plus the 5-test self-hosted-only retirement contract. Hosted GitHub Actions CI runs on Python 3.12 and 3.13.
 
 ## Known Limitations
 
 - **Datacenter IPs (Railway, AWS, etc.):** YouTube may block anonymous requests from cloud IP ranges. `youtube_search` and `youtube_get_video_info` are unaffected with a Data API v3 key. `youtube_get_transcript` may fail with bot detection — set `TUBE_BRIDGE_PROXY` to a residential proxy to work around this.
-- **Disposable demo retention:** demo corpora are deliberately non-durable. The worker is scheduled for the persisted 10-minute deadline (deterministic tests), and live sampling first observed absence 1.577 seconds later; a restart may remove data sooner because Railway has no attached volume. Self-hosted instances retain corpora under `~/.tube_bridge`.
 - **yt-dlp anonymous search:** degraded by YouTube in recent months. Prefer Data API v3 when available.
 
 ## License

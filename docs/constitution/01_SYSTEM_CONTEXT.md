@@ -1,111 +1,87 @@
 # 01 — System Context
 
-## What tube-bridge is
+## What tube-bridge Is
 
-An MCP (Model Context Protocol) server that lets AI agents interact with YouTube:
-- Search videos (dual-source: Data API v3 primary, yt-dlp fallback)
-- Get transcripts (plain text or timestamped, manual > ASR priority)
-- Discover trending content
-- Browse channels and playlists
-- Extract video metadata (cached, dual-source)
-- Read comments (via optional Data API v3)
-- Build semantic search corpora over transcripts (local embeddings via fastembed + sqlite-vec; transcript fetching over network)
+An MIT self-hosted MCP server that lets AI agents search and inspect YouTube, retrieve transcripts and metadata, browse channels/playlists/comments, and build local semantic transcript corpora.
 
-## Where it fits
+There is no public hosted demo. Every user installs and operates their own instance.
 
-```
-AI Agent (Claude / Codex / Hermes / Cursor)
-  │
-  │  MCP protocol (JSON-RPC) over:
-  │    • stdio (local child process, installed `tube-bridge` or compatibility root server.py)
-  │    • Streamable HTTP /mcp (remote, recommended, tube_bridge/transport.py)
-  │    • SSE /sse (legacy, deprecated, tube_bridge/transport.py)
-  │
-  ▼
-tube-bridge (modular Python package)
-  │
-  ├── server.py                    — Source-checkout compatibility launcher
-  ├── tube_bridge/cli.py           — Canonical synchronous installed entrypoint: stdio or HTTP
-  ├── tube_bridge/server.py        — Single 16-tool catalog, MCP registration, HELP derivation + dispatch
-  ├── tube_bridge/tools.py         — All tool implementations (async, cached, dual-source)
-  ├── tube_bridge/transport.py     — HTTP/SSE ASGI routes, static/OAuth dispatch + /health
-  ├── tube_bridge/oauth.py         — Optional invite-gated OAuth/DCR/PKCE adapter + role aggregates
-  ├── tube_bridge/cache.py         — Persistent SQLite cache (cache.db)
-  ├── tube_bridge/corpus.py        — Semantic search (corpus.db, sqlite-vec + fastembed)
-  └── tube_bridge/youtube/
-      ├── client.py       — yt-dlp subprocess (retry + exponential backoff + proxy)
-      ├── api.py          — YouTube Data API v3 (stdlib urllib, no Google SDK)
-      ├── transcript.py   — youtube-transcript-api (manual > ASR, proxy)
-      └── models.py       — VideoInfo dataclass
-  │
-  ├── youtube-transcript-api  →  YouTube TimedText API (no auth)
-  ├── yt-dlp (subprocess)     →  YouTube InnerTube API (no auth)
-  └── YouTube Data API v3     →  Google API (optional, key required)
+## Runtime Context
+
+```text
+AI Agent
+  │ MCP JSON-RPC
+  ├── stdio
+  ├── Streamable HTTP /mcp
+  └── legacy SSE /sse + /messages
        │
        ▼
-    YouTube servers
+tube-bridge
+  ├── tube_bridge/cli.py          installed entrypoint and transport selection
+  ├── tube_bridge/server.py       16-tool catalog, registration, help, dispatch
+  ├── tube_bridge/tools.py        tool implementations
+  ├── tube_bridge/transport.py    HTTP/SSE, optional Bearer, health
+  ├── tube_bridge/cache.py        cache.db
+  ├── tube_bridge/corpus.py       corpus.db, sqlite-vec, fastembed
+  └── tube_bridge/youtube/
+      ├── client.py               yt-dlp subprocess
+      ├── api.py                  Data API v3 via stdlib urllib
+      ├── transcript.py           youtube-transcript-api
+      └── models.py               VideoInfo
+       │
+       ├── YouTube TimedText API
+       ├── YouTube InnerTube through yt-dlp
+       └── optional YouTube Data API v3
 ```
 
-## Transport & Client Architecture
+Retired modules `oauth.py`, `demo_policy.py`, and `demo_ttl.py` are not part of the active package.
 
-tube-bridge supports three transports, all built from the same MCP server instance:
+## Transport Boundary
 
-1. **stdio** — Selected by the packaged `tube-bridge` command (`tube_bridge.cli:main`), which runs the async MCP stdio loop through `asyncio.run()`. Root `server.py` delegates to the same CLI for source-checkout compatibility.
+1. **stdio** — local child-process transport through the installed `tube-bridge` command.
+2. **Streamable HTTP `/mcp`** — stateless recommended remote transport.
+3. **SSE `/sse`** — legacy compatibility transport with `/messages` POST.
+4. **`/health`** — public process health, server name, tool count, and static-auth status.
 
-2. **Streamable HTTP (`/mcp`)** — Built by `tube_bridge/transport.py` via `StreamableHTTPSessionManager` (stateless). Recommended for remote deployments. Launched with `tube-bridge --http`.
+`TUBE_BRIDGE_AUTH_KEY` optionally protects `/mcp`, `/sse`, and `/messages`. Without it, self-hosted HTTP is open. There are no OAuth discovery/registration/authorization/token routes, invites, users, tester roles, or IP identities.
 
-3. **SSE (`/sse`, legacy)** — Built by `tube_bridge/transport.py` via `SseServerTransport`. Deprecated in favor of Streamable HTTP.
-
-`tube_bridge/transport.py` builds the HTTP/SSE ASGI routes (`/mcp`, `/sse`, `/messages`, `/health`); CLI runtime selection owns stdio.
-
-ADR-002 defines the following optional protocol endpoints. They are implemented and active on the Railway demo; full WI-00047 acceptance still requires a real Claude Custom Connector authorization and tool call:
-- `/.well-known/oauth-protected-resource` and `/.well-known/oauth-protected-resource/mcp`
-- `/.well-known/oauth-authorization-server`
-- `/oauth/register`, `/oauth/authorize`, and `/oauth/token`
-
-Authorization boundaries:
-- **`/health`** — Always open. Returns tool/auth status, existing demo quota aggregates, and aggregate-only Operator/Tester/unique-OAuth-subject counts.
-- **Static Bearer compatibility** — `TUBE_BRIDGE_AUTH_KEY` protects `/mcp`, `/sse`, and `/messages` and is classified as Operator traffic.
-- **Optional OAuth compatibility** — Complete OAuth configuration enables Authorization Code + mandatory PKCE `S256`, a deprecated dynamic-registration compatibility path, and deployment-issued invites for pseudonymous `operator`/`tester` subjects. Discovery/authorization/token routes are public protocol surfaces; registration alone grants no MCP access.
-- **Fail-closed remote routes** — If static Bearer or OAuth is configured, protected routes require one valid access mechanism. Partial OAuth configuration fails app creation. If neither mechanism is configured, self-hosted HTTP remains open as before.
-- **Quota separation** — OAuth roles are observability-only and do not replace Railway-observed IP identity or change ADR-001's five-operation process-lifetime allowance.
-
-## Outbound Sources & Trust Boundaries
-
-tube-bridge makes outbound calls to three distinct sources. All API keys, tokens, and proxy URLs are obtained from environment variables at runtime; none are bundled, embedded, or committed.
+## Outbound Sources
 
 | Source | Module | Auth | Purpose |
-|--------|--------|------|---------|
-| `youtube-transcript-api` | `tube_bridge/youtube/transcript.py` | None | Transcript extraction (TimedText API). Proxy supported via `TUBE_BRIDGE_PROXY`. |
-| `yt-dlp` (subprocess) | `tube_bridge/youtube/client.py` | None | Search, metadata, channels, playlists, trending (InnerTube API). 2 retries with exponential backoff (`1.5 ** attempt`). Proxy supported via `TUBE_BRIDGE_PROXY`. |
-| YouTube Data API v3 | `tube_bridge/youtube/api.py` | `YOUTUBE_API_KEY` env var | Comments, channel search, channel info, upgraded search/video_info/trending. Uses Python stdlib `urllib` directly — no `google-api-python-client` dependency. |
+|---|---|---|---|
+| YouTube TimedText | `youtube/transcript.py` | None | Captions/transcripts; optional proxy |
+| YouTube InnerTube | `youtube/client.py` | None | yt-dlp search/metadata/channel/playlist fallback |
+| YouTube Data API v3 | `youtube/api.py` | User-owned `YOUTUBE_API_KEY` | Comments, channel tools and upgraded results |
 
-### External Service Qualification
+The core requires network access to YouTube but no external database, vector service, or embedding API. sqlite-vec and fastembed run locally after model assets are available.
 
-- The core requires **no external database, vector store, or embedding API service** — sqlite-vec and fastembed inference run locally after model assets are available; initial model acquisition may require network.
-- However, the core **does rely on external YouTube upstreams**: the YouTube TimedText API (via youtube-transcript-api), YouTube InnerTube API (via yt-dlp subprocess), and optionally YouTube Data API v3. Network connectivity to YouTube servers is required for all tools except `corpus_list`, `corpus_delete`, `corpus_search` (when corpus already populated), and `tube_bridge_help`.
+## Trust Boundaries
 
-### Trust Boundaries
-
-- **No bundled credentials** — All sensitive values (API keys, proxy URLs, static auth tokens, OAuth signing key, invite-code digests) are read from environment variables at runtime. No plaintext invite, key, token, or credential is committed to the repository.
-- **Graceful degradation** — When `YOUTUBE_API_KEY` is absent or quota is exhausted, tools fall back to yt-dlp for search, video_info, and trending. Tools that require the Data API (comments, channel search, channel info) return a clear error message.
-- **Subprocess isolation** — yt-dlp runs as a subprocess with configurable timeouts. Rationale: explicit timeout control, captured stdout/stderr, 2-retry with exponential backoff, and process isolation. Failures are captured and surfaced as structured errors, not as crashes.
-- **Transcript pipeline independence** — Transcripts are obtained via `youtube-transcript-api`, not through the Data API (which does not provide transcript text). A proxy (`TUBE_BRIDGE_PROXY`) can be configured to work around datacenter IP bot detection.
+- API keys, proxy URLs and Bearer keys come from the deploying user's environment.
+- No credentials are bundled, committed, logged, or distributed by the project.
+- yt-dlp runs as a timeout-bounded subprocess with captured output and retry behavior.
+- Transcript network/proxy failures remain distinct from confirmed missing captions.
+- The project does not provide shared upstream credentials or a hosted evaluation endpoint.
 
 ## Local Storage
 
-- **`cache.db`** — Persistent SQLite database for transcript segments and video metadata. Default path: `~/.tube_bridge/cache.db` (configurable via `TUBE_BRIDGE_CACHE`). Tables: `transcripts` (video_id, lang, segments, language, is_generated), `video_info` (video_id, data).
-- **`corpus.db`** — Separate SQLite database for semantic search corpora. Same directory as `cache.db`. Tables: `corpora`, `corpus_chunks`, `corpus_added_videos`, plus per-corpus sqlite-vec virtual tables. Embeddings generated via fastembed (BGE-small-en-v1.5); inference runs locally after model assets are available; initial model download may require network.
+- `cache.db` stores transcript/video metadata cache entries.
+- `corpus.db` stores named corpora, chunks, added-video records, and per-corpus vectors.
+- Both live under `TUBE_BRIDGE_CACHE` (default `~/.tube_bridge`).
+- The self-hosting user controls retention and backups.
+- `corpora.expires_at` remains nullable for compatibility with databases touched by earlier development builds; active code writes `NULL` and imposes no expiry worker.
 
 ## Integration Points
 
-1. **MCP Clients** — Any MCP-compatible client (Claude Desktop, Cursor, Codex, Hermes Agent). Supports stdio and HTTP transports.
-2. **BrainOps Station** — Project lifecycle, TME operating map, ADR records.
-3. **Optional: YouTube Data API v3** — For comment extraction, channel search, channel info, and higher-quality search/video_info/trending. Users bring their own key from Google Cloud Console.
+- MCP-compatible local or remote clients that support stdio, Streamable HTTP, or legacy SSE.
+- Optional user-owned YouTube Data API project.
+- Optional user-owned HTTP proxy.
+- BrainOps Station for this repository's development lifecycle only.
 
-## Product Boundaries
+The Operator's private Railway deployment is personal infrastructure protected by static Bearer auth. It is not a project integration point, public endpoint, demo, managed service, or compatibility promise.
 
-- **Core (MIT self-hosted)** — All 16 MCP tools, all transports, all cache/corpus logic. Zero registration for 13 tools. Users bring their own `YOUTUBE_API_KEY` for the 3 API-dependent tools.
-- **Demo (Railway, disposable)** — Controlled try-before-install endpoint at `tube-bridge-production.up.railway.app`, not SaaS or managed hosting. WI-00029 accepted isolated server-side configuration, Railway-overwritten `X-Real-IP`, exactly 5 attempted Data API operations per observed IP/process, memory-only privacy-preserving counters, 10-minute transactional corpus deletion, and no volume/backups/accounts/durable hosting. The separately gated ADR-002 adapter is now deployed and live-protocol verified with invite-backed pseudonymous test roles; it adds no accounts, persistence, quota bypass, or managed identity. Real Claude UI acceptance remains pending.
-- **Grabbit (separate MCP)** — Completely separate MCP. No connector, dependency, shared service, code integration, or implementation roadmap exists between tube-bridge and Grabbit. An example agent usage sequence may show the agent using tube-bridge to find videos and then separately using Grabbit to save links — that is the full extent of any documented relationship.
-- **Browser extension** — Outside this project's scope and release gate. Not architected, planned, or documented here.
+## Product Boundary
+
+- **Included:** all 16 tools, all active transports, optional static Bearer, cache/corpus logic, packaging and container distribution.
+- **Excluded:** public demo, OAuth, tester program, accounts, hosted retention, shared quota/key access, billing, SLA, browser extension, and managed hosting.
+- **Separate:** Grabbit is a different MCP with no connector, dependency, shared service, or implementation roadmap.

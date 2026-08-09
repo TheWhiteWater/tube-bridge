@@ -1,132 +1,77 @@
 # Project Vision — tube-bridge
 
 **Last updated:** 2026-08-09
-**Status:** MIT self-hosted individual MCP. Core v1 is published on GitHub, PyPI, and GHCR; disposable-demo P0 controls are accepted. The optional OAuth tester-identity addendum is deployed and protocol-verified, with real Claude Custom Connector UI acceptance still pending.
+**Status:** Published MIT self-hosted MCP. There is no public hosted demo.
 
 ## North Star
 
-Every AI agent can interact with YouTube as naturally as a human — search, discover, extract knowledge, and build research corpora — without API keys, registration, or vendor lock-in.
+Every AI agent can interact with YouTube as naturally as a human — search, discover, extract knowledge, and build local research corpora — without vendor lock-in. Users install and operate their own instance.
 
-## What Is Shipped
+## Public Product
 
-### Tool baseline: 16 MCP tools
+The complete public product is the self-hosted `tube-bridge` package:
 
-The MCP server registers exactly 16 tools from `TOOL_CATALOG` via `tube_bridge/server.py` `list_tools()`:
+- GitHub: source and releases.
+- PyPI: `pip install tube-bridge`.
+- GHCR: public container image.
+- MIT license.
+- No hosted access, accounts, tester program, managed corpus storage, billing, SLA, or OAuth service.
 
-| # | Tool | API Key Required | Notes |
-|---|------|:---:|-------|
-| 1 | `youtube_search` | No → Yes | Data API v3 primary when key present; yt-dlp fallback |
-| 2 | `youtube_search_channels` | Yes | Channel search with subscriber filters |
-| 3 | `youtube_get_channel_info` | Yes | Detailed channel stats |
-| 4 | `youtube_get_video_info` | No → Yes | Metadata, cached (lru_cache 64), dual-source |
-| 5 | `youtube_get_trending` | No → Yes | API v3 primary, yt-dlp fallback |
-| 6 | `youtube_get_channel_videos` | No | Recent uploads from @handle or URL |
-| 7 | `youtube_get_playlist` | No | All videos in a playlist |
-| 8 | `youtube_get_transcript` | No | Plain text or [MM:SS] timestamps; Manual > ASR |
-| 9 | `youtube_get_available_languages` | No | Subtitle languages with auto-generated flags |
-| 10 | `youtube_get_comments` | Yes | Top-level comments via Data API v3 |
-| 11 | `corpus_create` | No | Named corpus for semantic transcript search |
-| 12 | `corpus_add` | No | Auto-fetches transcript (network), chunks, local embeds |
-| 13 | `corpus_search` | No | Semantic search with scores and timestamps |
-| 14 | `corpus_list` | No | List all corpora with counts |
-| 15 | `corpus_delete` | No | Delete corpus and all chunks/vectors |
-| 16 | `tube_bridge_help` | No | In-MCP documentation |
+Each user controls their own YouTube API key, proxy, Bearer auth, storage, quota usage, and retention.
 
-**Key:** 13 tools work without an API key; 3 require one.
+## Tool Baseline
 
-**Corpus tools note:** All 5 corpus tools need no Data API authentication and embedding generation is local. However, `corpus_add` may fetch a transcript over the network (via `youtube-transcript-api`) when the transcript is not already cached.
+The MCP server registers exactly 16 tools from `TOOL_CATALOG`:
 
-### Transports
+- 10 YouTube discovery/transcript/metadata tools;
+- 5 local corpus tools;
+- 1 help tool.
 
-- **stdio** — MCP client spawns `python3 server.py` as a child process; no inbound listening port/socket; outbound network calls still occur for tool operations (yt-dlp, youtube-transcript-api, Data API v3).
-- **Streamable HTTP** (`/mcp`) — stateless; recommended for remote deployments.
-- **SSE** (`/sse`) — legacy; deprecated in favor of Streamable HTTP.
-- **Health** (`/health`) — always open; returns tool count and auth status.
+Thirteen tools can operate without a YouTube Data API key. Three require `YOUTUBE_API_KEY`: comments, channel search, and channel information. Search, video information, and trending upgrade to Data API results when a key is present and fall back to yt-dlp where supported.
 
-### Auth (optional)
+## Transports and Auth
 
-- `TUBE_BRIDGE_AUTH_KEY` remains the static Bearer mechanism for Pi and other header-capable clients and is classified as Operator traffic.
-- Setting all three OAuth variables (`TUBE_BRIDGE_PUBLIC_BASE_URL`, `TUBE_BRIDGE_OAUTH_SIGNING_KEY`, `TUBE_BRIDGE_OAUTH_INVITES_JSON`) enables the invite-gated Authorization Code + PKCE adapter in `tube_bridge/oauth.py`. Partial or malformed configuration fails startup.
-- Dynamic registration alone grants no access. High-entropy invite digests select deployment-local pseudonymous `operator` or `tester` roles; authorization state/codes and role metrics are process-memory only.
-- OAuth roles are an aggregate observability dimension, not quota identity. ADR-001's five attempted Data API operations per Railway-observed IP/process remain unchanged.
-- If neither static Bearer nor OAuth is configured, self-hosted HTTP remains open for local development.
+- **stdio** — recommended for local clients; no inbound socket.
+- **Streamable HTTP** (`/mcp`) — recommended remote transport.
+- **SSE** (`/sse`) — legacy compatibility transport.
+- **Health** (`/health`) — public process health and tool count.
+- **Optional static Bearer** — `TUBE_BRIDGE_AUTH_KEY` protects `/mcp`, `/sse`, and `/messages` for header-capable clients.
 
-### Data API Client
+There is no OAuth, invite-code, account, or tester-role layer.
 
-- YouTube Data API v3 calls use Python stdlib `urllib` direct REST (`tube_bridge/youtube/api.py`).
-- No `google-api-python-client` dependency exists in the codebase.
-- `YOUTUBE_API_KEY` is read from the environment at runtime by `get_api_key()` in `tube_bridge/youtube/api.py`.
+## Storage
 
-### Cache and Corpus Storage
+- `cache.db` stores transcript and video metadata cache entries.
+- `corpus.db` stores user-created corpora, chunks, and sqlite-vec vectors.
+- Embeddings run locally through fastembed after model assets are available.
+- Corpus retention is controlled by the self-hosting user. The application imposes no demo TTL or hosted-retention policy.
+- The nullable historical `expires_at` column remains schema-compatible for databases that passed through earlier development builds; new self-hosted corpora have `expires_at = NULL`.
 
-- **Cache:** `cache.db` under `TUBE_BRIDGE_CACHE` (default `~/.tube_bridge`). Stores transcripts and video metadata; source authority is `tube_bridge.cache.DB_PATH`.
-- **Corpus:** separate `corpus.db` under the same configured directory. Stores named corpora, chunks, deadlines and sqlite-vec vectors; source authority is `tube_bridge.corpus.DB_PATH`.
+## Private Operator Infrastructure
 
-### Security Model
+The Operator may run a private Railway instance for personal Pi/CLI usage. It is protected by the existing static Bearer key and is not a public product endpoint, demo, tester surface, or support promise. Its credentials and hostname are not distributed as an evaluation service.
 
-- Code obtains optional values (API keys, tokens, proxy URLs, OAuth signing material and invite digests) from environment variables at runtime.
-- No API key, plaintext invite, signing key, token, secret, or access material is bundled, embedded, committed, or shipped in the repository.
-- The publication policy forbids bundling such material; prior README claims implying bundled access material are stale and have been corrected.
+Browser Claude Custom Connector is not a supported target for this private instance because it cannot attach the static Bearer header. Pi and Claude Code CLI remain suitable header-capable personal clients.
 
-## Demo Endpoint
+## Product Boundaries
 
-- **Railway-hosted disposable demo:** `tube-bridge-production.up.railway.app`. This is solely a controlled try-before-install demo, never a SaaS or managed transcript-hosting product.
-- **Accepted controls:** exactly 5 attempted official Data API operations per Railway-observed client IP for the current process lifetime; memory-only salted/HMAC buckets; structured sixth-operation rejection; restart reset; persisted 600-second corpus deadlines with exact deterministic deletion and first live absence observation at +1.577 seconds.
-- **Trusted identity:** production uses Railway-overwritten `X-Real-IP`. A live adversarial probe varied both client-supplied `X-Real-IP` and `X-Forwarded-For`; all requests remained one observed bucket. Production does not trust client-controlled XFF.
-- **Retention/privacy:** no persistent volume, backups, accounts, or durable hosted corpus. Raw IPs are not stored in SQLite or application logs; `/health` exposes aggregate quota and role counters only. Self-hosted users remain unaffected and bring their own keys/storage.
-- **OAuth addendum:** Railway deployment `3667c56f-4487-435b-b8b4-b45ec2d5619c` serves public standards discovery plus invite-gated DCR/Authorization Code/PKCE. Live Operator OAuth, Tester OAuth, existing static Bearer, and MCP initialize checks pass without changing quota counters. This is not an account system, and real Claude UI connector acceptance remains a separate gate.
-- **No shared upstream access material** may be distributed to consumers.
-- IPRoyal residential proxy (`TUBE_BRIDGE_PROXY` env var, pay-as-you-go) is configured as the transcript bot-detection workaround; reliability remains a conditional operational concern rather than a durability promise.
+- No public hosted demo or try-before-install service.
+- No user accounts, signup, durable hosted profiles, billing, entitlements, or managed identity.
+- No public upstream API key or proxy sharing.
+- No browser extension.
+- No video download/upload, comment posting, playlist mutation, or account management.
+- Grabbit remains a completely separate companion MCP with no connector, dependency, shared service, or code integration.
 
-## Quota Facts (Verified 2026-08-08)
+## Current Evidence
 
-Default allocation documented as 100 search.list calls/day, 100 videos.insert calls/day, and 10,000 units/day combined for other endpoints, subject to change. Additional allocation follows the YouTube API Services audit/quota-extension process. No purchasable quota tier was identified in official Google documentation. Sources:
-- https://developers.google.com/youtube/v3/determine_quota_cost
-- https://developers.google.com/youtube/v3/guides/quota_and_compliance_audits
-- https://developers.google.com/youtube/terms/developer-policies
+- Current public release: `v1.0.2`.
+- Original core freeze: 125 deterministic tests.
+- Active tree: 130 deterministic tests, including the 5-test self-hosted-only retirement contract.
+- Wheel/sdist, `twine check`, isolated install, installed CLI/MCP, Docker runtime, PyPI, GitHub Release, public GHCR, and hosted Python 3.12/3.13 CI are verification surfaces.
+- `test_tools.py` remains an optional live YouTube smoke, not a deterministic gate.
 
-The Data API does not provide transcript text; transcripts rely on a separate `youtube-transcript-api`/proxy pipeline.
+## Decision Authority
 
-## Self-Hosted Boundary
+ADR-003 is active: `docs/adr/003-self-hosted-only-private-operator-railway.md`.
 
-tube-bridge is an MIT self-hosted individual MCP. It is never a SaaS or managed transcript-hosting product.
-
-**Open core (MIT licensed):**
-- All 16 MCP tools, all transports, all cache/corpus logic.
-- Zero-registration workflows: 13 tools usable without any API key.
-- Users bring their own `YOUTUBE_API_KEY` for the 3 API-dependent tools.
-
-The Railway demo is solely a disposable try-before-install convenience. There is no commercial extension, product gateway, billing, entitlement, managed higher-quota tier, or extension deployment.
-
-## [Grabbit MCP](https://grabbitapp.com)
-
-Grabbit is a completely separate companion MCP. There is no connector, dependency, shared service, bundled workflow, code integration, or implementation roadmap between tube-bridge and Grabbit. An example agent usage sequence may show that the agent uses tube-bridge to find videos and then separately uses Grabbit to save links — that is the full extent of any documented relationship.
-
-## Browser Extension
-
-A browser extension is outside this project's scope and release gate. It must not be architected, planned, or documented here.
-
-## Core Release-Candidate Evidence
-
-- One runtime `TOOL_CATALOG` defines all 16 tools and derives HELP metadata; stale 10/11-tool claims are removed.
-- The packaged synchronous entrypoint is `tube_bridge.cli:main`.
-- Ten frozen Python test files produce 125 passing tests without changing the frozen hash.
-- Isolated wheel install, installed CLI/MCP handshake, wheel+sdist, `twine check`, SHA-256 dependency lock, and actual Docker authenticated MCP handshake pass.
-- Verification: `.brainops/methodology/verification/verification-WI-00028-python-local.json`; Station lifecycle hash/gate/persistence receipts are complete. Final independent conformance is recorded separately and must not be inferred from intermediate audit receipts.
-
-## Disposable Demo Acceptance Evidence
-
-- Frozen-TDD source cycles cover allowance accounting at the Data API boundary, async/thread/MCP/SSE identity propagation, trusted-header fail-closed behavior, privacy, restart reconciliation, nearest-deadline cleanup, rollback, deadline-crossing races, worker recovery, and atomic expiry selection.
-- The accepted demo baseline produced 209 passing tests. With the separately frozen 64-test OAuth addendum, the current cumulative suite is 273 deterministic tests; hosted CI passes on Python 3.12 and 3.13.
-- Live Railway probe: five operations allowed, structured sixth rejection, one bucket despite six spoofed `X-Real-IP`/XFF values; process restart reset all aggregate counters to zero.
-- Live non-invasive TTL probe: persisted deadline delta was exactly 600 seconds; Railway filesystem inspection first observed complete relational/vector deletion 1.577 seconds after the deadline without invoking a corpus API.
-- Railway deployment manifest shows no volume mount; application logs contained none of the known probe IP values.
-
-## Publication Readiness
-
-- **Self-hosted core publication is accepted.** GitHub Release, PyPI package, public GHCR image, hosted CI, and post-publication install/container receipts are present.
-- **Disposable demo P0 acceptance is separately complete.** It does not change the self-hosted core contract and provides no SLA, account continuity, durable storage, or managed-hosting promise.
-- **OAuth source and live protocol verification pass, but UI acceptance remains pending.** Do not mark WI-00047/D7 complete until a real Claude Custom Connector authorizes and completes a tool call.
-- **Conditional operations remain explicit:** D6/X1 quota-extension work is reviewed before broad announcement and when demand approaches default allocation; X2 proxy reliability is reviewed before broad announcement and on an Operator-observed availability-threshold breach; X3 persistence/backups is N/A while the demo remains no-volume and non-durable.
-- Architecture and implementation outcomes are recorded in ADR-001 and `docs/adr/002-demo-oauth-test-identity.md`.
-- No coverage percentage, SLA, pricing, launch venue, or legal conclusion is asserted.
+ADR-001's hosted-demo clauses and ADR-002's OAuth/tester design are superseded. Their commits and audit receipts remain historical evidence; they are not active product requirements.

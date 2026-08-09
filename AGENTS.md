@@ -1,161 +1,97 @@
 # AGENTS.md — tube-bridge
 
-**Project:** YouTube MCP server for AI agents — 16 tools
-**Stack:** Python 3.12+, MCP 1.28.1, yt-dlp, youtube-transcript-api, sqlite-vec, fastembed
-**Transport:** stdio + Streamable HTTP (/mcp) + SSE (/sse, legacy)
+**Project:** Self-hosted YouTube MCP server — 16 tools
+**Stack:** Python 3.12+, MCP 1.28.1, yt-dlp, youtube-transcript-api, SQLite, sqlite-vec, fastembed
 **License:** MIT
+
+## Product Authority
+
+Read these before changing product behavior:
+
+1. `PROJECT_VISION.md`
+2. `docs/adr/003-self-hosted-only-private-operator-railway.md`
+3. `docs/planning/PUBLICATION_READINESS.md`
+
+The only public product is the self-hosted MCP. There is no public hosted demo, OAuth service, tester program, account system, managed storage, or SLA. The Operator's Railway instance is private personal infrastructure and is not distributed as an endpoint.
+
+ADR-001 hosted-demo clauses and ADR-002 are historical/superseded. Do not revive demo quotas, trusted-IP buckets, forced corpus TTL, OAuth, invite roles, or browser-Claude connector work without a new Operator-approved ADR.
 
 ## Quick Start
 
 ```bash
-pip install mcp==1.28.1 yt-dlp youtube-transcript-api starlette uvicorn sqlite-vec fastembed
-python3 server.py              # stdio
-python3 server.py --http       # HTTP on :8080
-python3 test_tools.py          # live smoke test (not an automated suite)
+pip install tube-bridge
+
+tube-bridge                  # stdio
+tube-bridge --http           # HTTP on :8080
+python3 -m pytest tests -q    # deterministic suite
+python3 test_tools.py         # optional live YouTube smoke
 ```
 
 ## Architecture
 
-```
+```text
 tube_bridge/
-├── server.py          # MCP wiring: 16-tool registration (list_tools) + dispatch (call_tool)
-├── tools.py           # All tool implementations (async, cached, dual-source)
-├── cli.py             # Argument parsing and stdio-vs-HTTP runtime selection
-├── transport.py       # Streamable HTTP/SSE routing + static/OAuth auth + identity + health
-├── oauth.py           # Optional invite-gated OAuth/DCR/PKCE adapter + role aggregates
-├── cache.py           # Persistent SQLite cache (cache.db) — transcript + video metadata tables
-├── corpus.py          # Semantic search (corpus.db) — sqlite-vec vectors + fastembed (local)
+├── server.py          # 16-tool catalog, MCP registration, help and dispatch
+├── tools.py           # YouTube and corpus tool implementations
+├── cli.py             # synchronous installed entrypoint; stdio/HTTP selection
+├── transport.py       # Streamable HTTP/SSE, optional static Bearer, health
+├── cache.py           # cache.db — transcripts and video metadata
+├── corpus.py          # corpus.db — user-managed corpora and local vectors
 └── youtube/
-    ├── client.py      # yt-dlp subprocess (retry + exponential backoff + proxy)
-    ├── api.py         # YouTube Data API v3 client — stdlib urllib only, no Google SDK
-    ├── transcript.py  # youtube-transcript-api (manual > ASR, proxy)
-    └── models.py      # VideoInfo dataclass
+    ├── client.py      # yt-dlp subprocess, retry, proxy
+    ├── api.py         # Data API v3 via stdlib urllib
+    ├── transcript.py  # transcript extraction; real upstream errors preserved
+    └── models.py      # VideoInfo
 ```
 
-## Tools (16)
+Retired modules `oauth.py`, `demo_policy.py`, and `demo_ttl.py` must remain absent.
 
-Registered from `TOOL_CATALOG` by `tube_bridge/server.py` `list_tools()`. Confirmed from source.
+## Core Contract
 
-| # | Tool | API Key | Notes |
-|---|------|:---:|-------|
-| 1 | `youtube_search` | No→Yes | Dual-source: API v3 primary, yt-dlp fallback |
-| 2 | `youtube_search_channels` | Yes | Channel search, subscriber filters |
-| 3 | `youtube_get_channel_info` | Yes | Channel stats: subs, views, country, keywords |
-| 4 | `youtube_get_video_info` | No→Yes | Cached (lru_cache 64), dual-source |
-| 5 | `youtube_get_trending` | No→Yes | API v3 primary, yt-dlp fallback |
-| 6 | `youtube_get_channel_videos` | No | Recent uploads from @handle or URL |
-| 7 | `youtube_get_playlist` | No | All videos in a playlist |
-| 8 | `youtube_get_transcript` | No | Plain text or [MM:SS] timestamps, Manual > ASR |
-| 9 | `youtube_get_available_languages` | No | Subtitle languages, manual vs auto-generated |
-| 10 | `youtube_get_comments` | Yes | Top-level comments via Data API v3 |
-| 11 | `corpus_create` | No | Named corpus, fixed embedding model |
-| 12 | `corpus_add` | No | Fetches transcript (network), chunks locally, embeds locally |
-| 13 | `corpus_search` | No | Semantic search: scores, timestamps, video IDs |
-| 14 | `corpus_list` | No | List corpora with chunk + video counts |
-| 15 | `corpus_delete` | No | Delete corpus and all chunks/vectors |
-| 16 | `tube_bridge_help` | No | In-MCP docs: tools, architecture, limitations |
+- Exactly 16 tools from `TOOL_CATALOG`.
+- 13 keyless-capable tools; 3 require `YOUTUBE_API_KEY`.
+- `youtube_search`, video information and trending use Data API first when configured and yt-dlp fallback where supported.
+- The Data API client uses Python stdlib `urllib`; do not add the Google SDK without an ADR.
+- Transcripts use `youtube-transcript-api`, with manual captions preferred over ASR.
+- Network/proxy failures must not be collapsed into a false “no captions” result.
+- Embeddings are local through fastembed after assets are available.
 
-13 callable without API key; 3 require one.
+## Transports and Auth
+
+- stdio for local child-process clients.
+- Streamable HTTP `/mcp` for remote clients.
+- Legacy SSE `/sse` plus `/messages`.
+- `/health` is public.
+- Optional `TUBE_BRIDGE_AUTH_KEY` protects `/mcp`, `/sse`, and `/messages`.
+- No OAuth, invite, tester-role, IP-bucket, or demo-mode behavior.
+
+Pi and Claude Code CLI may use the Operator's private Railway service because they support a Bearer header. Browser Claude Custom Connector is not an active requirement.
 
 ## Storage
 
-- **`cache.db`** — persistent SQLite database for transcript segments and video metadata. Path: `$TUBE_BRIDGE_CACHE/cache.db` (default: `~/.tube_bridge/cache.db`). Tables: `transcripts`, `video_info`.
-- **`corpus.db`** — separate SQLite database for semantic search corpora. Same directory as `cache.db`. Tables: `corpora`, `corpus_chunks`, `corpus_added_videos`, plus per-corpus sqlite-vec virtual tables.
+- `cache.db` and `corpus.db` are separate SQLite databases under `TUBE_BRIDGE_CACHE` (default `~/.tube_bridge`).
+- Self-hosting users own retention. No forced corpus TTL.
+- Keep the nullable `corpora.expires_at` compatibility column; new corpora write `NULL`.
+- Do not break databases created by earlier development builds.
 
-Both databases live under the same configurable directory but are distinct files and schemas.
+## Security
 
-## Data API Client
+- Read API keys, proxy URLs and Bearer keys from environment variables only.
+- Never commit, print, bundle, rotate, or expose credentials without explicit Operator authorization.
+- Do not distribute the private Railway URL/key as a public evaluation service.
+- Grabbit is a separate MCP; no connector/shared service/code integration exists.
 
-- YouTube Data API v3 calls use Python stdlib `urllib.request` directly (`tube_bridge/youtube/api.py`).
-- No `google-api-python-client` or any third-party Google SDK is a dependency.
-- `YOUTUBE_API_KEY` is read from the environment at runtime; no key is bundled or committed.
+## Testing and Methodology
 
-## Transports & Auth
+- `test_tools.py` is optional live smoke only.
+- Original core freeze: 125 tests.
+- Active suite after ADR-003 retirement: 130 deterministic tests.
+- Source/test changes require RED, independent contract audit, frozen SHA-256, GREEN, independent source audit, and hosted CI.
+- Do not modify a frozen test after source work begins; use an audited addendum or superseding product ADR.
+- Build/release verification uses a disposable tools environment when system Python lacks `build`/`twine`.
 
-- **stdio** — child-process transport for local MCP clients.
-- **Streamable HTTP** (`/mcp`) — recommended for remote deployments.
-- **SSE** (`/sse`) — legacy, deprecated in favor of Streamable HTTP.
-- **`/health`** — always open, returns tool count and auth status.
-- **Static Bearer auth** — `TUBE_BRIDGE_AUTH_KEY` protects `/mcp`, `/sse`, and `/messages`, remains valid for Pi/header-capable clients, and counts as Operator traffic.
-- **Optional OAuth** — the complete three-variable OAuth configuration enables public discovery/DCR/authorize/token routes and invite-gated Authorization Code + PKCE `S256`. Invite JSON stores SHA-256 digests only and assigns pseudonymous `operator`/`tester` roles. Partial configuration fails closed.
-- **Separation** — OAuth roles only affect aggregate auth metrics; they never bypass, reset, or replace ADR-001's Railway-observed-IP allowance. If neither auth mechanism is configured, self-host HTTP remains open.
+## Publication
 
-## Conventions
+Current release `v1.0.2` remains published on GitHub, PyPI and GHCR. Historical `v1.0.0` metadata hygiene remains recorded and does not require yanking the functional release.
 
-- **Dual-source:** API v3 primary, yt-dlp fallback for search, video_info, trending
-- **Cached:** SQLite persistent (cache.db) + lru_cache hot layer (64 for video_info, 32 for transcripts)
-- **Retry:** 2 retries with exponential backoff for yt-dlp subprocess
-- **Proxy:** `TUBE_BRIDGE_PROXY` env var → both yt-dlp and transcript API
-- **Embeddings:** fastembed (BGE-small-en-v1.5, 384-dim); local inference after model assets are available; initial model acquisition may require network; no embedding API setup
-- **Single package:** one `tube_bridge/` directory; no required external database/vector/embedding service; YouTube upstream network is required; proxy is optional
-
-## Testing
-
-```bash
-python3 test_tools.py          # live smoke script only
-```
-
-`test_tools.py` remains an optional live smoke. The original core freeze is 125 tests; the current cumulative acceptance tree is 273 deterministic tests, including the accepted demo/race/identity contracts and the separately frozen 64-test OAuth addendum. `.github/workflows/ci.yml` passes on Python 3.12 and 3.13.
-
-## Operational Guardrails
-
-### Decision Sources
-- `PROJECT_VISION.md` — product boundaries, tool baseline, open-core scope.
-- `docs/planning/PUBLICATION_READINESS.md` — per-surface readiness checklist; core publication and disposable-demo P0 controls are independently accepted.
-- `docs/adr/001-demo-api-quota-and-product-boundary.md` — accepted architecture and implementation outcome for demo access, quota/TTL, and product separation.
-- `docs/adr/002-demo-oauth-test-identity.md` — optional OAuth compatibility, invite roles, privacy, and unchanged quota identity.
-
-### No Direct Client-Side Upstream Access Material
-- tube-bridge obtains optional API keys, tokens, and proxy URLs from environment variables at runtime.
-- Do NOT bundle, embed, commit, print, or ship any API key, OAuth signing key, plaintext invite, token, secret, or access material in the repository.
-- Prior README claims implying bundled credentials are stale and have been corrected.
-
-### Core vs Demo vs Grabbit Boundary
-- **Core (MIT):** All 16 tools, all transports, cache/corpus logic — open source, zero registration for 13 tools.
-- **Demo (Railway, disposable):** Controlled try-before-install only. Active WI-00029 controls are exactly 5 attempted Data API operations per Railway-overwritten `X-Real-IP`/process, memory-only privacy-preserving counters, 10-minute transactional corpus deletion, and no durable storage/accounts/volume/backups. The WI-00047 OAuth adapter is deployed and live-protocol verified with Operator/Tester invites, but real Claude Custom Connector UI acceptance is still pending. Never present this as SaaS, an SLA, managed identity, or managed hosting.
-- **[Grabbit MCP](https://grabbitapp.com) (separate companion; endpoint `https://mcp.grabbitapp.com/api/mcp`):** Completely separate MCP. No connector, dependency, shared service, code integration, or implementation roadmap exists. An example agent usage sequence may show the agent using tube-bridge to find videos and then separately using Grabbit to save links — that is the full extent of any documented relationship.
-
-### Source/Test Changes
-- Source and test changes require corresponding tests and independent acceptance.
-- `test_tools.py` is an optional live smoke; the frozen deterministic suite is the acceptance authority.
-- Verify against runtime source (`tube_bridge/server.py` `list_tools()`) before citing tool counts.
-
-### Publication Readiness
-- **Core publication is accepted:** GitHub Release, PyPI, public GHCR, hosted CI, external install and container MCP checks are recorded.
-- **Disposable-demo P0 is independently accepted:** frozen-TDD, hosted CI and live Railway identity/quota/restart/TTL evidence are recorded.
-- **OAuth addendum is not yet fully accepted:** source audit, hosted CI and live Railway protocol evidence pass; a real Claude Custom Connector authorization and tool call remain mandatory before closing WI-00047/D7.
-- Do not extend any claim to a production SLA, legal conclusion, durable managed hosting, managed accounts, or one-click service promise. Conditional demo P1/P2 items remain tracked in `docs/planning/PUBLICATION_READINESS.md`.
-
-## Core Release-Candidate State
-
-1. `TOOL_CATALOG` is the single runtime source for 16 registered tools and derived HELP metadata.
-2. Package documentation states 16 tools.
-3. The installed synchronous entrypoint is `tube_bridge.cli:main`; isolated wheel install and MCP runtime are verified.
-4. Frozen suite, build/twine, hosted CI, PyPI install, public GHCR pull/MCP handshake, and GitHub Release are verified. Separately, demo quota/privacy/TTL controls pass their source and live gates.
-
-## Key Docs
-
-| Document | Path |
-|----------|------|
-| README (public) | README.md |
-| Project Vision | PROJECT_VISION.md |
-| Publication Readiness | docs/planning/PUBLICATION_READINESS.md |
-| ADR-001 (Demo/Quota/Boundary) | docs/adr/001-demo-api-quota-and-product-boundary.md |
-| ADR-002 (OAuth/Test Identity) | docs/adr/002-demo-oauth-test-identity.md |
-| Architecture | docs/constitution/02_ARCHITECTURE.md |
-| Data Model | docs/constitution/03_DATA_MODEL.md |
-| Non-Goals | docs/constitution/05_NON_GOALS.md |
-| ADR Rules | docs/constitution/06_ADR_RULES.md |
-| Open Questions | docs/planning/OPEN_QUESTIONS.md |
-
-## Dependencies
-
-```
-mcp>=1.28.1
-yt-dlp
-youtube-transcript-api
-starlette
-uvicorn
-sqlite-vec
-fastembed
-```
+Public documentation must describe self-hosting only. Do not advertise Railway demo access, hosted retention, tester invites, OAuth, accounts, billing, managed quota, or uptime guarantees.

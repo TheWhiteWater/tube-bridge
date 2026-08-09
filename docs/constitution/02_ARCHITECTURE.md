@@ -15,8 +15,7 @@ server.py                       — Source-checkout compatibility wrapper
 tube_bridge/cli.py              — Canonical synchronous installed CLI: stdio or HTTP
 tube_bridge/server.py           — 16-tool catalog, MCP wiring, HELP derivation, and separately verified dispatch
 tube_bridge/tools.py            — 15 operational tool implementations (async, cached, dual-source); tube_bridge_help is handled directly in server.py
-tube_bridge/transport.py        — HTTP/SSE ASGI app builder + static/OAuth auth dispatch + /health
-tube_bridge/oauth.py            — Optional invite-gated OAuth/DCR/PKCE adapter + role metrics
+tube_bridge/transport.py        — HTTP/SSE ASGI app builder + optional static Bearer + /health
 tube_bridge/cache.py            — cache.db: persistent SQLite for transcripts + video metadata
 tube_bridge/corpus.py           — corpus.db: sqlite-vec vectors + fastembed embeddings
 tube_bridge/youtube/
@@ -37,23 +36,10 @@ tube_bridge/youtube/
 - Builds a raw ASGI app routing `/mcp`, `/sse`, `/messages`, `/health`.
 - `/mcp`: `StreamableHTTPSessionManager` (stateless) — recommended for remote deployments.
 - `/sse`: `SseServerTransport` with `/messages` POST handler — legacy, deprecated.
-- `/health`: Always-open JSON endpoint returning tool count, auth status, demo aggregates, and aggregate-only OAuth role metrics.
-- Auth dispatch: accepts the existing `TUBE_BRIDGE_AUTH_KEY` static Bearer as Operator and optional OAuth access tokens. If either is configured, `/mcp`, `/sse`, and `/messages` fail closed; no auth configuration retains open self-host behavior.
-- Public OAuth protocol routes are delegated to `OAuthService` before protected MCP dispatch. Successful protected requests are counted once immediately before route dispatch, including long-lived SSE.
+- `/health`: Always-open JSON endpoint returning tool count and static-auth status.
+- Optional `TUBE_BRIDGE_AUTH_KEY` protects `/mcp`, `/sse`, and `/messages`; no auth configuration retains open self-host behavior.
 - Lifespan: `http_manager.run()` started/stopped with ASGI lifespan events; session manager lifecycle is tied to the server process.
 - **Note:** `transport.py` builds HTTP/SSE ASGI routes only; packaged CLI runtime selection handles stdio.
-
-## Optional OAuth Adapter
-
-`tube_bridge/oauth.py` is enabled only when all three deployment variables are valid: canonical HTTPS origin, high-entropy signing key, and bounded invite-digest JSON. It provides RFC 9728/8414 discovery, public-client DCR compatibility, Authorization Code with mandatory PKCE `S256`, RFC 8707 resource binding, and RFC 9207 issuer identification.
-
-- Dynamic client IDs and access tokens are stateless HMAC-authenticated values.
-- Exact registered redirect strings are integrity-bound and never canonicalized; only HTTPS or loopback HTTP is accepted.
-- Authorization requests/codes are one-time, process-memory only, purged at the five-minute deadline, and explicitly bound to issuer, client, redirect, resource, and PKCE challenge.
-- Invite plaintext is compared only by SHA-256 digest and never stored, returned, committed, or logged. A keyed opaque subject plus `operator`/`tester` role enters the eight-hour access token; no refresh token is issued.
-- OAuth roles feed aggregate-only observability and never enter ADR-001 quota identity selection.
-
-The Railway protocol handshake is live-verified while real Claude Custom Connector UI acceptance remains the final WI-00047 gate.
 
 ## Tool Registration & Dispatch
 
@@ -64,7 +50,7 @@ The Railway protocol handshake is live-verified while real Claude Custom Connect
 
 **Tool dispatch** (`tube_bridge/server.py` `call_tool()` + `_handle_tool()`):
 - `call_tool()` wraps the result in `TextContent` with JSON serialization.
-- Errors have explicit branches for `DemoPolicyError`, `ValueError`, `RuntimeError`, and generic `Exception`; demo-policy failures use stable structured payloads.
+- Errors have explicit branches for `ValueError`, `RuntimeError`, and generic `Exception`, returned as structured tool payloads.
 - `_handle_tool()` is a separate `match`/`case` dispatcher routing tool names to async implementation functions in `tube_bridge/tools.py`.
 
 `HELP_TEXT` is derived from `TOOL_CATALOG`. Dispatch remains separate; frozen catalog/help/schema/dispatch tests enforce exactly the same 16-name set.
@@ -178,20 +164,20 @@ Two-layer cache for transcripts and video metadata:
 - Users bring their own `YOUTUBE_API_KEY` for the 3 API-keyed tools.
 - MIT-licensed; installable from source. No SaaS, accounts, billing, or managed hosting.
 
-### Disposable Try-Before-Install Demo
-- Controlled Railway endpoint: `tube-bridge-production.up.railway.app`; it is not an SLA-backed service.
-- Explicit demo mode is HTTP-only. Request identity propagates through MCP/SSE/threads and production selects Railway-overwritten single-value `X-Real-IP`; malformed, duplicate, missing or unknown trusted-header configuration fails closed.
-- Data API accounting occurs immediately before each attempted official network request: 5 operations per observed IP/process, then structured rejection. Salted HMAC buckets and aggregate health metrics are memory-only; restart resets them.
-- Demo corpora persist `expires_at`; deterministic clocks prove transactional deletion at the 600-second deadline, while non-invasive live sampling first observed complete absence at +1.577 seconds. The startup-reconciling nearest-deadline worker retries transient SQLite errors. Railway has no persistent volume/backups/accounts. Self-hosted users retain their own keys and persistent storage.
-- The separately gated OAuth adapter is deployed with Operator and external-Tester invites. Live DCR/PKCE, both role flows, existing static Bearer, MCP initialize, aggregate deltas, and unchanged quota counters pass; no account or durable identity layer is added.
+### Distribution
+- GitHub, PyPI and GHCR distribute the same self-hosted package.
+- Users own deployment, credentials, quotas, storage, retention and availability.
+- No public hosted demo, shared quota, forced corpus expiry, OAuth service, account layer, or managed infrastructure is part of the architecture.
 
 ## Release-Candidate Readiness
 
 1. One catalog defines all 16 registered tool schemas and HELP metadata; a separate dispatcher is contract-tested against the same 16-name set.
 2. Package documentation and the synchronous installed `tube_bridge.cli:main` entrypoint are verified from an isolated wheel.
-3. The core freeze remains 125 tests; with demo/race/identity contracts and the separately frozen 64-test OAuth addendum, the current cumulative suite produces 273 deterministic passes. `test_tools.py` remains optional live smoke.
-4. Wheel+sdist/twine, exact dependency lock, Docker MCP handshake, SQLite lifecycle/race contracts and hosted Python 3.12/3.13 CI pass.
-5. GitHub Release, PyPI and public GHCR publication are complete; separate live Railway identity/quota/restart/TTL gates pass. OAuth source/live-protocol gates pass, while real Claude UI acceptance remains pending.
+3. The core freeze remains 125 tests; the active tree adds a 5-test self-hosted-only retirement contract for 130 deterministic tests. `test_tools.py` remains optional live smoke.
+4. Wheel+sdist/twine, exact dependency lock, Docker MCP handshake and SQLite lifecycle contracts pass; final hosted Python 3.12/3.13 CI for the ADR-003 transition remains a WI-00060 gate.
+5. GitHub Release, PyPI and public GHCR publication are complete; no hosted-demo gate exists.
+
+ADR-003 is the active product authority. ADR-001's hosted-demo clauses and ADR-002 are superseded but remain preserved as historical documents and Git/Station evidence.
 
 ## Design Decisions
 

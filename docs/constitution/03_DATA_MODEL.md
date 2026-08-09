@@ -233,22 +233,6 @@ Deletes per-corpus vector table, all chunks, added-video records, and the corpus
 
 ---
 
-## Optional OAuth Process-Memory Model
-
-OAuth adds no SQLite table or durable identity record. `tube_bridge/oauth.py` uses these bounded deployment/process structures:
-
-- **Invite configuration:** up to 64 unique `{id, role, secret_sha256}` records. `role` is exactly `operator` or `tester`; only lowercase SHA-256 digests are configured. Plaintext invite codes are provisioning material, not application state.
-- **Stateless client ID:** HMAC-authenticated payload containing version, issuance time, and the exact registered redirect URI strings. It grants no access by itself.
-- **Pending authorization request:** random request ID → five-minute `exp`, canonical `iss`/resource, signed client ID, exact redirect, unchanged state, PKCE challenge, and CSRF value. Memory-only and purged on expiry.
-- **One-time authorization code:** random opaque key → the same issuer/client/redirect/resource/PKCE binding plus role and keyed opaque subject. Memory-only, five-minute expiry, and removed before token validation so even a failed exchange consumes it.
-- **Access token:** stateless HMAC-authenticated payload with version, exact `iss`/`aud`, opaque `sub`, role, scope `mcp:tools`, `iat`, eight-hour `exp`, and random `jti`. No refresh token exists.
-- **Authenticated principal:** in-request `{role, subject | None, method}`. The static Bearer maps to `operator` with no OAuth subject.
-- **Health aggregates:** process-memory Operator request count, Tester request count, and a set-derived unique OAuth subject count. `/health` exposes only counts, never subject/client/invite/token/code/redirect values.
-
-OAuth identity and demo quota identity are deliberately separate. The OAuth subject is never persisted or mapped to a raw/hashed client IP; ADR-001 accounting continues to use only the trusted Railway-observed IP bucket.
-
----
-
 ## Storage Schema
 
 ### cache.db
@@ -264,7 +248,7 @@ WAL mode. `$TUBE_BRIDGE_CACHE/corpus.db`.
 
 | Table | Columns | Notes |
 |-------|---------|-------|
-| corpora | corpus_id TEXT PK, label TEXT, embedding_model TEXT, created_at REAL, expires_at REAL nullable | ID validated: `^[A-Za-z0-9_-]{1,128}$`; demo stores `created_at + 600`, self-hosted stores NULL |
+| corpora | corpus_id TEXT PK, label TEXT, embedding_model TEXT, created_at REAL, expires_at REAL nullable | ID validated: `^[A-Za-z0-9_-]{1,128}$`; active self-hosted code stores `expires_at = NULL` while retaining the column for schema compatibility |
 | corpus_chunks | id INTEGER PK, corpus_id TEXT, video_id TEXT, start_ts REAL, end_ts REAL, text TEXT, added_at REAL | UNIQUE(corpus_id, video_id, start_ts) |
 | corpus_added_videos | corpus_id TEXT, video_id TEXT, added_at REAL | Composite PK |
 | vec_{corpus_id} | VIRTUAL (sqlite-vec: `vec0(embedding float[dim])`) | Joined via rowid=id. Dim=384 (BGE-small) |
@@ -307,8 +291,8 @@ Regex: `^[A-Za-z0-9_-]{1,128}$`. Rejected IDs raise `ValueError`. Protects SQL i
 - Separate files in `$TUBE_BRIDGE_CACHE`. Distinct schemas/lifecycles.
 - cache.db: transient cache (safe to delete/regenerate).
 - corpus.db in self-hosted mode: user-managed; deletion is permanent and user-initiated.
-- corpus.db in explicit demo mode: each corpus has a persisted 600-second deadline; relational rows and its `vec_{id}` table are transactionally deleted by the worker/lazy defense. No raw client identity or allowance bucket is stored in either database.
-- Both use WAL journal mode. Railway attaches no persistent volume, so a process/deployment replacement may remove demo data earlier.
+- `expires_at` remains nullable for compatibility with databases produced by earlier development builds; active code does not schedule expiry or background deletion.
+- Both databases use WAL journal mode. Retention and backups belong to the self-hosting user.
 
 ---
 

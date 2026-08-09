@@ -1,6 +1,7 @@
 # ADR-001: Demo API Access, Quota Boundary, and Self-Hosted Product Boundary
 
-**Status:** Accepted and implemented (core and disposable-demo gates remain independent)
+**Status:** Partially superseded by ADR-003; self-hosted/open-core decisions remain historical authority, hosted-demo decisions are retired
+**Superseded by:** [ADR-003](003-self-hosted-only-private-operator-railway.md)
 **Date:** 2026-08-08
 **Implementation accepted:** 2026-08-09
 **Authority:** Operator/Architect

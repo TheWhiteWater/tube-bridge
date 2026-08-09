@@ -26,10 +26,10 @@ Build the **most complete, zero-friction YouTube MCP server** — covering searc
 - Zero-registration workflows: 13 tools usable without any API key.
 - Users bring their own `YOUTUBE_API_KEY` for the 3 API-dependent tools (comments, channel search, channel info).
 
-**Hosted demo endpoint (Railway, disposable):**
-- Controlled try-before-install endpoint: `tube-bridge-production.up.railway.app`; not a SaaS or managed service.
-- WI-00029 accepted controls: isolated server-side configuration, exactly 5 attempted Data API operations per Railway-overwritten `X-Real-IP`/process, memory-only privacy-preserving counters, transactional corpus deletion at 10 minutes, and no volume/backups/accounts/durable corpus.
-- These controls have frozen deterministic, hosted-CI and live Railway evidence; self-hosted behavior is unaffected.
+**Distribution:**
+- The project provides no public hosted endpoint or demo.
+- Users install from PyPI, GitHub, or GHCR and operate their own credentials, storage, quotas, auth, and retention.
+- Private Operator infrastructure is not part of the public product.
 
 **Grabbit (separate MCP):**
 - Completely separate MCP. No connector, dependency, shared service, code integration, or implementation roadmap exists between tube-bridge and Grabbit.
@@ -56,8 +56,8 @@ Search, video_info, and trending upgrade to higher-quality Data API v3 results w
 - 16 tools available via stdio, Streamable HTTP, and SSE MCP transports.
 - 13 tools work with zero API keys; 3 unlock with an optional Data API v3 key.
 - Semantic corpus search over transcripts using local embeddings (fastembed + sqlite-vec), with embedding inference done locally after model assets are available; initial model acquisition/cache may require network. `corpus_add` fetches transcripts over the network.
-- Open-core library published on GitHub under MIT license; controlled disposable demo deployed on Railway.
-- Publication readiness gating: self-hosted core and disposable-demo P0 controls are independently accepted in `docs/planning/PUBLICATION_READINESS.md`.
+- Self-hosted library published through GitHub, PyPI, and GHCR under the MIT license.
+- Publication readiness covers the self-hosted core only.
 
 ## Anti-Goals (what success is NOT)
 
@@ -65,4 +65,4 @@ Search, video_info, and trending upgrade to higher-quality Data API v3 results w
 - NOT a video player or UI.
 - NOT a replacement for YouTube Data API — a complementary, agent-first alternative.
 - NOT a scraping service at scale — designed for agent use, not bulk harvesting.
-- NOT a public production service or SLA-backed managed host — the Railway endpoint is only a controlled, non-durable try-before-install demo despite its accepted quota/retention controls.
+- NOT a public hosted demo, production service, or SLA-backed managed host.

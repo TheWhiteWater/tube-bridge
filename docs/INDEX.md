@@ -1,42 +1,48 @@
 # tube-bridge — Project Index
 
-**YouTube MCP server for AI agents. 16 tools: search, discovery, transcripts, comments, semantic corpus. 13 zero-setup, 3 with optional Data API v3 key. MIT self-hosted MCP with disposable try-before-install demo.**
+**Self-hosted MIT YouTube MCP. 16 tools; 13 keyless-capable, 3 with a user-owned Data API key. No public hosted demo.**
 
-## Quick Nav
+## Quick Navigation
 
 | Document | Purpose |
-|----------|---------|
-| [PROJECT_VISION.md](../PROJECT_VISION.md) | Product boundaries, tool baseline, self-hosted model |
-| [README.md](../README.md) | Public-facing readme: quick start, tools, architecture, deployment |
-| [00_MISSION.md](constitution/00_MISSION.md) | Why this project exists |
-| [01_SYSTEM_CONTEXT.md](constitution/01_SYSTEM_CONTEXT.md) | Where it fits |
-| [02_ARCHITECTURE.md](constitution/02_ARCHITECTURE.md) | How it's built |
-| [03_DATA_MODEL.md](constitution/03_DATA_MODEL.md) | What data flows |
-| [04_GLOSSARY.md](constitution/04_GLOSSARY.md) | Terminology |
-| [05_NON_GOALS.md](constitution/05_NON_GOALS.md) | What we DON'T do |
-| [06_ADR_RULES.md](constitution/06_ADR_RULES.md) | How architecture decisions get made |
-| [MVP_SCOPE.md](planning/MVP_SCOPE.md) | Implementation baseline shipped in source |
-| [WORK_BREAKDOWN.md](planning/WORK_BREAKDOWN.md) | Blocks A–F: decomposition and dependencies |
-| [PUBLICATION_READINESS.md](planning/PUBLICATION_READINESS.md) | Two-surface readiness checklist with gates |
-| [OPEN_QUESTIONS.md](planning/OPEN_QUESTIONS.md) | Resolved questions and blocking decisions |
-| [ADR-001](adr/001-demo-api-quota-and-product-boundary.md) | Demo API access, quota boundary, self-hosted product boundary |
-| [ADR-002](adr/002-demo-oauth-test-identity.md) | Optional OAuth compatibility and pseudonymous Operator/Tester identity |
-| [v1.0.0 metadata hygiene audit](audits/2026-08-09-v1.0.0-release-metadata-hygiene.md) | Historical release disposition and public verification |
+|---|---|
+| [Project Vision](../PROJECT_VISION.md) | Active self-hosted-only product boundary |
+| [README](../README.md) | Public install, tools and configuration |
+| [Mission](constitution/00_MISSION.md) | Why the project exists |
+| [System Context](constitution/01_SYSTEM_CONTEXT.md) | Runtime and trust boundaries |
+| [Architecture](constitution/02_ARCHITECTURE.md) | Package and transport design |
+| [Data Model](constitution/03_DATA_MODEL.md) | Tool envelopes and SQLite schemas |
+| [Glossary](constitution/04_GLOSSARY.md) | Terms |
+| [Non-Goals](constitution/05_NON_GOALS.md) | Explicit exclusions |
+| [ADR Rules](constitution/06_ADR_RULES.md) | Decision process and active ADR state |
+| [MVP Scope](planning/MVP_SCOPE.md) | Included/excluded product surface |
+| [Work Breakdown](planning/WORK_BREAKDOWN.md) | Implementation and retirement blocks |
+| [Publication Readiness](planning/PUBLICATION_READINESS.md) | Core-only release gates |
+| [Open Questions](planning/OPEN_QUESTIONS.md) | Resolved and conditional questions |
+| [ADR-003](adr/003-self-hosted-only-private-operator-railway.md) | Active self-hosted-only/private-infrastructure decision |
+| [ADR-001](adr/001-demo-api-quota-and-product-boundary.md) | Historical; demo clauses superseded |
+| [ADR-002](adr/002-demo-oauth-test-identity.md) | Historical; superseded in full |
+| [v1.0.0 metadata hygiene](audits/2026-08-09-v1.0.0-release-metadata-hygiene.md) | Historical release disposition |
 
 ## Tool Inventory
 
-10 YouTube interaction + 5 corpus + 1 help = **16 tools** registered from `TOOL_CATALOG` by `tube_bridge/server.py` `list_tools()`.
+`TOOL_CATALOG` registers 10 YouTube tools, 5 corpus tools and 1 help tool.
 
-- **13 tools callable without API key** (zero-setup): `youtube_search` (yt-dlp fallback), `youtube_get_video_info`, `youtube_get_trending`, `youtube_get_channel_videos`, `youtube_get_playlist`, `youtube_get_transcript`, `youtube_get_available_languages`, `corpus_create`, `corpus_add`, `corpus_search`, `corpus_list`, `corpus_delete`, `tube_bridge_help`.
-- **3 tools require YouTube Data API v3 key:** `youtube_get_comments`, `youtube_search_channels`, `youtube_get_channel_info`.
+- Keyless-capable: search fallback, video info, trending, channel videos, playlist, transcript, available languages, all five corpus tools and help.
+- Data API required: comments, channel search and channel information.
 
-Search, video_info, and trending upgrade to higher-quality Data API v3 results when the key is present.
+## Active State
 
-## State
+- Current public release: `v1.0.2`.
+- Public distribution: GitHub, PyPI and GHCR.
+- Product: self-hosted software only.
+- Auth: optional static Bearer for self-hosted HTTP.
+- Storage: user-managed cache/corpus databases with no forced TTL.
+- Tests: original 125-test core freeze plus five ADR-003 retirement tests.
+- Active WorkItem: WI-00060 finalizes source/docs/CI/private-Railway verification.
+- Historical demo/OAuth WorkItems are superseded and do not define current product behavior.
+- Grabbit is a completely separate MCP.
 
-- **Architecture:** ADR-001 is accepted/implemented for demo identity/quota/TTL and product separation. ADR-002 is accepted/implemented for optional OAuth compatibility without changing quota identity or adding accounts.
-- **Current WorkItems:** WI-00027 documentation synchronization, WI-00028 core publication, WI-00029 disposable-demo hardening, and WI-00034 release metadata hygiene are complete. WI-00047 remains active only for real Claude Custom Connector UI acceptance/final sign-off; WI-00049 records audited frozen-harness corrections.
-- **TME direction:** DIR-004-publication-productization is complete; there is no active P0 direction.
-- **Core publication:** Accepted and externally verified through GitHub Release, PyPI, public GHCR, hosted CI, clean install, and registry-image MCP checks. Historical `v1.0.0` remains functional and unyanked but is explicitly marked superseded for release metadata by current `v1.0.2`.
-- **Disposable demo:** Independently accepted D1–D5 P0 controls: Railway-overwritten identity, 5 attempted Data API operations/IP/process, aggregate privacy-preserving observability, no durable storage, and transactional 10-minute corpus deletion. The optional OAuth adapter is source-audited, CI-green and live-protocol verified with Operator/Tester invites and static-Bearer coexistence; real Claude UI acceptance remains pending. Conditional P1 operations remain triaged. No commercial extension, product gateway, Grabbit connector, or browser-extension roadmap exists.
-- **Last updated:** 2026-08-09
+## Private Infrastructure
+
+The Operator's Railway service is private personal infrastructure for header-capable Pi/CLI clients. It is not indexed as a public endpoint, demo, tester service or support promise.

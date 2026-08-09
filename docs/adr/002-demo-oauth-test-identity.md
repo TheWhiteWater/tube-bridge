@@ -1,6 +1,7 @@
 # ADR-002: Demo OAuth Compatibility and Pseudonymous Test Identity
 
-**Status:** Accepted
+**Status:** Superseded; OAuth/tester identity retired
+**Superseded by:** [ADR-003](003-self-hosted-only-private-operator-railway.md)
 **Date:** 2026-08-09
 **Authority:** Operator/Architect
 **WorkItem:** WI-00047
