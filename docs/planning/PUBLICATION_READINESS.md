@@ -1,7 +1,7 @@
 # Publication Readiness — tube-bridge
 
 **Last updated:** 2026-08-09
-**Status:** Self-hosted core published. No hosted-demo surface exists.
+**Status:** Self-hosted core published. No hosted-demo surface exists. WI-00060 evidence is complete and `ready_for_gate`; refreshed final conformance/closure is pending.
 
 ## Public Surface
 
@@ -18,7 +18,7 @@ Users deploy their own instance and own credentials, storage, quota, retention, 
 | # | Area | Priority | Status | Evidence / Exit Criterion |
 |---|---|:---:|---|---|
 | C1 | Tool/help/schema consistency | P0 | Resolved | One `TOOL_CATALOG` defines exactly 16 tools and derived help metadata. |
-| C2 | Deterministic tests and CI | P0 | In final addendum verification | Original 125-test core freeze plus five ADR-003 retirement tests and two private-endpoint help tests pass locally (132 total); final addendum hosted CI remains pending. |
+| C2 | Deterministic tests and CI | P0 | Resolved | Original 125-test core freeze plus five ADR-003 retirement tests and two private-endpoint help tests pass (132 total); hosted Python 3.12/3.13 run `31298551526` passes both jobs. |
 | C3 | Packaging and installed runtime | P0 | Resolved | Wheel/sdist, twine, isolated install, synchronous CLI, installed MCP runtime and exact dependency lock pass. |
 | C4 | Container distribution | P0 | Resolved | Public GHCR image and authenticated MCP handshake pass. |
 | C5 | Secret and license review | P0 | Resolved | MIT license; no bundled API/proxy/Bearer credentials. |

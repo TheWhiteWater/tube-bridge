@@ -54,7 +54,7 @@
 
 ## Block F — Retire Hosted Demo and OAuth
 
-**Status:** Complete
+**Status:** Implementation/evidence complete; WI-00060 `ready_for_gate`
 
 ### Completed
 
@@ -73,7 +73,8 @@
 - [x] Simplified source deployed privately as `dd031af0-de10-49ff-aca8-97c7dc00e1fe`.
 - [x] Unauthenticated `401`, authenticated MCP initialize/help, Pi extension, absent OAuth routes and exact non-demo health surface verified.
 - [x] WI-00047 and WI-00057 recorded terminal as superseded/cancelled by ADR-003.
-- [ ] WI-00064 removes the final hard-coded private hostname from MCP help before WI-00060 closure.
+- [x] WI-00064 removed the final hard-coded private hostname from MCP help; source audit, hosted CI and private live verification pass.
+- [ ] Refreshed WI-00060 final conformance verdict and Station closure.
 
 ## Dependency Graph
 
