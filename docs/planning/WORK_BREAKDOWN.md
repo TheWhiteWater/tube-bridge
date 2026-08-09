@@ -71,7 +71,7 @@
 - [x] Source and final-doc hosted CI PASS.
 - [x] Simplified source deployed privately as `dd031af0-de10-49ff-aca8-97c7dc00e1fe`.
 - [x] Unauthenticated `401`, authenticated MCP initialize/help, Pi extension, absent OAuth routes and exact non-demo health surface verified.
-- [ ] Station status finalization: cancel/supersede WI-00047 and WI-00057, then close WI-00060.
+- [x] WI-00047 and WI-00057 recorded terminal as superseded/cancelled by ADR-003; WI-00060 proceeds to final gate/closure.
 
 ## Dependency Graph
 

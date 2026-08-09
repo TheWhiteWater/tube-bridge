@@ -28,7 +28,7 @@ None. ADR-003 resolves the active product boundary: self-hosted distribution onl
 
 ### Q6: Browser Claude OAuth and tester distinction
 
-**Resolved by ADR-003: retired.** No OAuth, DCR, invite, Operator/Tester role, or browser-Claude Custom Connector requirement. ADR-003 supersedes the authority of WI-00047 and WI-00057; their Station statuses remain to be marked cancelled during WI-00060 finalization.
+**Resolved by ADR-003: retired.** No OAuth, DCR, invite, Operator/Tester role, or browser-Claude Custom Connector requirement. WI-00047 and WI-00057 are terminal in Station with an explicit superseded/cancelled resolution; no acceptance of that retired surface is claimed.
 
 ### Q7: Private Operator Railway
 
