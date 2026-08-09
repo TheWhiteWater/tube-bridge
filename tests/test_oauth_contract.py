@@ -249,7 +249,7 @@ def test_valid_config_has_exact_issuer_resource_and_eight_hour_ttl(monkeypatch):
 async def test_discovery_metadata_is_public_canonical_and_current(monkeypatch):
     service = _service(monkeypatch)
     app = _app(monkeypatch, service)
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="https://test") as client:
         root = await client.get("/.well-known/oauth-protected-resource")
         path = await client.get("/.well-known/oauth-protected-resource/mcp")
         auth = await client.get("/.well-known/oauth-authorization-server")
@@ -278,7 +278,7 @@ async def test_discovery_metadata_is_public_canonical_and_current(monkeypatch):
 async def test_default_create_app_builds_oauth_from_environment(monkeypatch):
     _set_oauth_env(monkeypatch)
     app = _app(monkeypatch, None)
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="https://test") as client:
         metadata = await client.get("/.well-known/oauth-protected-resource")
         health = await client.get("/health")
     assert metadata.status_code == 200
@@ -297,7 +297,7 @@ def test_default_create_app_fails_closed_on_partial_oauth_env(monkeypatch):
 async def test_oauth_routes_are_404_when_adapter_disabled(monkeypatch):
     _clear_oauth_env(monkeypatch)
     app = _app(monkeypatch, None)
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="https://test") as client:
         for path in (
             "/.well-known/oauth-protected-resource",
             "/.well-known/oauth-authorization-server",
@@ -311,7 +311,7 @@ async def test_oauth_routes_are_404_when_adapter_disabled(monkeypatch):
 async def test_protected_401_advertises_resource_metadata_without_counting(monkeypatch):
     service = _service(monkeypatch)
     app = _app(monkeypatch, service)
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="https://test") as client:
         response = await client.get("/mcp")
     assert response.status_code == 401
     challenge = response.headers["www-authenticate"]
@@ -324,7 +324,7 @@ async def test_dcr_returns_stateless_public_client_and_preserves_exact_redirects
     service = _service(monkeypatch)
     app = _app(monkeypatch, service)
     redirects = ["https://Claude.AI:443/api/mcp/auth_callback?x=%2F", "http://localhost:49152/callback/"]
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="https://test") as client:
         response = await _register(client, redirects)
     assert response.status_code == 201
     body = response.json()
@@ -346,7 +346,7 @@ async def test_dcr_returns_stateless_public_client_and_preserves_exact_redirects
 async def test_dcr_rejects_unsafe_redirects(monkeypatch, redirect):
     service = _service(monkeypatch)
     app = _app(monkeypatch, service)
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="https://test") as client:
         response = await _register(client, [redirect])
     assert response.status_code == 400
     assert response.json()["error"] == "invalid_redirect_uri"
@@ -356,7 +356,7 @@ async def test_dcr_rejects_unsafe_redirects(monkeypatch, redirect):
 async def test_dcr_rejects_exact_duplicates_but_does_not_canonicalize(monkeypatch):
     service = _service(monkeypatch)
     app = _app(monkeypatch, service)
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="https://test") as client:
         duplicate = await _register(client, ["https://example.com/cb", "https://example.com/cb"])
         variants = await _register(client, ["https://example.com/cb", "https://EXAMPLE.com:443/cb/"])
     assert duplicate.status_code == 400
@@ -368,7 +368,7 @@ async def test_dcr_rejects_exact_duplicates_but_does_not_canonicalize(monkeypatc
 async def test_dcr_enforces_content_type_body_uri_count_uri_length_and_name_bounds(monkeypatch):
     service = _service(monkeypatch)
     app = _app(monkeypatch, service)
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="https://test") as client:
         wrong_type = await client.post("/oauth/register", content="{}", headers={"content-type": "text/plain"})
         oversized = await client.post("/oauth/register", content=b"{" + b" " * 16_385, headers={"content-type": "application/json"})
         no_uris = await _register(client, [])
@@ -385,7 +385,7 @@ async def test_tampered_client_id_is_rejected_without_redirect(monkeypatch):
     service = _service(monkeypatch)
     app = _app(monkeypatch, service)
     redirect = "https://claude.ai/api/mcp/auth_callback"
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="https://test") as client:
         registered = await _register(client, [redirect])
         client_id = registered.json()["client_id"] + "x"
         response, _ = await _authorization_request(client, client_id, redirect)
@@ -403,7 +403,7 @@ async def test_authorize_requires_exact_redirect_state_resource_and_s256(monkeyp
     service = _service(monkeypatch)
     app = _app(monkeypatch, service)
     redirect = "https://claude.ai/api/mcp/auth_callback"
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="https://test") as client:
         client_id = (await _register(client, [redirect])).json()["client_id"]
         _, challenge = _pkce()
         common = {
@@ -421,8 +421,20 @@ async def test_authorize_requires_exact_redirect_state_resource_and_s256(monkeyp
         ]
         responses = [await client.get("/oauth/authorize", params=params) for params in cases]
         duplicate_resource = await client.get("/oauth/authorize", params=list(common.items()) + [("resource", RESOURCE)])
-    assert all(response.status_code == 400 for response in responses)
-    assert duplicate_resource.status_code == 400
+    # A redirect mismatch is unsafe to redirect. Once client + exact redirect
+    # are validated, RFC 9207 errors return through that trusted callback.
+    assert responses[0].status_code == 400
+    assert "location" not in responses[0].headers
+    safe_errors = responses[1:] + [duplicate_resource]
+    assert all(response.status_code in (302, 303, 307) for response in safe_errors)
+    for index, response in enumerate(safe_errors):
+        location = urlparse(response.headers["location"])
+        assert f"{location.scheme}://{location.netloc}{location.path}" == redirect
+        query = parse_qs(location.query, keep_blank_values=True)
+        assert query["error"] == ["invalid_request"]
+        assert query["iss"] == [BASE]
+        assert query["state"] == ([""] if index == 0 else ["state"])
+        assert "code" not in query
 
 
 @pytest.mark.asyncio
@@ -430,7 +442,7 @@ async def test_authorize_page_has_csrf_no_store_csp_and_no_invite_material(monke
     service = _service(monkeypatch)
     app = _app(monkeypatch, service)
     redirect = "https://claude.ai/api/mcp/auth_callback"
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="https://test") as client:
         client_id = (await _register(client, [redirect])).json()["client_id"]
         response, request_id = await _authorization_request(client, client_id, redirect)
     assert response.status_code == 200 and request_id
@@ -438,7 +450,7 @@ async def test_authorize_page_has_csrf_no_store_csp_and_no_invite_material(monke
     assert "default-src 'none'" in response.headers["content-security-policy"]
     cookie = response.headers["set-cookie"].lower()
     assert "httponly" in cookie and "samesite=lax" in cookie and "secure" in cookie
-    serialized = response.text + json.dumps(response.headers)
+    serialized = response.text + json.dumps(dict(response.headers))
     assert OPERATOR_CODE not in serialized and TESTER_CODE not in serialized
     assert _digest(OPERATOR_CODE) not in serialized and "operator-main" not in serialized
 
@@ -448,7 +460,7 @@ async def test_authorize_post_requires_matching_csrf_cookie(monkeypatch):
     service = _service(monkeypatch)
     app = _app(monkeypatch, service)
     redirect = "https://claude.ai/api/mcp/auth_callback"
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="https://test") as client:
         client_id = (await _register(client, [redirect])).json()["client_id"]
         _, request_id = await _authorization_request(client, client_id, redirect)
         saved_cookie = client.cookies.get("tb_oauth_csrf")
@@ -467,7 +479,7 @@ async def test_authorize_post_requires_matching_csrf_cookie(monkeypatch):
 async def test_authorize_post_enforces_form_content_type_and_16k_limit(monkeypatch):
     service = _service(monkeypatch)
     app = _app(monkeypatch, service)
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="https://test") as client:
         wrong = await client.post("/oauth/authorize", json={})
         large = await client.post(
             "/oauth/authorize",
@@ -484,7 +496,7 @@ async def test_safe_authorization_error_redirect_includes_iss_and_state(monkeypa
     app = _app(monkeypatch, service)
     redirect = "https://claude.ai/api/mcp/auth_callback"
     _, challenge = _pkce()
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="https://test") as client:
         client_id = (await _register(client, [redirect])).json()["client_id"]
         response = await client.get("/oauth/authorize", params={
             "response_type": "code",
@@ -510,7 +522,7 @@ async def test_wrong_invite_is_generic_and_pending_request_can_retry(monkeypatch
     service = _service(monkeypatch)
     app = _app(monkeypatch, service)
     redirect = "https://claude.ai/api/mcp/auth_callback"
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="https://test") as client:
         client_id = (await _register(client, [redirect])).json()["client_id"]
         _, request_id = await _authorization_request(client, client_id, redirect)
         wrong = await _complete_authorization(client, request_id, "wrong-code")
@@ -526,7 +538,7 @@ async def test_successful_operator_flow_returns_iss_state_and_bounded_token(monk
     service = _service(monkeypatch, clock=clock)
     app = _app(monkeypatch, service)
     redirect = "https://claude.ai/api/mcp/auth_callback"
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="https://test") as client:
         token, query, _ = await _oauth_flow(client, OPERATOR_CODE, redirect)
     assert query["state"] == ["state-123"]
     assert query["iss"] == [BASE]
@@ -544,7 +556,7 @@ async def test_successful_operator_flow_returns_iss_state_and_bounded_token(monk
 async def test_tester_flow_has_distinct_pseudonymous_subject(monkeypatch):
     service = _service(monkeypatch)
     app = _app(monkeypatch, service)
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="https://test") as client:
         operator, _, _ = await _oauth_flow(client, OPERATOR_CODE, "https://claude.ai/api/mcp/operator")
         tester, _, _ = await _oauth_flow(client, TESTER_CODE, "https://claude.ai/api/mcp/tester")
     operator_principal = service.authenticate_bearer(operator["access_token"])
@@ -560,7 +572,7 @@ async def test_authorization_request_and_code_expire_at_five_minutes(monkeypatch
     service = _service(monkeypatch, clock=clock)
     app = _app(monkeypatch, service)
     redirect = "https://claude.ai/api/mcp/auth_callback"
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="https://test") as client:
         client_id = (await _register(client, [redirect])).json()["client_id"]
         _, request_id = await _authorization_request(client, client_id, redirect)
         clock.now += 301
@@ -581,7 +593,7 @@ async def test_code_is_single_use_even_after_wrong_verifier(monkeypatch):
     service = _service(monkeypatch)
     app = _app(monkeypatch, service)
     redirect = "https://claude.ai/api/mcp/auth_callback"
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="https://test") as client:
         client_id = (await _register(client, [redirect])).json()["client_id"]
         _, request_id = await _authorization_request(client, client_id, redirect)
         callback = await _complete_authorization(client, request_id, TESTER_CODE)
@@ -597,7 +609,7 @@ async def test_token_requires_exact_client_redirect_and_resource_binding(monkeyp
     service = _service(monkeypatch)
     app = _app(monkeypatch, service)
     redirect = "https://claude.ai/api/mcp/auth_callback"
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="https://test") as client:
         for field, value in (
             ("client_id", "tampered"),
             ("redirect_uri", redirect + "/"),
@@ -623,7 +635,7 @@ async def test_token_rejects_missing_or_duplicate_resource(monkeypatch, mode):
     service = _service(monkeypatch)
     app = _app(monkeypatch, service)
     redirect = "https://claude.ai/api/mcp/auth_callback"
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="https://test") as client:
         client_id = (await _register(client, [redirect])).json()["client_id"]
         _, request_id = await _authorization_request(client, client_id, redirect)
         callback = await _complete_authorization(client, request_id, TESTER_CODE)
@@ -644,7 +656,7 @@ async def test_token_rejects_missing_or_duplicate_resource(monkeypatch, mode):
 async def test_token_endpoint_enforces_form_content_type_and_16k_limit(monkeypatch):
     service = _service(monkeypatch)
     app = _app(monkeypatch, service)
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="https://test") as client:
         wrong = await client.post("/oauth/token", json={})
         large = await client.post("/oauth/token", content=b"x" * 16_385, headers={"content-type": "application/x-www-form-urlencoded"})
     assert wrong.status_code == 415
@@ -656,7 +668,7 @@ async def test_access_token_tamper_expiry_and_wrong_audience_fail_closed(monkeyp
     clock = Clock()
     service = _service(monkeypatch, clock=clock)
     app = _app(monkeypatch, service)
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="https://test") as client:
         token, _, _ = await _oauth_flow(client)
     value = token["access_token"]
     assert service.authenticate_bearer(value + "x") is None
@@ -706,7 +718,7 @@ async def test_health_auth_metrics_are_aggregate_only(monkeypatch):
         static_key="existing-static-key",
     ))
     app = _app(monkeypatch, service)
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="https://test") as client:
         token, _, _ = await _oauth_flow(client, TESTER_CODE)
         principal = service.authenticate_bearer(token["access_token"])
         service.record_authenticated(principal)
@@ -772,7 +784,7 @@ async def test_all_three_protected_routes_count_once_after_auth(monkeypatch):
     monkeypatch.setattr(transport, "SseServerTransport", FakeSSE)
     app = transport.create_app(FakeServer(), "127.0.0.1", 8080, oauth_service=service)
     headers = {"authorization": "Bearer existing-static-key"}
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="https://test") as client:
         responses = [
             await client.post("/mcp", headers=headers),
             await client.get("/sse", headers=headers),
@@ -791,7 +803,7 @@ async def test_only_successful_protected_dispatch_counts(monkeypatch):
     monkeypatch.setenv("TUBE_BRIDGE_AUTH_KEY", "existing-static-key")
     service = _service(monkeypatch)
     app = _app(monkeypatch, service)
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="https://test") as client:
         await client.get("/health")
         await client.get("/.well-known/oauth-protected-resource")
         await _register(client)
@@ -813,7 +825,7 @@ async def test_oauth_roles_do_not_change_ip_allowance_identity(monkeypatch):
     allowance = policy.DemoAllowance(salt=b"oauth-independent-ip-salt-32bytes!!")
     service = _service(monkeypatch)
     app = _app(monkeypatch, service)
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="https://test") as client:
         operator_token, _, _ = await _oauth_flow(client, OPERATOR_CODE, "https://claude.ai/api/mcp/operator-ip")
         tester_token, _, _ = await _oauth_flow(client, TESTER_CODE, "https://claude.ai/api/mcp/tester-ip")
     principals = [
@@ -841,7 +853,7 @@ async def test_auth_failures_and_invite_flow_do_not_log_secrets(monkeypatch, cap
     app = _app(monkeypatch, service)
     redirect = "https://claude.ai/api/mcp/auth_callback"
     with caplog.at_level("DEBUG"):
-        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="https://test") as client:
             client_id = (await _register(client, [redirect])).json()["client_id"]
             _, request_id = await _authorization_request(client, client_id, redirect)
             await _complete_authorization(client, request_id, "wrong-secret-invite")
@@ -866,7 +878,7 @@ async def test_auth_failures_and_invite_flow_do_not_log_secrets(monkeypatch, cap
 async def test_oauth_only_mode_is_auth_enabled_and_selfhost_no_auth_stays_open(monkeypatch):
     service = _service(monkeypatch)
     app = _app(monkeypatch, service)
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="https://test") as client:
         oauth_health = await client.get("/health")
     assert oauth_health.json()["auth"] == "enabled"
     assert oauth_health.json()["auth_oauth"]["enabled"] is True
@@ -874,7 +886,7 @@ async def test_oauth_only_mode_is_auth_enabled_and_selfhost_no_auth_stays_open(m
     _clear_oauth_env(monkeypatch)
     monkeypatch.delenv("TUBE_BRIDGE_AUTH_KEY", raising=False)
     open_app = _app(monkeypatch, None)
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=open_app), base_url="http://test") as client:
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=open_app), base_url="https://test") as client:
         open_health = await client.get("/health")
     assert open_health.json()["auth"] == "disabled"
     assert open_health.json()["auth_oauth"] == {
