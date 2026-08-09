@@ -2,6 +2,7 @@
 
 **Active authority:** ADR-003
 **Completed transition:** WI-00060
+**Active release gate:** WI-00067
 
 ## Block A — Interaction Engine
 
@@ -33,22 +34,22 @@
 
 ## Block D — Verification
 
-**Status:** Complete
+**Status:** Established core complete; v1.0.3 release gate active
 
 - original 125-test core freeze;
 - five-test self-hosted-only retirement contract;
 - two-test private-endpoint help remediation;
-- hosted Python 3.12/3.13 CI;
-- build/twine, isolated install, Docker and MCP checks;
-- independent source/document audits.
+- five-test v1.0.3 artifact contract, including whole-wheel/sdist private-metadata scans;
+- local 137-test, build/twine, isolated install, Docker and MCP candidate checks pass;
+- hosted branch/tag CI and terminal release audit remain pending for WI-00067.
 
 ## Block E — Documentation and Release History
 
-**Status:** Complete
+**Status:** v1.0.3 candidate prepared; external evidence pending
 
 - self-hosting-only public language;
-- current release `v1.0.2`;
-- functional `v1.0.0` metadata supersession history preserved;
+- candidate that becomes the current release `v1.0.3` only after the active registry gate passes;
+- functional `v1.0.0`/`v1.0.2` unyanked history preserved;
 - ADR-001 hosted-demo clauses and ADR-002 marked superseded;
 - private infrastructure excluded from public product claims.
 
@@ -75,6 +76,20 @@
 - [x] WI-00047 and WI-00057 recorded terminal as superseded/cancelled by ADR-003.
 - [x] WI-00064 removed the final hard-coded private hostname from MCP help; source audit, hosted CI and private live verification pass.
 - [x] WI-00060 final conformance PASS and Station closure.
+
+## Block G — Publish v1.0.3 Self-Hosted Artifacts
+
+**Status:** Active; WI-00067
+
+- [x] Operator authorized GitHub Release, PyPI and GHCR publication.
+- [x] Deterministic release contract and test-literal hygiene correction frozen and audited.
+- [x] Local 137-test/build/twine/wheel-install/Docker/artifact-scan evidence passes.
+- [ ] Independent source conformance PASS on the final candidate.
+- [ ] Hosted branch CI PASS.
+- [ ] Tag `v1.0.3`; release workflow publishes GitHub/PyPI/GHCR.
+- [ ] Download/pull all public artifacts and verify version/help/16 tools/no private metadata.
+- [ ] Append and verify the `v1.0.2` GitHub supersession notice without yanking history.
+- [ ] Terminal docs/TME/Station closure.
 
 ## Dependency Graph
 

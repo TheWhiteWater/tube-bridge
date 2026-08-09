@@ -43,7 +43,7 @@ None. ADR-003 resolves the active product boundary: self-hosted distribution onl
 - ADR-001 remains historical authority for the self-hosted/open-core boundary; its hosted-demo clauses are superseded.
 - ADR-002 is superseded in full.
 - ADR-003 is active.
-- `v1.0.0` remains functional and unyanked; `v1.0.2` is current and metadata-corrected.
+- `v1.0.0` and `v1.0.2` remain immutable, unyanked history; `v1.0.3` is current and self-hosted-only.
 - Grabbit remains a separate MCP with no integration roadmap.
 
 ## Conditional Operational Questions

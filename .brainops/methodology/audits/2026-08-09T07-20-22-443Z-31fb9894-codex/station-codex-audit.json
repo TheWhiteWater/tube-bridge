@@ -1,0 +1,103 @@
+{
+  "ok": true,
+  "kind": "brainops.methodology_audit",
+  "profile_id": "methodology.doc_audit",
+  "model_profile_id": "auditor.codex_headless",
+  "runtime_surface": "codex_headless",
+  "provider": "codex",
+  "model": "gpt-5.5",
+  "project": "tube-bridge",
+  "project_path": "/home/ali/Workspace/BrainOps/Projects/tube-bridge",
+  "target": {
+    "type": "artifact",
+    "source": "artifact_context"
+  },
+  "status": "passed",
+  "verdict": "PASS",
+  "summary": "The corrected two-file WI-00067 packet is coherent and sufficient to freeze: it defines bounded release scope, deterministic wheel/sdist scanner behavior, authorized release surfaces, and separate post-release supersession evidence. The RED is legitimate and attributable solely to intended pre-implementation gaps.",
+  "audit_contract": {
+    "kind": "brainops.methodology_audit_contract",
+    "profile_id": "methodology.doc_audit",
+    "status": "recommended_template",
+    "purpose": "Check whether project methodology documents are coherent enough to become accepted planning evidence.",
+    "intended_use": [
+      "Use before freezing tests or accepting implementation work.",
+      "Treat this as a recommended checklist/template for the auditor, not as evidence by itself."
+    ],
+    "packet_template": [
+      {
+        "section": "project_identity",
+        "required": true,
+        "description": "Project name/path and WorkItem or lifecycle run being audited."
+      },
+      {
+        "section": "constitution_docs",
+        "required": true,
+        "description": "Mission, system context, architecture, glossary, non-goals, ADR rules, and planning docs where present."
+      },
+      {
+        "section": "open_questions",
+        "required": true,
+        "description": "Open questions and resolution/defer receipts."
+      },
+      {
+        "section": "scope_boundary",
+        "required": true,
+        "description": "What is inside/outside the current project or work block."
+      },
+      {
+        "section": "decision_evidence",
+        "required": false,
+        "description": "Relevant ADRs, TME entries, lifecycle gate results, and handoff notes."
+      }
+    ],
+    "audit_questions": [
+      "Is the project intent clear enough that a future agent after auto-compact can continue without silently changing the goal?",
+      "Are scope boundaries and non-goals explicit enough to detect methodology drift later?",
+      "Are terms and decisions grounded in documents instead of only in transcript memory?",
+      "Are blocking open questions resolved or explicitly deferred before implementation?"
+    ],
+    "pass_conditions": [
+      "Core intent, boundaries, terms, and decision process are documented and mutually consistent.",
+      "No blocking open question remains for the next planned implementation step.",
+      "The docs provide enough stable context for frozen tests or implementation planning."
+    ],
+    "fail_conditions": [
+      "Docs contradict each other on purpose, scope, public API, or acceptance criteria.",
+      "Critical requirements exist only in volatile chat/session context.",
+      "Implementation would require guessing unresolved behavior."
+    ],
+    "inconclusive_conditions": [
+      "Required docs or planning artifacts are missing from the packet.",
+      "The packet references files or receipts that are not supplied and cannot be inspected read-only."
+    ],
+    "forbidden_assumptions": [
+      "Do not accept docs because tests pass; this is a documentation gate.",
+      "Do not invent product goals not present in the supplied documents."
+    ],
+    "expected_output": {
+      "verdicts": [
+        "PASS",
+        "FAIL",
+        "INCONCLUSIVE"
+      ],
+      "required_fields": [
+        "VERDICT",
+        "SUMMARY",
+        "EVIDENCE_CHECKED",
+        "RESIDUAL_RISK"
+      ]
+    }
+  },
+  "output_dir": ".brainops/methodology/audits/2026-08-09T07-20-22-443Z-31fb9894-codex",
+  "receipt_path": ".brainops/methodology/audits/2026-08-09T07-20-22-443Z-31fb9894-codex/station-codex-audit.json",
+  "codex_runtime": {
+    "command": "codex exec --sandbox read-only --ephemeral --json",
+    "exit_code": 0,
+    "signal": null,
+    "duration_ms": 85619,
+    "stdout_tail": "ports the pre-existing checks passing. I’m doing one final bounded consistency check on the two artifact files and their worktree scope before issuing the gate verdict.\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_3\",\"type\":\"command_execution\",\"command\":\"/bin/bash -lc 'git status --short && git diff -- .hermes/plans/2026-08-09-v1.0.3-self-hosted-release.md tests/test_v1_0_3_release_contract.py && git diff --cached -- .hermes/plans/2026-08-09-v1.0.3-self-hosted-release.md tests/test_v1_0_3_release_contract.py'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_3\",\"type\":\"command_execution\",\"command\":\"/bin/bash -lc 'git status --short && git diff -- .hermes/plans/2026-08-09-v1.0.3-self-hosted-release.md tests/test_v1_0_3_release_contract.py && git diff --cached -- .hermes/plans/2026-08-09-v1.0.3-self-hosted-release.md tests/test_v1_0_3_release_contract.py'\",\"aggregated_output\":\"?? .hermes/plans/2026-08-09-v1.0.3-self-hosted-release.md\\n?? tests/test_v1_0_3_release_contract.py\\n\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_4\",\"type\":\"agent_message\",\"text\":\"VERDICT: PASS\\nSUMMARY: The corrected two-file WI-00067 packet is coherent and sufficient to freeze: it defines bounded release scope, deterministic wheel/sdist scanner behavior, authorized release surfaces, and separate post-release supersession evidence. The RED is legitimate and attributable solely to intended pre-implementation gaps.\\nEVIDENCE_CHECKED: Release plan, five-test contract, named RED receipt, scanner absence, current 1.0.2 version, release workflow, and two-file worktree scope.\\nRESIDUAL_RISK: GREEN, frozen SHA-256, full suite, audits, hosted workflows, registry inspection, and v1.0.2 note-edit receipt remain required after implementation.\"}}\n{\"type\":\"turn.completed\",\"usage\":{\"input_tokens\":124912,\"cached_input_tokens\":89344,\"cache_write_input_tokens\":0,\"output_tokens\":2444,\"reasoning_output_tokens\":1720}}\n",
+    "stderr_tail": "2026-08-09T07:19:06.163690Z ERROR codex_rmcp_client::oauth::refresh_transaction: error=failed to refresh OAuth tokens for server supabase\n2026-08-09T07:19:06.466669Z ERROR codex_rmcp_client::oauth::refresh_transaction: error=failed to refresh OAuth tokens for server supabase\n"
+  },
+  "created_at": "2026-08-09T07:20:22.443Z"
+}

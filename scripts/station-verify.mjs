@@ -11,9 +11,11 @@ for (const path of [
   "tube_bridge/youtube/transcript.py",
   "tests/test_self_hosted_only_contract.py",
   "tests/test_private_endpoint_not_distributed.py",
+  "tests/test_v1_0_3_release_contract.py",
   ".brainops/methodology/frozen-tests/frozen-tdd-wi-00028-core-publication-001-python.json",
   ".brainops/methodology/frozen-tests/frozen-20260809051810-test_self_hosted_only_contract.py.json",
-  ".brainops/methodology/frozen-tests/frozen-20260809061346-test_private_endpoint_not_distributed.py.json",
+  ".brainops/methodology/frozen-tests/frozen-20260809073048-tests.json",
+  ".brainops/methodology/frozen-tests/supersession-20260809073048-release-test-literal-hygiene.json",
 ]) {
   const digest = createHash("sha256").update(readFileSync(path)).digest("hex");
   console.log(`sha256 ${digest}  ${path}`);

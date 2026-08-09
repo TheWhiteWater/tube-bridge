@@ -1,0 +1,71 @@
+{
+  "kind": "brainops.release_candidate_verification",
+  "version": "0.1",
+  "project": "tube-bridge",
+  "work_item_id": "WI-00067",
+  "candidate_version": "1.0.3",
+  "evaluated_tree": "uncommitted frozen implementation candidate",
+  "created_at": "2026-08-09T07:36:42.964647+00:00",
+  "created_by_agent_id": "W-1028",
+  "created_session_id": "S-01024",
+  "frozen_contract": {
+    "manifest": ".brainops/methodology/frozen-tests/frozen-20260809073048-tests.json",
+    "hashes": {
+      "tests/test_private_endpoint_not_distributed.py": "13f0ca65d6bf11b651af669f266f22e263370a20c889a1708a90824f94a1b41d",
+      "tests/test_v1_0_3_release_contract.py": "c3583e5f98e26b355ac73c96405e0b0a46cb4176289ea752f55d9fa1e76eba0b"
+    }
+  },
+  "checks": [
+    {
+      "name": "full deterministic suite",
+      "command": "TUBE_BRIDGE_RELEASE_TOOLS_PYTHON=<disposable-venv>/bin/python <disposable-venv>/bin/python -m pytest tests -q",
+      "result": "PASS",
+      "summary": "137 passed in 53.12s"
+    },
+    {
+      "name": "Station bounded verification",
+      "artifact_ref": ".brainops/methodology/verification/verification-1786261209880.json",
+      "result": "PASS",
+      "summary": "123 bounded tests pass"
+    },
+    {
+      "name": "build",
+      "command": "python -m build --sdist --wheel --no-isolation",
+      "result": "PASS"
+    },
+    {
+      "name": "twine",
+      "command": "python -m twine check dist/*",
+      "result": "PASS"
+    },
+    {
+      "name": "artifact content scanner",
+      "command": "python scripts/verify-release-artifacts.py dist/*",
+      "result": "PASS",
+      "summary": "wheel and complete sdist contain no deploy_url or .railway.app bytes"
+    },
+    {
+      "name": "installed wheel MCP",
+      "result": "PASS",
+      "summary": "distribution version/help 1.0.3, exactly 16 tools, no private endpoint metadata"
+    },
+    {
+      "name": "Docker MCP",
+      "result": "PASS",
+      "summary": "locally built image help 1.0.3, exactly 16 tools, no private endpoint metadata"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "dist/tube_bridge-1.0.3-py3-none-any.whl",
+      "sha256": "c2f3316e524d02da3e93ac7068888151eb1a917798efcbae5f1ae03c77ea8228",
+      "bytes": 26070
+    },
+    {
+      "path": "dist/tube_bridge-1.0.3.tar.gz",
+      "sha256": "0e463e4456c21bf8d200d1bdf80abad2b9ecde94d7be4706aaa2d6223da8a1bd",
+      "bytes": 56697
+    }
+  ],
+  "secret_handling": "No publication, Railway, proxy or API credential was read, printed or embedded by these checks."
+}

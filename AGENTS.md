@@ -85,13 +85,13 @@ Pi and Claude Code CLI may use the Operator's private Railway service because th
 
 - `test_tools.py` is optional live smoke only.
 - Original core freeze: 125 tests.
-- Active suite after ADR-003 retirement/privacy addenda: 132 deterministic tests.
+- Active suite after ADR-003 retirement/privacy and v1.0.3 release addenda: 137 deterministic tests.
 - Source/test changes require RED, independent contract audit, frozen SHA-256, GREEN, independent source audit, and hosted CI.
 - Do not modify a frozen test after source work begins; use an audited addendum or superseding product ADR.
 - Build/release verification uses a disposable tools environment when system Python lacks `build`/`twine`.
 
 ## Publication
 
-Current release `v1.0.2` remains published on GitHub, PyPI and GHCR. Historical `v1.0.0` metadata hygiene remains recorded and does not require yanking the functional release.
+Current release `v1.0.3` is distributed through GitHub, PyPI and GHCR as the self-hosted-only default. Historical `v1.0.0` and `v1.0.2` artifacts remain immutable, unyanked history and are explicitly superseded by `v1.0.3`.
 
 Public documentation must describe self-hosting only. Do not advertise Railway demo access, hosted retention, tester invites, OAuth, accounts, billing, managed quota, or uptime guarantees.

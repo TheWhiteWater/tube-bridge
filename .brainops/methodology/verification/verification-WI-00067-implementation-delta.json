@@ -1,0 +1,49 @@
+{
+  "kind": "brainops.implementation_apply_delta",
+  "version": "0.1",
+  "project": "tube-bridge",
+  "work_item_id": "WI-00067",
+  "status": "release_candidate_pre_commit",
+  "authority": [
+    "docs/adr/003-self-hosted-only-private-operator-railway.md",
+    ".brainops/methodology/open-questions/resolution-20260809074500.json"
+  ],
+  "production_delta": {
+    "version": {
+      "pyproject.toml": "1.0.2 -> 1.0.3",
+      "tube_bridge/server.py HELP_TEXT.version": "1.0.2 -> 1.0.3"
+    },
+    "new_artifact_scanner": "scripts/verify-release-artifacts.py scans every regular member of wheel and sdist archives and rejects deploy_url or .railway.app markers",
+    "release_workflow": ".github/workflows/release.yml invokes the scanner after build/twine validation and before upload",
+    "station_verification": "scripts/station-verify.mjs records current authoritative release-test hashes/manifests",
+    "runtime_non_delta": "No tool catalog, schema, dispatch, transport, Bearer auth, corpus, transcript, YouTube client or Railway configuration behavior changed."
+  },
+  "test_contract": {
+    "authoritative_manifest": ".brainops/methodology/frozen-tests/frozen-20260809073048-tests.json",
+    "supersession": ".brainops/methodology/frozen-tests/supersession-20260809073048-release-test-literal-hygiene.json",
+    "test_files": {
+      "tests/test_private_endpoint_not_distributed.py": "13f0ca65d6bf11b651af669f266f22e263370a20c889a1708a90824f94a1b41d",
+      "tests/test_v1_0_3_release_contract.py": "c3583e5f98e26b355ac73c96405e0b0a46cb4176289ea752f55d9fa1e76eba0b"
+    }
+  },
+  "documentation_delta": [
+    "AGENTS.md",
+    "PROJECT_VISION.md",
+    "README.md",
+    "docs/INDEX.md",
+    "docs/constitution/02_ARCHITECTURE.md",
+    "docs/planning/OPEN_QUESTIONS.md",
+    "docs/planning/PUBLICATION_READINESS.md",
+    "docs/planning/WORK_BREAKDOWN.md"
+  ],
+  "verification": [
+    ".brainops/methodology/verification/verification-1786261209880.json",
+    ".brainops/methodology/verification/verification-WI-00067-local-release-candidate.json",
+    ".brainops/methodology/audits/2026-08-09T07-41-56-699Z-416706b1-codex/station-codex-audit.json",
+    ".brainops/methodology/audits/2026-08-09T07-42-26-656Z-c73bdb6d-codex/station-codex-audit.json",
+    ".brainops/methodology/audits/2026-08-09T07-44-44-612Z-f8cdfe7e-codex/station-codex-audit.json"
+  ],
+  "created_at": "2026-08-09T07:45:00Z",
+  "created_by_agent_id": "W-1028",
+  "created_session_id": "S-01024"
+}

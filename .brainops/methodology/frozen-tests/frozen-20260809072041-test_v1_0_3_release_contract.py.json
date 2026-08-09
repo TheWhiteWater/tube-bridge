@@ -1,0 +1,16 @@
+{
+  "kind": "brainops.frozen_tests_manifest",
+  "version": "0.1",
+  "project": "tube-bridge",
+  "project_path": "/home/ali/Workspace/BrainOps/Projects/tube-bridge",
+  "test_files": [
+    {
+      "path": "tests/test_v1_0_3_release_contract.py",
+      "sha256": "f6d9dc5ad0047ea32b355b174aaf7dd96563113e569ae4229821d695072fa331",
+      "bytes": 3996
+    }
+  ],
+  "created_by_agent_id": "W-1028",
+  "created_session_id": "S-01024",
+  "created_at": "2026-08-09T07:20:41.610Z"
+}

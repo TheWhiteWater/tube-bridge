@@ -16,7 +16,7 @@ from .youtube.client import extract_video_id
 
 HELP_TEXT = {
     "server": "tube-bridge",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "description": "YouTube MCP server — search, discovery, transcripts, comments.",
     "architecture": {
         "dual_source": "Data API v3 primary, yt-dlp fallback for search, video_info, trending",

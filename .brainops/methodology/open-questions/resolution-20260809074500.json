@@ -1,0 +1,31 @@
+{
+  "kind": "brainops.open_questions_resolution",
+  "version": "0.1",
+  "project": "tube-bridge",
+  "project_path": "/home/ali/Workspace/BrainOps/Projects/tube-bridge",
+  "summary": "Operator explicitly authorized the v1.0.3 self-hosted-only publication cycle across GitHub Release, PyPI and GHCR; historical releases remain unyanked.",
+  "all_blocking_cleared": true,
+  "decisions": [
+    {
+      "question_id": "Q9-v1-0-3-publication-authorization",
+      "status": "resolved",
+      "rationale": "The Operator explicitly confirmed that each external user installs their own server and authorized publishing the corrected self-hosted-only v1.0.3 artifacts through all named registries.",
+      "evidence_refs": [
+        ".hermes/plans/2026-08-09-v1.0.3-self-hosted-release.md",
+        "docs/adr/003-self-hosted-only-private-operator-railway.md"
+      ]
+    },
+    {
+      "question_id": "Q10-v1-0-2-disposition",
+      "status": "resolved",
+      "rationale": "Preserve immutable PyPI and Git history without yanking; append a public GitHub release note that v1.0.2 is superseded by v1.0.3 after the new release is live.",
+      "evidence_refs": [
+        ".hermes/plans/2026-08-09-v1.0.3-self-hosted-release.md",
+        "docs/planning/PUBLICATION_READINESS.md"
+      ]
+    }
+  ],
+  "created_by_agent_id": "W-1028",
+  "created_session_id": "S-01024",
+  "created_at": "2026-08-09T07:45:00.064Z"
+}

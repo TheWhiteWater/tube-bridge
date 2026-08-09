@@ -1,0 +1,126 @@
+{
+  "ok": true,
+  "kind": "brainops.methodology_audit",
+  "profile_id": "methodology.conformance_audit",
+  "model_profile_id": "auditor.codex_headless",
+  "runtime_surface": "codex_headless",
+  "provider": "codex",
+  "model": "gpt-5.5",
+  "project": "tube-bridge",
+  "project_path": "/home/ali/Workspace/BrainOps/Projects/tube-bridge",
+  "target": {
+    "type": "artifact",
+    "source": "artifact_context"
+  },
+  "status": "passed",
+  "verdict": "PASS",
+  "summary": "WI-00069 may close: both corrected tests match the authoritative frozen hashes and byte counts, preserve the audited assertions through runtime-composed equivalent markers, and passed post-freeze Station verification; this accepts test-contract correction only, not production behavior.",
+  "audit_contract": {
+    "kind": "brainops.methodology_audit_contract",
+    "profile_id": "methodology.conformance_audit",
+    "status": "recommended_template",
+    "purpose": "Check whether source/test work can be accepted against accepted docs, frozen tests, verification, and methodology state.",
+    "intended_use": [
+      "Use immediately before WorkItem status=done or lifecycle publish for source/test work.",
+      "Treat this as the recommended Station checklist/template the auditor is tuned for.",
+      "This gate protects against context drift: green tests alone are not enough if docs, frozen tests, and implementation diverged."
+    ],
+    "packet_template": [
+      {
+        "section": "methodology_state",
+        "required": true,
+        "description": "Station-computed state: constitution, audit_gate, tests, implementation, blocking open questions, artifacts, next_required_profile."
+      },
+      {
+        "section": "work_item",
+        "required": true,
+        "description": "WorkItem id, goal, status, owner, lifecycle_run_id, and evidence refs."
+      },
+      {
+        "section": "accepted_docs",
+        "required": true,
+        "description": "Accepted constitution/planning docs and document audit receipts."
+      },
+      {
+        "section": "open_question_receipts",
+        "required": true,
+        "description": "Receipts proving blocking questions are resolved or explicitly deferred."
+      },
+      {
+        "section": "frozen_tests",
+        "required": true,
+        "description": "Frozen test manifest with hashes created before implementation acceptance."
+      },
+      {
+        "section": "implementation_delta",
+        "required": true,
+        "description": "Relevant source/test files or patch/apply receipts for the implementation under audit."
+      },
+      {
+        "section": "verification",
+        "required": true,
+        "description": "Station verification receipt with command, exit code, and bounded output."
+      },
+      {
+        "section": "previous_audits",
+        "required": false,
+        "description": "Previous doc/route/conformance audit receipts, separated by profile_id to avoid cross-contamination."
+      }
+    ],
+    "audit_questions": [
+      "Does the implementation satisfy the accepted project docs and explicit WorkItem goal without expanding scope?",
+      "Do frozen tests cover the behavior claimed by the implementation, and were they recorded as Station-owned evidence?",
+      "Did verification run after apply against the project tree, not only inside scratch?",
+      "Are source files, tests, and docs mutually consistent, or has the project drifted beyond the accepted constitution?",
+      "Is there any unresolved question, missing receipt, or same-agent self-acceptance risk that should block final acceptance?"
+    ],
+    "pass_conditions": [
+      "Accepted docs, frozen tests, implementation, and verification receipts are all present and consistent.",
+      "No blocking open questions remain for the accepted source/test change.",
+      "The implementation does not introduce behavior outside the accepted scope unless docs/tests were updated and audited first.",
+      "Verification passed after apply and the evidence chain is Station-owned."
+    ],
+    "fail_conditions": [
+      "Implementation behavior conflicts with accepted docs, non-goals, WorkItem goal, or ADRs.",
+      "Tests were created/changed after implementation without a valid frozen-test receipt.",
+      "Verification failed, did not run after apply, or only checked scratch output.",
+      "The change expands project scope without prior doc update and doc audit.",
+      "The same logical agent self-accepted source/test work without independent audit or human override."
+    ],
+    "inconclusive_conditions": [
+      "Any required packet section is missing, truncated past decision-critical content, or internally inconsistent.",
+      "The audit cannot distinguish accepted docs from draft/scaffold docs.",
+      "Verification, frozen-test, or apply receipts are referenced but not supplied."
+    ],
+    "forbidden_assumptions": [
+      "Do not PASS only because tests are green.",
+      "Do not treat scaffold/TODO docs as accepted project intent.",
+      "Do not infer frozen-test timing from an agent summary; require Station-owned receipts.",
+      "Do not let failed conformance receipts count as failed doc audits; profile_id matters."
+    ],
+    "expected_output": {
+      "verdicts": [
+        "PASS",
+        "FAIL",
+        "INCONCLUSIVE"
+      ],
+      "required_fields": [
+        "VERDICT",
+        "SUMMARY",
+        "EVIDENCE_CHECKED",
+        "RESIDUAL_RISK"
+      ]
+    }
+  },
+  "output_dir": ".brainops/methodology/audits/2026-08-09T07-33-25-999Z-408b2be9-codex",
+  "receipt_path": ".brainops/methodology/audits/2026-08-09T07-33-25-999Z-408b2be9-codex/station-codex-audit.json",
+  "codex_runtime": {
+    "command": "codex exec --sandbox read-only --ephemeral --json",
+    "exit_code": 0,
+    "signal": null,
+    "duration_ms": 79435,
+    "stdout_tail": "of forbidden markers; all seven assertions and clean/leaking wheel-and-sdist cases remain intact. Safe to freeze together as superseding hashes without accepting production behavior.\\\\\\\\nEVIDENCE_CHECKED: Three supplied artifacts, predecessor manifest hashes, exact prior-source hash reconstruction, marker search, and release scanner logic.\\\\\\\\nRESIDUAL_RISK: The new combined manifest and supersession receipt still must be created; this verdict does not approve production changes or WI-00067 completion.\\\\\\\"}}\\\\n{\\\\\\\"type\\\\\\\":\\\\\\\"turn.completed\\\\\\\",\\\\\\\"usage\\\\\\\":{\\\\\\\"input_tokens\\\\\\\":282811,\\\\\\\"cached_input_tokens\\\\\\\":251136,\\\\\\\"cache_write_input_tokens\\\\\\\":0,\\\\\\\"output_tokens\\\\\\\":3080,\\\\\\\"reasoning_output_tokens\\\\\\\":1523}}\\\\n\\\",\\n    \\\"stderr_tail\\\": \\\"2026-08-09T07:29:03.685801Z ERROR codex_rmcp_client::oauth::refresh_transaction: error=failed to refresh OAuth tokens for server supabase\\\\n2026-08-09T07:29:04.002708Z ERROR codex_rmcp_client::oauth::refresh_transaction: error=failed to refresh OAuth tokens for server supabase\\\\n\\\"\\n  },\\n  \\\"created_at\\\": \\\"2026-08-09T07:30:40.119Z\\\"\\n}\\n\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_2\",\"type\":\"agent_message\",\"text\":\"VERDICT: PASS\\nSUMMARY: WI-00069 may close: both corrected tests match the authoritative frozen hashes and byte counts, preserve the audited assertions through runtime-composed equivalent markers, and passed post-freeze Station verification; this accepts test-contract correction only, not production behavior.\\nEVIDENCE_CHECKED: Two test files; combined manifest; supersession receipt; pre-freeze independent PASS; post-freeze verification exit 0 with matching hashes and 123 tests passed.\\nRESIDUAL_RISK: Production, release, and the documented global 137-test acceptance remain outside this bounded verdict.\"}}\n{\"type\":\"turn.completed\",\"usage\":{\"input_tokens\":81306,\"cached_input_tokens\":47616,\"cache_write_input_tokens\":0,\"output_tokens\":2400,\"reasoning_output_tokens\":1972}}\n",
+    "stderr_tail": "2026-08-09T07:32:07.979280Z ERROR codex_rmcp_client::oauth::refresh_transaction: error=failed to refresh OAuth tokens for server supabase\n2026-08-09T07:32:08.185996Z ERROR codex_rmcp_client::oauth::refresh_transaction: error=failed to refresh OAuth tokens for server supabase\n"
+  },
+  "created_at": "2026-08-09T07:33:25.999Z"
+}

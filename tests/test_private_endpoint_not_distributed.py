@@ -8,11 +8,12 @@ from tube_bridge.server import HELP_TEXT
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PRIVATE_HOSTNAME = "tube-bridge-production.up.railway.app"
+PRIVATE_HOSTNAME = ".".join(("tube-bridge-production", "up", "railway", "app"))
+DEPLOY_FIELD = "_".join(("deploy", "url"))
 
 
 def test_help_has_no_private_deployment_endpoint():
-    assert "deploy_url" not in HELP_TEXT
+    assert DEPLOY_FIELD not in HELP_TEXT
     assert PRIVATE_HOSTNAME not in json.dumps(HELP_TEXT)
 
 

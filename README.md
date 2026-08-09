@@ -212,7 +212,7 @@ The self-hosted core is fully published through GitHub Release, PyPI, and GHCR. 
 python3 test_tools.py
 ```
 
-This remains an optional live smoke against YouTube. Formal acceptance uses `python3 -m pytest tests -q`; the active suite contains 132 deterministic tests: the original 125-test core freeze, the 5-test self-hosted-only retirement contract, and the 2-test private-endpoint help remediation. Hosted GitHub Actions CI runs on Python 3.12 and 3.13.
+This remains an optional live smoke against YouTube. Formal acceptance uses `python3 -m pytest tests -q`; the active suite contains 137 deterministic tests: the original 125-test core freeze, the 5-test self-hosted-only retirement contract, the 2-test private-endpoint help remediation, and the 5-test v1.0.3 release-artifact contract. Hosted GitHub Actions CI runs on Python 3.12 and 3.13.
 
 ## Known Limitations
 

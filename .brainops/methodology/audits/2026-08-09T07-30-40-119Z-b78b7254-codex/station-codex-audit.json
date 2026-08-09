@@ -1,0 +1,103 @@
+{
+  "ok": true,
+  "kind": "brainops.methodology_audit",
+  "profile_id": "methodology.doc_audit",
+  "model_profile_id": "auditor.codex_headless",
+  "runtime_surface": "codex_headless",
+  "provider": "codex",
+  "model": "gpt-5.5",
+  "project": "tube-bridge",
+  "project_path": "/home/ali/Workspace/BrainOps/Projects/tube-bridge",
+  "target": {
+    "type": "artifact",
+    "source": "artifact_context"
+  },
+  "status": "passed",
+  "verdict": "PASS",
+  "summary": "Both corrected test files are semantically identical to their frozen predecessors except for runtime construction of forbidden markers; all seven assertions and clean/leaking wheel-and-sdist cases remain intact. Safe to freeze together as superseding hashes without accepting production behavior.",
+  "audit_contract": {
+    "kind": "brainops.methodology_audit_contract",
+    "profile_id": "methodology.doc_audit",
+    "status": "recommended_template",
+    "purpose": "Check whether project methodology documents are coherent enough to become accepted planning evidence.",
+    "intended_use": [
+      "Use before freezing tests or accepting implementation work.",
+      "Treat this as a recommended checklist/template for the auditor, not as evidence by itself."
+    ],
+    "packet_template": [
+      {
+        "section": "project_identity",
+        "required": true,
+        "description": "Project name/path and WorkItem or lifecycle run being audited."
+      },
+      {
+        "section": "constitution_docs",
+        "required": true,
+        "description": "Mission, system context, architecture, glossary, non-goals, ADR rules, and planning docs where present."
+      },
+      {
+        "section": "open_questions",
+        "required": true,
+        "description": "Open questions and resolution/defer receipts."
+      },
+      {
+        "section": "scope_boundary",
+        "required": true,
+        "description": "What is inside/outside the current project or work block."
+      },
+      {
+        "section": "decision_evidence",
+        "required": false,
+        "description": "Relevant ADRs, TME entries, lifecycle gate results, and handoff notes."
+      }
+    ],
+    "audit_questions": [
+      "Is the project intent clear enough that a future agent after auto-compact can continue without silently changing the goal?",
+      "Are scope boundaries and non-goals explicit enough to detect methodology drift later?",
+      "Are terms and decisions grounded in documents instead of only in transcript memory?",
+      "Are blocking open questions resolved or explicitly deferred before implementation?"
+    ],
+    "pass_conditions": [
+      "Core intent, boundaries, terms, and decision process are documented and mutually consistent.",
+      "No blocking open question remains for the next planned implementation step.",
+      "The docs provide enough stable context for frozen tests or implementation planning."
+    ],
+    "fail_conditions": [
+      "Docs contradict each other on purpose, scope, public API, or acceptance criteria.",
+      "Critical requirements exist only in volatile chat/session context.",
+      "Implementation would require guessing unresolved behavior."
+    ],
+    "inconclusive_conditions": [
+      "Required docs or planning artifacts are missing from the packet.",
+      "The packet references files or receipts that are not supplied and cannot be inspected read-only."
+    ],
+    "forbidden_assumptions": [
+      "Do not accept docs because tests pass; this is a documentation gate.",
+      "Do not invent product goals not present in the supplied documents."
+    ],
+    "expected_output": {
+      "verdicts": [
+        "PASS",
+        "FAIL",
+        "INCONCLUSIVE"
+      ],
+      "required_fields": [
+        "VERDICT",
+        "SUMMARY",
+        "EVIDENCE_CHECKED",
+        "RESIDUAL_RISK"
+      ]
+    }
+  },
+  "output_dir": ".brainops/methodology/audits/2026-08-09T07-30-40-119Z-b78b7254-codex",
+  "receipt_path": ".brainops/methodology/audits/2026-08-09T07-30-40-119Z-b78b7254-codex/station-codex-audit.json",
+  "codex_runtime": {
+    "command": "codex exec --sandbox read-only --ephemeral --json",
+    "exit_code": 0,
+    "signal": null,
+    "duration_ms": 98028,
+    "stdout_tail": "ntime/help metadata.\\n+\\n+## Authorized test-only correction\\n+\\n+- In `tests/test_private_endpoint_not_distributed.py`, compose the private hostname and `deploy_url` field at runtime from non-contiguous components.\\n+- In `tests/test_v1_0_3_release_contract.py`, compose the same fixture markers at runtime.\\n+- Preserve every behavioral assertion and synthetic clean/leaking wheel+sdist case.\\n+- Do not change production source, workflow, docs, package version or release behavior in this addendum.\\n+\\n+## Freeze and supersession\\n+\\n+After an independent two-test contract audit PASS, freeze both corrected files in one manifest. Record that this manifest supersedes:\\n+\\n+- `.brainops/methodology/frozen-tests/frozen-20260809061346-test_private_endpoint_not_distributed.py.json`;\\n+- `.brainops/methodology/frozen-tests/frozen-20260809072041-test_v1_0_3_release_contract.py.json`.\\n+\\n+The superseded files remain immutable history. WI-00067 may resume implementation only after the corrected hashes are frozen and the tests retain the same deterministic outcomes.\\n\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_8\",\"type\":\"agent_message\",\"text\":\"VERDICT: PASS\\nSUMMARY: Both corrected test files are semantically identical to their frozen predecessors except for runtime construction of forbidden markers; all seven assertions and clean/leaking wheel-and-sdist cases remain intact. Safe to freeze together as superseding hashes without accepting production behavior.\\nEVIDENCE_CHECKED: Three supplied artifacts, predecessor manifest hashes, exact prior-source hash reconstruction, marker search, and release scanner logic.\\nRESIDUAL_RISK: The new combined manifest and supersession receipt still must be created; this verdict does not approve production changes or WI-00067 completion.\"}}\n{\"type\":\"turn.completed\",\"usage\":{\"input_tokens\":282811,\"cached_input_tokens\":251136,\"cache_write_input_tokens\":0,\"output_tokens\":3080,\"reasoning_output_tokens\":1523}}\n",
+    "stderr_tail": "2026-08-09T07:29:03.685801Z ERROR codex_rmcp_client::oauth::refresh_transaction: error=failed to refresh OAuth tokens for server supabase\n2026-08-09T07:29:04.002708Z ERROR codex_rmcp_client::oauth::refresh_transaction: error=failed to refresh OAuth tokens for server supabase\n"
+  },
+  "created_at": "2026-08-09T07:30:40.119Z"
+}

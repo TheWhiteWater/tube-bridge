@@ -1,0 +1,20 @@
+{
+  "kind": "brainops.frozen_tests_supersession",
+  "version": "0.1",
+  "project": "tube-bridge",
+  "work_item_id": "WI-00069",
+  "reason": "The prior frozen tests embedded contiguous private-deployment markers in test source included by the sdist. Runtime-composed equivalent fixtures preserve assertions while allowing whole-archive scanning.",
+  "supersedes": [
+    ".brainops/methodology/frozen-tests/frozen-20260809061346-test_private_endpoint_not_distributed.py.json",
+    ".brainops/methodology/frozen-tests/frozen-20260809072041-test_v1_0_3_release_contract.py.json"
+  ],
+  "authoritative_manifest": ".brainops/methodology/frozen-tests/frozen-20260809073048-tests.json",
+  "authoritative_test_hashes": {
+    "tests/test_private_endpoint_not_distributed.py": "13f0ca65d6bf11b651af669f266f22e263370a20c889a1708a90824f94a1b41d",
+    "tests/test_v1_0_3_release_contract.py": "c3583e5f98e26b355ac73c96405e0b0a46cb4176289ea752f55d9fa1e76eba0b"
+  },
+  "pre_freeze_audit": ".brainops/methodology/audits/2026-08-09T07-30-40-119Z-b78b7254-codex/station-codex-audit.json",
+  "created_by_agent_id": "W-1028",
+  "created_session_id": "S-01024",
+  "created_at": "2026-08-09T07:30:48Z"
+}

@@ -1,7 +1,7 @@
 # Publication Readiness — tube-bridge
 
 **Last updated:** 2026-08-09
-**Status:** Self-hosted core published. No hosted-demo surface exists. WI-00060 is closed after final conformance PASS.
+**Status:** Self-hosted core published. No hosted-demo surface exists. WI-00067 is the active v1.0.3 release gate; local candidate checks pass, but hosted/tag/registry evidence is pending.
 
 ## Public Surface
 
@@ -18,12 +18,12 @@ Users deploy their own instance and own credentials, storage, quota, retention, 
 | # | Area | Priority | Status | Evidence / Exit Criterion |
 |---|---|:---:|---|---|
 | C1 | Tool/help/schema consistency | P0 | Resolved | One `TOOL_CATALOG` defines exactly 16 tools and derived help metadata. |
-| C2 | Deterministic tests and CI | P0 | Resolved | Original 125-test core freeze plus five ADR-003 retirement tests and two private-endpoint help tests pass (132 total); hosted Python 3.12/3.13 run `31298551526` passes both jobs. |
-| C3 | Packaging and installed runtime | P0 | Resolved | Wheel/sdist, twine, isolated install, synchronous CLI, installed MCP runtime and exact dependency lock pass. |
-| C4 | Container distribution | P0 | Resolved | Public GHCR image and authenticated MCP handshake pass. |
+| C2 | Deterministic tests and CI | P0 | Release gate | Original 125-test core freeze plus five ADR-003 retirement tests, two private-endpoint help tests, and five v1.0.3 release-artifact tests pass (137 total); final hosted release evidence is required before WI-00067 closes. |
+| C3 | Packaging and installed runtime | P0 | Release gate | Local v1.0.3 wheel/sdist, twine, artifact scan, isolated install, synchronous CLI and installed MCP runtime pass; registry download evidence remains pending. |
+| C4 | Container distribution | P0 | Release gate | Local v1.0.3 image and MCP handshake pass; GHCR `1.0.3`/`1.0`/`latest` publication and pull evidence remain pending. |
 | C5 | Secret and license review | P0 | Resolved | MIT license; no bundled API/proxy/Bearer credentials. |
-| C6 | Documentation alignment | P0 | Resolved | Six bounded documentation packs independently pass with self-hosting only and ADR-003 active. |
-| C7 | Historical release metadata | P1 | Resolved | Functional `v1.0.0` remains unyanked and explicitly metadata-superseded by current `v1.0.2`. |
+| C6 | Documentation alignment | P0 | Release gate | Existing ADR-003 documentation is accepted; bounded v1.0.3 release-candidate packs and terminal post-publication sync must pass. |
+| C7 | Historical release metadata | P1 | Release gate | Functional historical releases remain unyanked; after registry publication, the v1.0.2 GitHub notes will identify current `v1.0.3` as its superseding release. |
 
 ## No-Go Conditions
 
@@ -54,4 +54,4 @@ Its hostname and credentials are not published as a demo.
 
 ## Exit Rule
 
-The project is ready when core C1–C7 are resolved, hosted CI is green, documentation audits pass, and the private Operator Railway checks pass. There is no second demo acceptance surface.
+WI-00067 closes only when C1–C7 are resolved, hosted branch and tag workflows are green, downloaded registry artifacts pass inspection, documentation audits pass, and the private Operator Railway remains closed. There is no second demo acceptance surface.
