@@ -37,6 +37,7 @@
 
 - original 125-test core freeze;
 - five-test self-hosted-only retirement contract;
+- two-test private-endpoint help remediation;
 - hosted Python 3.12/3.13 CI;
 - build/twine, isolated install, Docker and MCP checks;
 - independent source/document audits.
@@ -71,7 +72,8 @@
 - [x] Source and final-doc hosted CI PASS.
 - [x] Simplified source deployed privately as `dd031af0-de10-49ff-aca8-97c7dc00e1fe`.
 - [x] Unauthenticated `401`, authenticated MCP initialize/help, Pi extension, absent OAuth routes and exact non-demo health surface verified.
-- [x] WI-00047 and WI-00057 recorded terminal as superseded/cancelled by ADR-003; WI-00060 proceeds to final gate/closure.
+- [x] WI-00047 and WI-00057 recorded terminal as superseded/cancelled by ADR-003.
+- [ ] WI-00064 removes the final hard-coded private hostname from MCP help before WI-00060 closure.
 
 ## Dependency Graph
 

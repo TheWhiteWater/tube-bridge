@@ -85,7 +85,7 @@ Pi and Claude Code CLI may use the Operator's private Railway service because th
 
 - `test_tools.py` is optional live smoke only.
 - Original core freeze: 125 tests.
-- Active suite after ADR-003 retirement: 130 deterministic tests.
+- Active suite after ADR-003 retirement/privacy addenda: 132 deterministic tests.
 - Source/test changes require RED, independent contract audit, frozen SHA-256, GREEN, independent source audit, and hosted CI.
 - Do not modify a frozen test after source work begins; use an audited addendum or superseding product ADR.
 - Build/release verification uses a disposable tools environment when system Python lacks `build`/`twine`.

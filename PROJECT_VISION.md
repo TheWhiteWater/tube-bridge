@@ -66,7 +66,7 @@ Browser Claude Custom Connector is not a supported target for this private insta
 
 - Current public release: `v1.0.2`.
 - Original core freeze: 125 deterministic tests.
-- Active tree: 130 deterministic tests, including the 5-test self-hosted-only retirement contract.
+- Active tree: 132 deterministic tests: the 125-test core freeze, 5-test self-hosted-only retirement contract, and 2-test private-endpoint help remediation.
 - Wheel/sdist, `twine check`, isolated install, installed CLI/MCP, Docker runtime, PyPI, GitHub Release, public GHCR, and hosted Python 3.12/3.13 CI are verification surfaces.
 - `test_tools.py` remains an optional live YouTube smoke, not a deterministic gate.
 

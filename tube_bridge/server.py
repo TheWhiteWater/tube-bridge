@@ -16,7 +16,7 @@ from .youtube.client import extract_video_id
 
 HELP_TEXT = {
     "server": "tube-bridge",
-    "version": "1.0.0",
+    "version": "1.0.2",
     "description": "YouTube MCP server — search, discovery, transcripts, comments.",
     "architecture": {
         "dual_source": "Data API v3 primary, yt-dlp fallback for search, video_info, trending",
@@ -31,7 +31,6 @@ HELP_TEXT = {
         "Trending yt-dlp URL fragile — Data API v3 used as primary when key present.",
     ],
     "api_key_setup": "Set YOUTUBE_API_KEY env var. Get from https://console.cloud.google.com/apis/library/youtube.googleapis.com",
-    "deploy_url": "https://tube-bridge-production.up.railway.app/mcp",
 }
 
 

@@ -173,7 +173,7 @@ Two-layer cache for transcripts and video metadata:
 
 1. One catalog defines all 16 registered tool schemas and HELP metadata; a separate dispatcher is contract-tested against the same 16-name set.
 2. Package documentation and the synchronous installed `tube_bridge.cli:main` entrypoint are verified from an isolated wheel.
-3. The core freeze remains 125 tests; the active tree adds a 5-test self-hosted-only retirement contract for 130 deterministic tests. `test_tools.py` remains optional live smoke.
+3. The core freeze remains 125 tests; the active tree adds five self-hosted-only retirement tests and two private-endpoint help tests for 132 deterministic tests. `test_tools.py` remains optional live smoke.
 4. Wheel+sdist/twine, exact dependency lock, Docker MCP handshake, SQLite lifecycle contracts and final hosted Python 3.12/3.13 CI for the ADR-003 transition pass.
 5. GitHub Release, PyPI and public GHCR publication are complete; no hosted-demo gate exists.
 
