@@ -1,6 +1,17 @@
 #!/usr/bin/env node
 // Bounded Python verification bridge accepted by BrainOps Station.
 import { spawn } from "node:child_process";
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
+
+for (const path of [
+  "tube_bridge/oauth.py",
+  "tube_bridge/transport.py",
+  "tests/test_oauth_contract.py",
+]) {
+  const digest = createHash("sha256").update(readFileSync(path)).digest("hex");
+  console.log(`sha256 ${digest}  ${path}`);
+}
 
 const args = [
   "-m", "pytest", "tests", "-q",
