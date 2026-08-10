@@ -226,10 +226,13 @@ Status: `"indexed"`, `"already_indexed"`, or `"no_content"`. Idempotent via `cor
 ### corpus_search
 ```json
 {"corpus_id": "iran-hormuz-2026", "query": "memory systems", "total_results": 3,
- "chunks": [{"video_id": "dQw4w9WgXcQ", "start_ts": 120.5, "end_ts": 200.0,
+ "chunks": [{"video_id": "dQw4w9WgXcQ", "title": "Example Video",
+   "video_url": "https://youtube.com/watch?v=dQw4w9WgXcQ",
+   "timestamp_url": "https://youtube.com/watch?v=dQw4w9WgXcQ&t=120s",
+   "start_ts": 120.5, "end_ts": 200.0,
    "text": "The memory system in this architecture...", "score": 0.8734}]}
 ```
-`score = round(1.0 - distance, 4)` without clamping (`corpus.py` 237). sqlite-vec cosine distance can exceed 1.0, producing negative scores; consumers must not assume [0,1]. Sorted by ascending distance.
+`title` is nullable for legacy rows or cache misses. `top_k` is an integer from 1 through 50. Search over-fetches a bounded candidate set, uses stable distance/video/time/id ordering, resolves an observed saturated boundary tie through stable scalar L2 ordering, suppresses positively overlapping same-video windows, caps the first multi-video pass at `ceil(top_k / 2)` per video, and then refills remaining slots. `score = round(1.0 - distance, 4)` without clamping; consumers must not assume [0,1].
 
 ### corpus_list
 ```json
@@ -264,10 +267,10 @@ WAL mode. `$TUBE_BRIDGE_CACHE/corpus.db`.
 |-------|---------|-------|
 | corpora | corpus_id TEXT PK, label TEXT, embedding_model TEXT, created_at REAL, expires_at REAL nullable | ID validated: `^[A-Za-z0-9_-]{1,128}$`; active self-hosted code stores `expires_at = NULL` while retaining the column for schema compatibility |
 | corpus_chunks | id INTEGER PK, corpus_id TEXT, video_id TEXT, start_ts REAL, end_ts REAL, text TEXT, added_at REAL | UNIQUE(corpus_id, video_id, start_ts) |
-| corpus_added_videos | corpus_id TEXT, video_id TEXT, added_at REAL | Composite PK |
-| vec_{corpus_id} | VIRTUAL (sqlite-vec: `vec0(embedding float[dim])`) | Joined via rowid=id. Dim=384 (BGE-small) |
+| corpus_added_videos | corpus_id TEXT, video_id TEXT, added_at REAL, title TEXT nullable | Composite PK; `title` is added idempotently to legacy databases and is sourced only from local metadata cache during `corpus_add` |
+| vec_{sha256-prefix} | VIRTUAL (sqlite-vec: `vec0(embedding float[dim])`) | Name is `vec_` plus the first 32 hexadecimal SHA-256 characters of corpus_id; joined via rowid=id. Dim=384 for BGE-small |
 
-ID validation protects SQL identifiers; dashes replaced with underscores for table names.
+ID validation and generated hexadecimal table names protect SQL identifiers. Startup transactionally splits legacy tables (which replaced dashes with underscores) using `corpus_chunks.id/corpus_id`, preserving stored vectors without re-embedding.
 
 ---
 

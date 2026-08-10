@@ -1,0 +1,126 @@
+{
+  "ok": true,
+  "kind": "brainops.methodology_audit",
+  "profile_id": "methodology.conformance_audit",
+  "model_profile_id": "auditor.codex_headless",
+  "runtime_surface": "codex_headless",
+  "provider": "codex",
+  "model": "gpt-5.6-sol",
+  "project": "tube-bridge",
+  "project_path": "/home/ali/Workspace/BrainOps/Projects/tube-bridge",
+  "target": {
+    "type": "artifact",
+    "source": "artifact_context"
+  },
+  "status": "inconclusive",
+  "verdict": "INCONCLUSIVE",
+  "summary": "Acceptance is unsupported by the supplied evidence chain: the WorkItem has zero evidence refs, no implementation/apply receipt, no hosted-CI receipt, and no supplied independent source/doc PASS audits. The cited verification records 197—not 211—passing tests. The primary frozen test also changed repeatedly, with no supplied independent correction audit establishing valid freeze timing.",
+  "audit_contract": {
+    "kind": "brainops.methodology_audit_contract",
+    "profile_id": "methodology.conformance_audit",
+    "status": "recommended_template",
+    "purpose": "Check whether source/test work can be accepted against accepted docs, frozen tests, verification, and methodology state.",
+    "intended_use": [
+      "Use immediately before WorkItem status=done or lifecycle publish for source/test work.",
+      "Treat this as the recommended Station checklist/template the auditor is tuned for.",
+      "This gate protects against context drift: green tests alone are not enough if docs, frozen tests, and implementation diverged."
+    ],
+    "packet_template": [
+      {
+        "section": "methodology_state",
+        "required": true,
+        "description": "Station-computed state: constitution, audit_gate, tests, implementation, blocking open questions, artifacts, next_required_profile."
+      },
+      {
+        "section": "work_item",
+        "required": true,
+        "description": "WorkItem id, goal, status, owner, lifecycle_run_id, and evidence refs."
+      },
+      {
+        "section": "accepted_docs",
+        "required": true,
+        "description": "Accepted constitution/planning docs and document audit receipts."
+      },
+      {
+        "section": "open_question_receipts",
+        "required": true,
+        "description": "Receipts proving blocking questions are resolved or explicitly deferred."
+      },
+      {
+        "section": "frozen_tests",
+        "required": true,
+        "description": "Frozen test manifest with hashes created before implementation acceptance."
+      },
+      {
+        "section": "implementation_delta",
+        "required": true,
+        "description": "Relevant source/test files or patch/apply receipts for the implementation under audit."
+      },
+      {
+        "section": "verification",
+        "required": true,
+        "description": "Station verification receipt with command, exit code, and bounded output."
+      },
+      {
+        "section": "previous_audits",
+        "required": false,
+        "description": "Previous doc/route/conformance audit receipts, separated by profile_id to avoid cross-contamination."
+      }
+    ],
+    "audit_questions": [
+      "Does the implementation satisfy the accepted project docs and explicit WorkItem goal without expanding scope?",
+      "Do frozen tests cover the behavior claimed by the implementation, and were they recorded as Station-owned evidence?",
+      "Did verification run after apply against the project tree, not only inside scratch?",
+      "Are source files, tests, and docs mutually consistent, or has the project drifted beyond the accepted constitution?",
+      "Is there any unresolved question, missing receipt, or same-agent self-acceptance risk that should block final acceptance?"
+    ],
+    "pass_conditions": [
+      "Accepted docs, frozen tests, implementation, and verification receipts are all present and consistent.",
+      "No blocking open questions remain for the accepted source/test change.",
+      "The implementation does not introduce behavior outside the accepted scope unless docs/tests were updated and audited first.",
+      "Verification passed after apply and the evidence chain is Station-owned."
+    ],
+    "fail_conditions": [
+      "Implementation behavior conflicts with accepted docs, non-goals, WorkItem goal, or ADRs.",
+      "Tests were created/changed after implementation without a valid frozen-test receipt.",
+      "Verification failed, did not run after apply, or only checked scratch output.",
+      "The change expands project scope without prior doc update and doc audit.",
+      "The same logical agent self-accepted source/test work without independent audit or human override."
+    ],
+    "inconclusive_conditions": [
+      "Any required packet section is missing, truncated past decision-critical content, or internally inconsistent.",
+      "The audit cannot distinguish accepted docs from draft/scaffold docs.",
+      "Verification, frozen-test, or apply receipts are referenced but not supplied."
+    ],
+    "forbidden_assumptions": [
+      "Do not PASS only because tests are green.",
+      "Do not treat scaffold/TODO docs as accepted project intent.",
+      "Do not infer frozen-test timing from an agent summary; require Station-owned receipts.",
+      "Do not let failed conformance receipts count as failed doc audits; profile_id matters."
+    ],
+    "expected_output": {
+      "verdicts": [
+        "PASS",
+        "FAIL",
+        "INCONCLUSIVE"
+      ],
+      "required_fields": [
+        "VERDICT",
+        "SUMMARY",
+        "EVIDENCE_CHECKED",
+        "RESIDUAL_RISK"
+      ]
+    }
+  },
+  "output_dir": ".brainops/methodology/audits/2026-08-10T17-32-29-330Z-d3d987a8-codex",
+  "receipt_path": ".brainops/methodology/audits/2026-08-10T17-32-29-330Z-d3d987a8-codex/station-codex-audit.json",
+  "codex_runtime": {
+    "command": "codex exec --sandbox read-only --ephemeral --json",
+    "exit_code": 0,
+    "signal": null,
+    "duration_ms": 106050,
+    "stdout_tail": "ttr(corpus, \\\"_get_embedding_model\\\", lambda: (object(), 2))\\n+    monkeypatch.setattr(corpus, \\\"_embed\\\", lambda texts: [[1.0, 0.0] for _ in texts])\\n+    return corpus\\n+\\n+\\n+def _seed_candidates(corpus, corpus_id: str, candidates: list[dict]) -> None:\\n+    created = corpus.corpus_create(corpus_id, corpus_id)\\n+    assert created[\\\"status\\\"] == \\\"created\\\"\\n+\\n+    with corpus._connection() as conn:\\n+        columns = {\\n+            row[1]\\n+            for row in conn.execute(\\n+                \\\"PRAGMA table_info(corpus_added_videos)\\\"\\n+            ).fetchall()\\n+        }\\n+        if \\\"title\\\" not in columns:\\n+            # Ranking tests need to reach current search behavior during RED.\\n+            # Fresh-schema and legacy-migration tests independently require\\n+            # production to add this nullable column.\\n+            conn.execute(\\\"ALTER TABLE corpus_added_videos ADD COLUMN title TEXT\\\")\\n\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_9\",\"type\":\"agent_message\",\"text\":\"VERDICT: INCONCLUSIVE\\nSUMMARY: Acceptance is unsupported by the supplied evidence chain: the WorkItem has zero evidence refs, no implementation/apply receipt, no hosted-CI receipt, and no supplied independent source/doc PASS audits. The cited verification records 197—not 211—passing tests. The primary frozen test also changed repeatedly, with no supplied independent correction audit establishing valid freeze timing.\\nEVIDENCE_CHECKED: Accepted docs; WorkItem and methodology state; frozen manifests and current hashes; verification-1786383021743.json; audit records; working-tree delta and correction plan.\\nRESIDUAL_RISK: Source/test self-acceptance, post-implementation test correction, unverified 211-test/build/twine/CI claims, and missing apply provenance remain blocking.\"}}\n{\"type\":\"turn.completed\",\"usage\":{\"input_tokens\":631505,\"cached_input_tokens\":555008,\"cache_write_input_tokens\":0,\"output_tokens\":3745,\"reasoning_output_tokens\":2219}}\n",
+    "stderr_tail": "2026-08-10T17:30:44.829443Z ERROR codex_rmcp_client::oauth::refresh_transaction: error=failed to refresh OAuth tokens for server supabase\n2026-08-10T17:30:45.043543Z ERROR codex_rmcp_client::oauth::refresh_transaction: error=failed to refresh OAuth tokens for server supabase\n"
+  },
+  "created_at": "2026-08-10T17:32:29.330Z"
+}

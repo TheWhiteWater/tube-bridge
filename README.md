@@ -62,7 +62,7 @@ The plugin is a preview because dependency bootstrap and client-specific loading
 | `tube_bridge_help` | ❌ | Server documentation accessible via MCP |
 | `corpus_create` | ❌ | Create a named corpus for semantic transcript search |
 | `corpus_add` | ❌ | Add video transcript to a corpus. Auto-fetches (network), chunks, embeds locally |
-| `corpus_search` | ❌ | Semantic search within a corpus. Returns chunks with scores, timestamps, video IDs |
+| `corpus_search` | ❌ | Semantic search with overlap deduplication, source-aware ranking, titles and timestamp URLs |
 | `corpus_list` | ❌ | List all corpora with chunk and video counts |
 | `corpus_delete` | ❌ | Delete a corpus and all its chunks/vectors permanently |
 
@@ -110,6 +110,8 @@ export YOUTUBE_API_KEY="your-key-here"
 
 Semantic search over YouTube transcripts using local embeddings. Useful for research workflows — build a corpus of videos on a topic and search across them.
 
+The ranking behavior below describes the current source tree after the immutable public v1.1.0 artifacts. It requires a future separately authorized patch release before it is available from PyPI/GHCR.
+
 ```
 corpus_create("ai-agents", "AI Agents Research")     # Named corpus
 corpus_add("ai-agents", "dQw4w9WgXcQ")               # Auto-chunks + embeds (transcript fetched over network)
@@ -119,6 +121,8 @@ corpus_delete("ai-agents")                             # Delete permanently
 ```
 
 - **Chunking:** by transcript segments, 80-second windows with 20-second overlap
+- **Ranking:** bounded over-fetch, same-video overlap deduplication, and a first-pass per-video cap limit source domination when alternate sources enter the candidate pool; remaining candidates deterministically refill unused slots
+- **Results:** similarity score, source time span, cache-captured title when available, canonical video URL, and integer-second timestamp URL
 - **Embeddings:** fastembed (BGE-small-en-v1.5, 384-dim); local inference after model assets are available; initial model acquisition may require network; no embedding API setup
 - **Storage:** `corpus.db` — separate SQLite file from `cache.db`, same directory (`~/.tube_bridge`)
 
@@ -232,7 +236,7 @@ The self-hosted runtime is published through GitHub Release, PyPI, and GHCR. The
 python3 test_tools.py
 ```
 
-This remains an optional live smoke against YouTube. Formal acceptance uses `python3 -m pytest tests -q`; the source-tree suite contains 188 deterministic tests, preserving the original release/privacy gates and adding frame, plugin, subtitle-selection, and Corpus v2 contracts. Hosted GitHub Actions CI runs on Python 3.12 and 3.13.
+This remains an optional live smoke against YouTube. Formal acceptance uses `python3 -m pytest tests -q`; the source-tree suite contains 211 deterministic tests, preserving the release/privacy gates and adding frame, plugin, subtitle-selection, Corpus v2, Corpus v1 ranking, migration and rollback contracts. Hosted GitHub Actions CI runs on Python 3.12 and 3.13.
 
 ## Known Limitations
 

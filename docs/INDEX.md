@@ -41,7 +41,7 @@
 - Product: self-hosted software only.
 - Auth: optional static Bearer for self-hosted HTTP.
 - Storage: user-managed cache/corpus databases with no forced TTL.
-- Tests: 188 deterministic source-tree tests, including the preserved release/privacy contracts plus frame, plugin, subtitle, and Corpus v2 contracts.
+- Tests: 211 deterministic source-tree tests, including preserved release/privacy contracts plus frame, plugin, subtitle, Corpus v2, and Corpus v1 ranking/migration/rollback contracts.
 - Completed WorkItem: WI-00060 closed after source/docs/CI/private-Railway verification and final conformance PASS.
 - Completed WorkItem: WI-00067 published and verified self-hosted-only v1.0.3 across GitHub, PyPI and GHCR; final conformance PASS. Published v1.1.0 now supersedes it without altering historical artifacts.
 - Historical demo/OAuth WorkItems WI-00047 and WI-00057 are terminal with superseded/cancelled resolutions and do not define current product behavior.

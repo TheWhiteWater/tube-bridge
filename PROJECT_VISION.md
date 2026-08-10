@@ -64,10 +64,10 @@ Browser Claude Custom Connector is not a supported target for this private insta
 
 ## Current Evidence
 
-- Current public release and source tree: `v1.1.0`, 17 tools, including bounded ephemeral frame extraction.
+- Current public release: `v1.1.0`, 17 tools, including bounded ephemeral frame extraction. The source tree keeps the same tool surface and may contain separately gated, unreleased hardening after that immutable release.
 - GitHub Release additionally distributes the Agent Plugin preview with one research skill, methodology, examples, templates, and the frozen but not-yet-runtime Corpus v2 contract.
 - Original core freeze: 125 deterministic tests.
-- Active tree: 188 deterministic tests, including frame extraction/tool, Agent Plugin, Corpus v2 storage, subtitle selection, distribution, retirement/privacy, and v1.0.3 historical release contracts.
+- Active tree: 211 deterministic tests, including frame extraction/tool, Agent Plugin, Corpus v2 storage, subtitle selection, Corpus v1 ranking/migration/rollback, distribution, retirement/privacy, and historical release contracts.
 - Wheel/sdist, `twine check`, isolated install, installed CLI/MCP, Docker runtime, PyPI, GitHub Release, public GHCR, and hosted Python 3.12/3.13 CI are verification surfaces.
 - `test_tools.py` remains an optional live YouTube smoke, not a deterministic gate.
 

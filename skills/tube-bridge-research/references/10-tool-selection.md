@@ -32,9 +32,11 @@ When `lang` is omitted, the runtime stays in the inferred original/default langu
 
 ## Local corpus operations
 
+> **Release boundary:** title capture, overlap deduplication, source caps, refill and timestamp URLs below describe the current source tree after public v1.1.0. Immutable PyPI/GHCR v1.1.0 artifacts retain the earlier flat result behavior until a separately authorized patch release.
+
 - `corpus_create`: create a named local corpus with one embedding model.
-- `corpus_add`: fetch, chunk, and embed a selected video transcript; idempotent unless forced.
-- `corpus_search`: return flat semantic candidates with video IDs, time spans, text, and scores.
+- `corpus_add`: fetch, chunk, and embed a selected video transcript; capture a title only when already present in local metadata cache; idempotent unless forced.
+- `corpus_search`: return overlap-deduplicated, source-aware flat semantic candidates with titles when available, inspectable timestamp URLs, time spans, text, and scores.
 - `corpus_list`: inspect available local corpora and counts.
 - `corpus_delete`: permanently delete one corpus and its vectors; confirm the target before calling it.
 

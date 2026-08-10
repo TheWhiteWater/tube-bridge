@@ -1,0 +1,66 @@
+{
+  "kind": "brainops.implementation_apply_delta",
+  "version": "0.1",
+  "project": "tube-bridge",
+  "work_item_id": "WI-CORPUS-RANKING-20260810",
+  "status": "source_candidate_committed_ci_and_conformance_passed",
+  "authority": [
+    "docs/research/2026-08-10-corpus-v1-rag-retrieval-dogfood.md",
+    "docs/audits/2026-08-10-corpus-v1-ranking-convergence.md",
+    "PROJECT_VISION.md"
+  ],
+  "production_delta": {
+    "tool_surface": "Exactly 17 tools and the existing five corpus tool names/arguments are preserved; corpus_search.top_k now declares and enforces 1..50.",
+    "ranking": "Bounded over-fetch, positive same-video interval deduplication, ceil(top_k/2) first-pass per-video cap, deterministic refill, stable distance/video/time/id ordering and saturated observed boundary-tie fallback.",
+    "metadata": "corpus_add reads optional title from local cache only; results add nullable title, video_url and timestamp_url.",
+    "storage": "Nullable title migration; collision-resistant 32-hex SHA-256 vector table names; transactional exact legacy split; targeted force_reembed vector deletion with rollback.",
+    "non_delta": "No embedding model, chunk generation, Corpus v2 implementation/cutover, auth, transport, release workflow, public v1.1.0 artifact or Railway configuration change."
+  },
+  "source_sha256": {
+    "tube_bridge/corpus.py": "e749e1ffe731108998899345b84cdcefea07f066458a385f63eebf2798d0ed84",
+    "tube_bridge/tools.py": "24a7d6fcedbff172dea45535e135849a045495fd90574393388ab926e7614d86",
+    "tube_bridge/server.py": "8da67c9c544b08a9b18fc320d522ec48ab02255f1989a03b360d22bbcb2f2b26"
+  },
+  "test_contract": {
+    "primary_manifest": ".brainops/methodology/frozen-tests/frozen-20260810171509-test_corpus_search_ranking.py.json",
+    "primary_sha256": "d831c0ed077ea0ee12bfe934a09c9b014b11ca6884b99fe6999f73d856d1a031",
+    "addendum_manifest": ".brainops/methodology/frozen-tests/frozen-20260810171053-test_corpus_search_ranking_addendum.py.json",
+    "addendum_sha256": "15d1520fbf42bd97345a58f6e4368c16415a8598a8ae2dbc0141d93be86bda0e",
+    "correction_plan": ".hermes/plans/2026-08-10-corpus-ranking-frozen-test-correction.md"
+  },
+  "documentation_delta": [
+    "AGENTS.md",
+    "PROJECT_VISION.md",
+    "README.md",
+    "docs/INDEX.md",
+    "docs/constitution/02_ARCHITECTURE.md",
+    "docs/constitution/03_DATA_MODEL.md",
+    "docs/constitution/04_GLOSSARY.md",
+    "docs/research/2026-08-10-corpus-v1-rag-retrieval-dogfood.md",
+    "docs/research/evidence/2026-08-10-corpus-v1-ranking-live.json",
+    "skills/tube-bridge-research/references/10-tool-selection.md",
+    "skills/tube-bridge-research/references/50-retrieval.md"
+  ],
+  "verification": {
+    "station": ".brainops/methodology/verification/verification-1786383021743.json",
+    "full_suite": "211/211 PASS",
+    "focused": "23/23 PASS",
+    "build_twine": "PASS",
+    "live_receipt": "docs/research/evidence/2026-08-10-corpus-v1-ranking-live.json",
+    "live_receipt_sha256": "319f60489b79f290fbe2c312e1ecafc2bceb4169fefdb760bafd851dc074be56",
+    "source_audit": "PASS P0=0 P1=0",
+    "documentation_audits": "three bounded packs PASS P0=0 P1=0"
+  },
+  "candidate": {
+    "commit": "72c87e558c51ca4aacec9da5900c59f05a672def",
+    "pull_request": "https://github.com/TheWhiteWater/tube-bridge/pull/2",
+    "pull_request_ci": "https://github.com/TheWhiteWater/tube-bridge/actions/runs/31414985993",
+    "push_ci": "https://github.com/TheWhiteWater/tube-bridge/actions/runs/31414980436",
+    "station_conformance": ".brainops/methodology/audits/2026-08-10T17-46-25-588Z-cde3dd46-codex/station-codex-audit.json"
+  },
+  "publication": "not_authorized_or_performed",
+  "railway": "not_deployed_or_modified",
+  "created_at": "2026-08-10T17:33:09Z",
+  "created_by_agent_id": "W-1244",
+  "created_session_id": "S-01240"
+}

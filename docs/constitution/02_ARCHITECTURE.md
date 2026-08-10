@@ -136,8 +136,8 @@ Two-layer cache for transcripts and video metadata:
 
 **Storage:**
 - `corpus.db` — separate SQLite database from `cache.db`, same configurable directory.
-- Tables: `corpora` (corpus_id, label, embedding_model, created_at, nullable expires_at), `corpus_chunks` (id, corpus_id, video_id, start_ts, end_ts, text, added_at), `corpus_added_videos` (corpus_id, video_id, added_at).
-- Per-corpus sqlite-vec virtual tables: `vec_{corpus_id}` with float embedding columns.
+- Tables: `corpora` (corpus_id, label, embedding_model, created_at, nullable expires_at), `corpus_chunks` (id, corpus_id, video_id, start_ts, end_ts, text, added_at), `corpus_added_videos` (corpus_id, video_id, added_at, nullable title). Older databases add `title` through an idempotent additive migration.
+- Per-corpus sqlite-vec virtual tables: `vec_{first_32_hex_sha256(corpus_id)}` with float embedding columns. Startup transactionally splits legacy dash/underscore-colliding tables by joining vector row IDs to `corpus_chunks`, then removes the legacy table.
 
 **Embedding:**
 - fastembed with BGE-small-en-v1.5 (384-dim). Inference runs locally after model assets are available; initial model download may require network. Zero API keys.
@@ -147,21 +147,24 @@ Two-layer cache for transcripts and video metadata:
 
 **corpus_add workflow:**
 1. `tube_bridge/tools.py` `corpus_add()` first fetches the transcript via `_get_transcript_with_meta()` (which checks cache, then calls youtube-transcript-api over the network).
-2. Passes transcript segments to `tube_bridge/corpus.py` `corpus_add()`.
-3. Chunks segments into overlapping windows via `_chunk_transcript()`. The default window is **80 seconds** with a **20-second overlap** (`window_sec=80, overlap_sec=20`).
-4. Embeds each chunk with fastembed (locally after model assets are available).
-5. Stores chunks in `corpus_chunks` table and vectors in per-corpus sqlite-vec virtual table.
-6. Idempotent: `corpus_added_videos` table prevents duplicate indexing. `force_reembed=True` bypasses this.
+2. Reads optional title metadata from local `cache.db` only. A cache miss or cache failure does not start a metadata network request and does not block indexing.
+3. Passes transcript segments and the optional title to `tube_bridge/corpus.py` `corpus_add()`.
+4. Chunks segments into overlapping windows via `_chunk_transcript()`. The default window is **80 seconds** with a **20-second overlap** (`window_sec=80, overlap_sec=20`).
+5. Embeds each chunk with fastembed (locally after model assets are available).
+6. Stores chunks, vectors and the optional title in one transaction.
+7. Idempotent: `corpus_added_videos` prevents duplicate indexing. `force_reembed=True` transactionally removes only the replaced video's old vector rows/chunks, preserves other videos, and preserves a known title when no replacement title is available.
 
 **corpus_search workflow:**
-1. Validates corpus exists and embedding model matches.
+1. Validates corpus exists, embedding model matches, and integer `top_k` is between 1 and 50.
 2. Embeds the query string with the same model (locally after model assets are available).
-3. Runs sqlite-vec `MATCH` query joined with `corpus_chunks` for metadata filtering.
-4. Returns chunks with video IDs, timestamps, text, and similarity scores (distance → 1.0 − distance).
+3. Runs a bounded sqlite-vec `MATCH` over `min(total_chunks, max(top_k × 8, top_k + 32))` candidates with stable distance/video/time/id ordering. If the bounded KNN set ends in an observed saturated distance tie, a scalar L2 fallback resolves that tie with the same stable ordering.
+4. Suppresses same-video intervals with positive timestamp overlap.
+5. For multi-video corpora, applies a first-pass cap of `ceil(top_k / 2)` per video, then deterministically refills unused slots. Single-video corpora are not capped.
+6. Returns title when captured, canonical video/timestamp URLs, video ID, time span, text, and similarity score (distance → 1.0 − distance).
 
 **Offline/online boundary:** Embedding inference and vector search run locally after model assets are available; initial model acquisition may require network (no external embedding service required). However, `corpus_add` fetches the video transcript over the network (via youtube-transcript-api) before chunking and embedding. The corpus workflow is not fully offline.
 
-**Safety:** `corpus_id` is validated against `^[A-Za-z0-9_-]{1,128}$` before any SQL interpolation. Per-corpus vector table names are derived from the validated corpus_id.
+**Safety:** `corpus_id` is validated against `^[A-Za-z0-9_-]{1,128}$` before any SQL interpolation. Per-corpus vector table names use a fixed hexadecimal SHA-256 prefix, preventing the legacy `a-b`/`a_b` identifier collision while keeping interpolated identifiers restricted to a generated safe alphabet.
 
 ## Product Layers (Architecture)
 
@@ -180,7 +183,7 @@ Two-layer cache for transcripts and video metadata:
 
 1. One catalog defines all 17 registered tool schemas and HELP metadata; a separate dispatcher is contract-tested against the same 17-name set.
 2. Package documentation and the synchronous installed `tube_bridge.cli:main` entrypoint are verified from an isolated wheel.
-3. The active tree has 188 deterministic tests, preserving the original core/release/privacy gates and adding frame, plugin, subtitle, and Corpus v2 contracts. `test_tools.py` remains optional live smoke.
+3. The active tree has 211 deterministic tests, preserving core/release/privacy gates and adding frame, plugin, subtitle, Corpus v2, and Corpus v1 ranking/migration/rollback contracts. `test_tools.py` remains optional live smoke.
 4. Wheel+sdist/twine, exact dependency lock, Docker MCP handshake, SQLite lifecycle contracts and final hosted Python 3.12/3.13 CI for the ADR-003 transition pass.
 5. v1.1.0 GitHub/PyPI/GHCR publication and downloaded-artifact verification are complete; the Agent Plugin preview is a GitHub Release asset and no hosted-demo gate exists.
 

@@ -215,13 +215,19 @@ def _build_tools() -> list[Tool]:
         ),
         Tool(
             name="corpus_search",
-            description="Semantic search within a corpus. Returns relevant transcript chunks with scores, timestamps, and video IDs.",
+            description="Semantic search within a corpus. Deduplicates overlapping windows, limits source domination, and returns titles plus timestamp URLs.",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "corpus_id": {"type": "string", "description": "Corpus ID to search in"},
                     "query": {"type": "string", "description": "Natural language search query"},
-                    "top_k": {"type": "integer", "description": "Max results (default 10)", "default": 10},
+                    "top_k": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 50,
+                        "description": "Max results (default 10, max 50)",
+                        "default": 10,
+                    },
                 },
                 "required": ["corpus_id", "query"],
             },

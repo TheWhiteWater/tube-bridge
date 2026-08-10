@@ -369,11 +369,23 @@ async def corpus_create(corpus_id: str, label: str | None = None) -> dict:
 
 
 async def corpus_add(corpus_id: str, video_id: str, force_reembed: bool = False) -> dict:
-    """Add a video's transcript to a corpus. Fetches transcript, chunks, embeds automatically."""
+    """Add a transcript plus cache-only title metadata to a corpus."""
     result = await asyncio.to_thread(_get_transcript_with_meta, video_id, None)
     segments = result["segments"]
+    try:
+        cached_info = await asyncio.to_thread(cache.get_video_info, video_id)
+    except Exception:
+        cached_info = None
+    title = cached_info.get("title") if isinstance(cached_info, dict) else None
     from . import corpus
-    return await asyncio.to_thread(corpus.corpus_add, corpus_id, video_id, segments, force_reembed)
+    return await asyncio.to_thread(
+        corpus.corpus_add,
+        corpus_id,
+        video_id,
+        segments,
+        force_reembed,
+        title,
+    )
 
 
 async def corpus_search(corpus_id: str, query: str, top_k: int = 10) -> dict:

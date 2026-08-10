@@ -87,7 +87,7 @@ Pi and Claude Code CLI may use the Operator's private Railway service because th
 
 - `test_tools.py` is optional live smoke only.
 - Original core freeze: 125 tests.
-- Active source-tree suite: 188 deterministic tests, including frame, plugin, subtitle, Corpus v2, distribution, retirement/privacy, and historical release contracts.
+- Active source-tree suite: 211 deterministic tests, including frame, plugin, subtitle, Corpus v2, Corpus v1 ranking/migration/rollback, distribution, retirement/privacy, and historical release contracts.
 - Source/test changes require RED, independent contract audit, frozen SHA-256, GREEN, independent source audit, and hosted CI.
 - Do not modify a frozen test after source work begins; use an audited addendum or superseding product ADR.
 - Build/release verification uses a disposable tools environment when system Python lacks `build`/`twine`.
