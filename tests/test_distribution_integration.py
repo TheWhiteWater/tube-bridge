@@ -286,7 +286,7 @@ class TestCleanInstall:
                 )
                 assert smoke.returncode == 0, smoke.stdout + smoke.stderr
                 payload = __import__("json").loads(smoke.stdout)
-                assert payload["ok"] is True and payload["tool_count"] == 16
+                assert payload["ok"] is True and payload["tool_count"] == 17
             finally:
                 proc.terminate()
                 try:
@@ -445,16 +445,18 @@ class TestDockerContract:
         ), f"No project/wheel --no-deps install command: {commands}"
 
     def test_ordered_indices(self, dockerfile_lines):
-        """Strict order: COPY requirements → pip hashes → project COPY →
-        pip install --no-deps. Index order must be monotonic."""
+        """Strict order: dependency lock → hashed deps → allowlisted project
+        metadata/package copies → project install. Broad ``COPY . .`` is banned."""
         idx_copy_req = None
         idx_pip_hashes = None
-        idx_project_copy = None
+        idx_project_metadata = None
+        idx_project_package = None
         idx_pip_nodeps = None
 
         for i, line in enumerate(dockerfile_lines):
             stripped = line.strip()
 
+            assert stripped != "COPY . .", "Docker runtime must use explicit COPY allowlists"
             if stripped.startswith("COPY ") and \
                "requirements-release.txt" in stripped:
                 idx_copy_req = i
@@ -462,11 +464,10 @@ class TestDockerContract:
                  "--require-hashes" in stripped and \
                  "requirements-release.txt" in stripped:
                 idx_pip_hashes = i
-            elif stripped == "COPY . ." or (
-                stripped.startswith("COPY ") and ".whl" in stripped
-            ):
-                if idx_project_copy is None:
-                    idx_project_copy = i
+            elif stripped.startswith("COPY ") and "pyproject.toml" in stripped:
+                idx_project_metadata = i
+            elif stripped.startswith("COPY tube_bridge "):
+                idx_project_package = i
             elif stripped.startswith("RUN ") and "pip install" in stripped and \
                  "--no-deps" in stripped and \
                  (re.search(r"pip install\s+.*--no-deps\s+\.?($|\s)", stripped) or ".whl" in stripped):
@@ -475,19 +476,18 @@ class TestDockerContract:
         assert idx_copy_req is not None, "COPY requirements-release.txt not found"
         assert idx_pip_hashes is not None, \
             "RUN pip --require-hashes -r requirements-release.txt not found"
-        assert idx_project_copy is not None, "Project COPY not found"
+        assert idx_project_metadata is not None, "Allowlisted project metadata COPY not found"
+        assert idx_project_package is not None, "Allowlisted tube_bridge package COPY not found"
         assert idx_pip_nodeps is not None, "RUN pip --no-deps not found"
 
-        # Verify strict ordering
         assert idx_copy_req < idx_pip_hashes, (
             f"COPY requirements-release.txt (line {idx_copy_req}) must come "
             f"before pip --require-hashes (line {idx_pip_hashes})"
         )
-        assert idx_pip_hashes < idx_project_copy, (
-            f"pip --require-hashes (line {idx_pip_hashes}) must come "
-            f"before project COPY (line {idx_project_copy})"
+        assert idx_pip_hashes < idx_project_metadata <= idx_project_package, (
+            "hashed dependencies must be installed before the allowlisted project copies"
         )
-        assert idx_project_copy < idx_pip_nodeps, (
-            f"Project COPY (line {idx_project_copy}) must come "
+        assert idx_project_package < idx_pip_nodeps, (
+            f"Project package COPY (line {idx_project_package}) must come "
             f"before pip --no-deps (line {idx_pip_nodeps})"
         )

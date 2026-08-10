@@ -2,13 +2,16 @@
 
 **Active authority:** ADR-003
 **Completed transition:** WI-00060
-**Completed release:** WI-00067
+**Completed release:** WI-00067 (v1.0.3)
+**Authorized release:** v1.1.0 runtime plus Agent Plugin preview
 
 ## Block A — Interaction Engine
 
 **Status:** Complete
 
-- 16-tool `TOOL_CATALOG` and matching dispatch/help.
+- 17-tool `TOOL_CATALOG` and matching dispatch/help.
+- bounded ephemeral timestamp-to-JPEG `ImageContent` extraction;
+- deterministic default-language subtitle cohort selection.
 - Dual-source Data API/yt-dlp behavior.
 - Transcript extraction with real failure causes preserved.
 - Read-only YouTube interaction boundary.
@@ -34,7 +37,7 @@
 
 ## Block D — Verification
 
-**Status:** Complete through accepted public v1.0.3
+**Status:** v1.0.3 historical gate complete; v1.1.0 local candidate PASS
 
 - original 125-test core freeze;
 - five-test self-hosted-only retirement contract;
@@ -45,10 +48,10 @@
 
 ## Block E — Documentation and Release History
 
-**Status:** Complete; v1.0.3 published and accepted
+**Status:** v1.0.3 accepted; v1.1.0 publication authorized
 
 - self-hosting-only public language;
-- current release `v1.0.3` is live on GitHub, PyPI and GHCR;
+- v1.1.0 will supersede v1.0.3 on GitHub, PyPI and GHCR only after hosted publication and downloaded-artifact verification, without rewriting history;
 - functional `v1.0.0`/`v1.0.2` unyanked history preserved;
 - ADR-001 hosted-demo clauses and ADR-002 marked superseded;
 - private infrastructure excluded from public product claims.
@@ -91,6 +94,18 @@
 - [x] Append and verify the `v1.0.2` GitHub supersession notice without yanking history.
 - [x] Terminal docs/TME/Station closure.
 
+## Block H — Publish v1.1.0 Runtime and Agent Plugin Preview
+
+**Status:** Authorized; publication verification in progress
+
+- [x] Operator authorized GitHub Release, PyPI and GHCR publication; Railway excluded.
+- [x] 17-tool frame/subtitle/plugin/Corpus-contract source line independently audited.
+- [x] Local deterministic suite, build/twine, clean install, Docker and live Pi ImageContent smoke pass.
+- [ ] Branch CI passes.
+- [ ] Tag `v1.1.0`; release workflow publishes wheel, sdist, GHCR image and Agent Plugin ZIP.
+- [ ] Download and inspect every public artifact; verify version/help/17 tools/hashes/no private metadata.
+- [ ] Record final Station evidence and post-publication state.
+
 ## Dependency Graph
 
 ```text
@@ -102,10 +117,11 @@ A Interaction Engine ─┬─> B Transports/Packaging ─┬─> D Verification
 
 ## Active Test Authority
 
-- Core: `.brainops/methodology/frozen-tests/frozen-tdd-wi-00028-core-publication-001-python.json`
-- ADR-003: `.brainops/methodology/frozen-tests/frozen-20260809051810-test_self_hosted_only_contract.py.json`
+- v1.1.0 candidate: `.brainops/methodology/frozen-tests/frozen-v1.1.0-release-candidate-tests.json`
+- Supersession record: `.brainops/methodology/frozen-tests/supersession-v1.1.0-release-contract.json`
+- Decision authority: `docs/adr/004-v1.1.0-release-test-contract-supersession.md`
 
-Demo/OAuth manifests remain in Git history but are removed from the active manifest directory.
+The prior core, ADR-003 transcript-error, and v1.0.3 manifests remain immutable historical evidence but no longer provide current hash authority for files superseded by ADR-004. Demo/OAuth manifests remain historical and do not define the active product.
 
 ## Product Rule
 

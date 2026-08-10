@@ -57,7 +57,7 @@ The project does not promise:
 
 ## What tube-bridge Is
 
-- A self-hosted MIT MCP with 16 read-only YouTube tools.
+- A self-hosted MIT MCP with 17 read-only tools: 11 YouTube interactions, 5 local corpus operations, and help.
 - A dual-source system using yt-dlp and an optional user-owned Data API key.
 - A local semantic transcript-search engine using fastembed and sqlite-vec.
 - A package/container distributed through GitHub, PyPI and GHCR.

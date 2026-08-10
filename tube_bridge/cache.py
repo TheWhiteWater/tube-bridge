@@ -12,6 +12,7 @@ from pathlib import Path
 CACHE_DIR = Path(os.environ.get("TUBE_BRIDGE_CACHE", Path.home() / ".tube_bridge"))
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 DB_PATH = CACHE_DIR / "cache.db"
+_DEFAULT_LANGUAGE_CACHE_KEY = "__default_v2__"
 
 
 def _get_conn() -> sqlite3.Connection:
@@ -43,9 +44,9 @@ def _connection():
 
 
 def get_transcript(video_id: str, lang: str | None = None) -> dict | None:
-    """Get cached transcript. lang=None means 'any language'."""
+    """Get a cached explicit-language or deterministic-default transcript."""
     with _connection() as conn:
-        lang_key = lang or "__any__"
+        lang_key = lang or _DEFAULT_LANGUAGE_CACHE_KEY
         row = conn.execute("SELECT segments, language, is_generated FROM transcripts WHERE video_id=? AND lang=?",
                            (video_id, lang_key)).fetchone()
         if row:
@@ -56,7 +57,7 @@ def get_transcript(video_id: str, lang: str | None = None) -> dict | None:
 def set_transcript(video_id: str, lang: str | None, segments: list, language: str, is_generated: bool):
     """Cache a transcript."""
     with _connection() as conn:
-        lang_key = lang or "__any__"
+        lang_key = lang or _DEFAULT_LANGUAGE_CACHE_KEY
         conn.execute("INSERT OR REPLACE INTO transcripts VALUES (?, ?, ?, ?, ?, ?)",
                      (video_id, lang_key, json.dumps(segments), language, int(is_generated), time.time()))
         conn.commit()

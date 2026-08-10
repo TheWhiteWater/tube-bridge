@@ -1,0 +1,111 @@
+{
+  "kind": "brainops.frozen_tests_manifest",
+  "version": "0.1",
+  "project": "tube-bridge",
+  "release_candidate": "v1.1.0",
+  "authority": "ADR-004",
+  "scope": "Complete deterministic Python suite under tests/ after v1.1.0 contract supersession",
+  "test_files": [
+    {
+      "path": "tests/conftest.py",
+      "sha256": "d2c45bf7e4636cb8995f1cca323835d05d9c5b7e0a0d43c1324a5fefdf73bdf6",
+      "bytes": 7956
+    },
+    {
+      "path": "tests/mcp_client_smoke.py",
+      "sha256": "eeefca629bdc12bd55a850db25c2bf66059156cd1d6d0db03da13fabd1f5621d",
+      "bytes": 4938
+    },
+    {
+      "path": "tests/test_agent_plugin_contract.py",
+      "sha256": "0b056bcb7c3a01d21ae0e5311c06e754e5c2e22a3625fb0caa83addf4a2158e1",
+      "bytes": 11387
+    },
+    {
+      "path": "tests/test_cli_and_release_contract.py",
+      "sha256": "f897701b7c3b70eb0e3dbdd0c2b5c8086a85b9efb6789bdcdcb86bad509cf26c",
+      "bytes": 21682
+    },
+    {
+      "path": "tests/test_corpus_v2_storage_contract.py",
+      "sha256": "633158856972bf552e8ea6f6788cfa2a2091e3ce701a5709cc704c030ec98e06",
+      "bytes": 57030
+    },
+    {
+      "path": "tests/test_distribution_integration.py",
+      "sha256": "cd6aa8bc63a79c7eb23431dcc6744744b7759276f18368559547163fb5c4575e",
+      "bytes": 21654
+    },
+    {
+      "path": "tests/test_docker_runtime.py",
+      "sha256": "28e5981f29abf62933c2d675a609fe6dd2c37f42b03af22a21c7e8dd08244bce",
+      "bytes": 4587
+    },
+    {
+      "path": "tests/test_frame_extraction.py",
+      "sha256": "7a607b3ae604458ab37738c468a4ce527248369b0393832d9c1f36a88f3f8d9a",
+      "bytes": 6736
+    },
+    {
+      "path": "tests/test_frame_tool_contract.py",
+      "sha256": "08274e1e29a51badaad410765ef2d5c607740b977b187190a98334889c5f8be2",
+      "bytes": 4220
+    },
+    {
+      "path": "tests/test_mcp_integration.py",
+      "sha256": "bf3658b711315a3e36c724595e258a541e32d38499530ae26651c6279a9263f0",
+      "bytes": 12433
+    },
+    {
+      "path": "tests/test_private_endpoint_not_distributed.py",
+      "sha256": "13f0ca65d6bf11b651af669f266f22e263370a20c889a1708a90824f94a1b41d",
+      "bytes": 698
+    },
+    {
+      "path": "tests/test_self_hosted_only_contract.py",
+      "sha256": "db8be8841c43d945e6736980155b240fa17fc4afe994c3a7ab2c28284613927c",
+      "bytes": 5816
+    },
+    {
+      "path": "tests/test_sqlite_lifecycle.py",
+      "sha256": "03438d77ae8c808c39124942c534b119834a4c17e20040f283370e1790109031",
+      "bytes": 28879
+    },
+    {
+      "path": "tests/test_tool_contract.py",
+      "sha256": "0df8787813eedd8e92804d7365d5bfecb4dd66b13e49a1b01e332fcbaaea639d",
+      "bytes": 16096
+    },
+    {
+      "path": "tests/test_tool_dispatch.py",
+      "sha256": "3bbb15252794757427fe583e976f11944bdfea64def1cb42ff103b444f1a2248",
+      "bytes": 18594
+    },
+    {
+      "path": "tests/test_transcript_track_selection.py",
+      "sha256": "c6f4dd4a20b9fb0b3192f6f8a502d29d29ccf3da983457699c79cc1b28106ac3",
+      "bytes": 6085
+    },
+    {
+      "path": "tests/test_transcript_track_selection_addendum.py",
+      "sha256": "88a36a04862931c01d604f0595516da077c3d035a668f00fedf2aab762e642a0",
+      "bytes": 1682
+    },
+    {
+      "path": "tests/test_transport_contract.py",
+      "sha256": "55f14fad25a20c2b21ea60738a6d8a808dac5f41cdf8edd250a40cd3dee979b1",
+      "bytes": 14769
+    },
+    {
+      "path": "tests/test_v1_0_3_release_contract.py",
+      "sha256": "8380bd0c183e2d2bde98142c6050759a193827ef23dade2633ef7434f2e28461",
+      "bytes": 4925
+    }
+  ],
+  "test_count_collected": 188,
+  "created_by_agent_id": "W-1244",
+  "created_session_id": "S-01240",
+  "created_at": "2026-08-10T12:26:17.051836+00:00",
+  "frozen_test_commit": null,
+  "note": "Final v1.1.0 candidate hash authority after ADR-004 supersession and safe subtitle retry addendum; historical manifests remain immutable evidence."
+}

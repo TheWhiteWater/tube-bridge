@@ -12,7 +12,7 @@ Build the **most complete, zero-friction YouTube MCP server** — covering searc
 
 ## Principles
 
-1. **Zero-friction first** — Works out of the box. 13 of 16 tools require no API key, OAuth, or registration. The verified package installs from PyPI with `pip install tube-bridge`.
+1. **Zero-friction first** — Works out of the box. 14 of 17 tools require no API key, OAuth, or registration. The package install surface is `pip install tube-bridge`; exact publication state is verified through the release gate rather than assumed from source metadata.
 2. **Complete coverage** — Not just transcripts. Search, channels, playlists, trending, comments, metadata, and semantic corpus search. A broad read-only YouTube surface for agents; uploads, account management and bulk scraping remain non-goals.
 3. **Agent-native design** — Every tool returns structured JSON optimized for LLM consumption. Descriptions, schemas, and error messages are written for AI agents, not humans.
 4. **Graceful degradation** — yt-dlp as fallback (no keys needed for search/video_info/trending), YouTube Data API v3 as optional upgrade. Quota-exceeded falls through to the no-key path without breaking.
@@ -22,8 +22,8 @@ Build the **most complete, zero-friction YouTube MCP server** — covering searc
 ## Product Boundaries
 
 **Core (MIT licensed):**
-- All 16 MCP tools, all transports (stdio, Streamable HTTP, SSE), all cache/corpus logic.
-- Zero-registration workflows: 13 tools usable without any API key.
+- All 17 MCP tools, all transports (stdio, Streamable HTTP, SSE), all cache/corpus logic.
+- Zero-registration workflows: 14 tools usable without any API key.
 - Users bring their own `YOUTUBE_API_KEY` for the 3 API-dependent tools (comments, channel search, channel info).
 
 **Distribution:**
@@ -37,15 +37,15 @@ Build the **most complete, zero-friction YouTube MCP server** — covering searc
 
 ## Tool Baseline
 
-16 MCP tools registered from `TOOL_CATALOG` by `tube_bridge/server.py` `list_tools()`:
+17 MCP tools registered from `TOOL_CATALOG` by `tube_bridge/server.py` `list_tools()`:
 
-- **10 YouTube interaction tools:** `youtube_search`, `youtube_search_channels`, `youtube_get_channel_info`, `youtube_get_video_info`, `youtube_get_trending`, `youtube_get_channel_videos`, `youtube_get_playlist`, `youtube_get_transcript`, `youtube_get_available_languages`, `youtube_get_comments`.
+- **11 YouTube interaction tools:** `youtube_search`, `youtube_search_channels`, `youtube_get_channel_info`, `youtube_get_video_info`, `youtube_get_trending`, `youtube_get_channel_videos`, `youtube_get_playlist`, `youtube_get_transcript`, `youtube_get_frame`, `youtube_get_available_languages`, `youtube_get_comments`.
 - **5 corpus tools:** `corpus_create`, `corpus_add`, `corpus_search`, `corpus_list`, `corpus_delete`.
 - **1 help tool:** `tube_bridge_help`.
 
-Total: 10 + 5 + 1 = 16.
+Total: 11 + 5 + 1 = 17.
 
-- **13 tools callable without any API key:** `youtube_search` (yt-dlp fallback), `youtube_get_video_info`, `youtube_get_trending`, `youtube_get_channel_videos`, `youtube_get_playlist`, `youtube_get_transcript`, `youtube_get_available_languages`, `corpus_create`, `corpus_add`, `corpus_search`, `corpus_list`, `corpus_delete`, `tube_bridge_help`.
+- **14 tools callable without any API key:** `youtube_search` (yt-dlp fallback), `youtube_get_video_info`, `youtube_get_trending`, `youtube_get_channel_videos`, `youtube_get_playlist`, `youtube_get_transcript`, `youtube_get_frame`, `youtube_get_available_languages`, `corpus_create`, `corpus_add`, `corpus_search`, `corpus_list`, `corpus_delete`, `tube_bridge_help`.
 - **3 tools require YouTube Data API v3 key:** `youtube_get_comments`, `youtube_search_channels`, `youtube_get_channel_info`.
 
 Search, video_info, and trending upgrade to higher-quality Data API v3 results when the key is present; they fall back to yt-dlp when quota is exhausted or the key is absent.
@@ -53,15 +53,15 @@ Search, video_info, and trending upgrade to higher-quality Data API v3 results w
 ## Success Criteria
 
 - An AI agent can search YouTube, get a transcript, and analyze a video in under 3 tool calls.
-- 16 tools available via stdio, Streamable HTTP, and SSE MCP transports.
-- 13 tools work with zero API keys; 3 unlock with an optional Data API v3 key.
+- 17 tools available via stdio, Streamable HTTP, and SSE MCP transports.
+- 14 tools work with zero API keys; 3 unlock with an optional Data API v3 key.
 - Semantic corpus search over transcripts using local embeddings (fastembed + sqlite-vec), with embedding inference done locally after model assets are available; initial model acquisition/cache may require network. `corpus_add` fetches transcripts over the network.
 - Self-hosted library published through GitHub, PyPI, and GHCR under the MIT license.
 - Publication readiness covers the self-hosted core only.
 
 ## Anti-Goals (what success is NOT)
 
-- NOT a YouTube downloader.
+- NOT a full-video downloader or retained media library; frame extraction uses a bounded temporary section and deletes it.
 - NOT a video player or UI.
 - NOT a replacement for YouTube Data API — a complementary, agent-first alternative.
 - NOT a scraping service at scale — designed for agent use, not bulk harvesting.

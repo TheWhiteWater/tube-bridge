@@ -22,7 +22,7 @@ def _scan_member(archive: Path, member: str, content: bytes) -> list[str]:
 
 def scan_archive(path: Path) -> list[str]:
     findings: list[str] = []
-    if path.suffix == ".whl":
+    if path.suffix in {".whl", ".zip"}:
         with zipfile.ZipFile(path) as archive:
             for member in archive.namelist():
                 if not member.endswith("/"):
@@ -44,7 +44,7 @@ def scan_archive(path: Path) -> list[str]:
 
 def main(argv: list[str]) -> int:
     if not argv:
-        print("usage: verify-release-artifacts.py <wheel> <sdist>", file=sys.stderr)
+        print("usage: verify-release-artifacts.py <wheel> <sdist> [plugin.zip]", file=sys.stderr)
         return 2
 
     paths = [Path(value) for value in argv]

@@ -8,5 +8,9 @@ __pycache__/
 venv/
 *.db
 dist/
+plugin-dist/
 *.egg-info/
 .cache/
+
+# Private source material used to derive the public research methodology.
+/docs/methodology-inbox/

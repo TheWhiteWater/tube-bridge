@@ -12,6 +12,7 @@ from tube_bridge.server import HELP_TEXT
 
 ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_VERSION = "1.0.3"
+DEVELOPMENT_VERSION = "1.1.0"
 SCANNER = ROOT / "scripts/verify-release-artifacts.py"
 DEPLOY_FIELD = "_".join(("deploy", "url"))
 RAILWAY_SUFFIX = "." + ".".join(("railway", "app"))
@@ -42,25 +43,25 @@ def _scan(*paths: Path) -> subprocess.CompletedProcess[str]:
     )
 
 
-def test_package_and_mcp_help_use_v1_0_3_without_private_endpoint():
+def test_development_package_supersedes_v1_0_3_without_private_endpoint():
     project = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]
 
-    assert project["version"] == EXPECTED_VERSION
-    assert HELP_TEXT["version"] == EXPECTED_VERSION
+    assert project["version"] == DEVELOPMENT_VERSION
+    assert HELP_TEXT["version"] == DEVELOPMENT_VERSION
     assert DEPLOY_FIELD not in HELP_TEXT
     assert RAILWAY_SUFFIX not in str(HELP_TEXT)
 
 
-def test_current_release_documentation_names_v1_0_3():
+def test_v1_1_0_documentation_preserves_v1_0_3_as_immutable_history():
     index = (ROOT / "docs/INDEX.md").read_text()
     open_questions = (ROOT / "docs/planning/OPEN_QUESTIONS.md").read_text()
     work_breakdown = (ROOT / "docs/planning/WORK_BREAKDOWN.md").read_text()
     readiness = (ROOT / "docs/planning/PUBLICATION_READINESS.md").read_text()
 
-    assert "Current public release: `v1.0.3`." in index
-    assert "`v1.0.3` is current" in open_questions
-    assert "current release `v1.0.3`" in work_breakdown
-    assert "current `v1.0.3`" in readiness
+    assert "Authorized release candidate: `v1.1.0`" in index
+    assert "`v1.1.0` is the authorized self-hosted-only candidate" in open_questions
+    assert "v1.1.0 will supersede v1.0.3" in work_breakdown
+    assert "v1.0.0–v1.0.3 remain immutable" in readiness
 
 
 def test_release_artifact_scanner_accepts_clean_wheel_and_sdist(tmp_path: Path):
@@ -105,3 +106,14 @@ def test_tag_release_workflow_scans_artifacts_and_publishes_authorized_surfaces(
     assert "type=semver,pattern={{major}}.{{minor}}" in workflow
     assert "type=raw,value=latest" in workflow
     assert "softprops/action-gh-release@" in workflow
+    assert "python scripts/build-agent-plugin.py --output-dir plugin-dist" in workflow
+    assert "python scripts/verify-release-artifacts.py plugin-dist/*" in workflow
+    assert "agent-plugin-preview" in workflow
+    assert "SHA256SUMS" in workflow
+    assert "body_path: docs/releases/${{ github.ref_name }}.md" in workflow
+    assert workflow.count("persist-credentials: false") >= 3
+    assert "COPY . ." not in (ROOT / "Dockerfile").read_text()
+    assert "Inspect release candidate image boundary" in workflow
+    assert "Publish inspected image" in workflow
+    assert "(cd dist && sha256sum *) > SHA256SUMS" in workflow
+    assert "(cd plugin-dist && sha256sum *) >> SHA256SUMS" in workflow

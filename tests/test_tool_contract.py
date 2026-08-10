@@ -4,12 +4,12 @@ Pack C Second Remediation: preserve approved per-required-field schema tests and
 real authorized MCP handshake. Implement exact missing contracts.
 
 Validates:
-- Exactly 16 unique tool names with valid object schemas.
+- Exactly 17 unique tool names with valid object schemas.
 - Per-required-field: every required field is validated; omission is rejected.
 - Metaschema conformance: type=object, properties dict, required array.
-- Key classification: 13 zero-setup / 3 Data API required.
+- Key classification: 14 zero-setup / 3 Data API required.
 - Help tool names match registered names; no dead numeric/docstring mismatch.
-- All 16 names dispatch to the expected handler without live network.
+- All 17 names dispatch to the expected handler without live network.
 - Unknown tool and runtime errors return controlled MCP text responses.
 - Package docstring makes no 10/11-tool claim.
 """
@@ -30,7 +30,7 @@ def _sync_list_tools():
 
 
 # ---------------------------------------------------------------------------
-# Representative valid inputs for all 16 tools
+# Representative valid inputs for all 17 tools
 # ---------------------------------------------------------------------------
 
 VALID_INPUTS = {
@@ -42,6 +42,7 @@ VALID_INPUTS = {
     "youtube_get_channel_videos":            {"channel_url": "@testchannel"},
     "youtube_get_playlist":                  {"playlist_url": "https://youtube.com/playlist?list=PLabc"},
     "youtube_get_transcript":                {"url": "dQw4w9WgXcQ"},
+    "youtube_get_frame":                     {"url": "dQw4w9WgXcQ", "timestamp_ms": 30_000},
     "youtube_get_available_languages":       {"url": "dQw4w9WgXcQ"},
     "youtube_get_comments":                  {"url": "dQw4w9WgXcQ"},
     "tube_bridge_help":                      {},
@@ -80,13 +81,13 @@ def _get_tool_by_name(tools, name):
 # ---------------------------------------------------------------------------
 
 class TestToolRegistry:
-    """Exactly 16 unique tool names with valid schemas."""
+    """Exactly 17 unique tool names with valid schemas."""
 
-    def test_exactly_sixteen_tools(self):
-        """list_tools() returns exactly 16 tools."""
+    def test_exactly_seventeen_tools(self):
+        """list_tools() returns exactly 17 tools."""
         tools = _sync_list_tools()
-        assert len(tools) == 16, (
-            f"Expected 16 tools, got {len(tools)}: "
+        assert len(tools) == 17, (
+            f"Expected 17 tools, got {len(tools)}: "
             f"{sorted(t.name for t in tools)}"
         )
 
@@ -198,17 +199,17 @@ class TestToolSchemas:
 # ---------------------------------------------------------------------------
 
 class TestKeyClassification:
-    """13 zero-setup tools, 3 Data API required."""
+    """14 zero-setup tools, 3 Data API required."""
 
     def test_zero_setup_count(self):
-        """Exactly 13 tools work without YOUTUBE_API_KEY."""
+        """Exactly 14 tools work without YOUTUBE_API_KEY."""
         tools = _sync_list_tools()
         zero_setup = [
             t for t in tools
             if t.name not in DATA_API_REQUIRED_TOOLS
         ]
-        assert len(zero_setup) == 13, (
-            f"Expected 13 zero-setup tools, got {len(zero_setup)}: "
+        assert len(zero_setup) == 14, (
+            f"Expected 14 zero-setup tools, got {len(zero_setup)}: "
             f"{sorted(t.name for t in zero_setup)}"
         )
 
@@ -236,7 +237,7 @@ class TestKeyClassification:
 # ---------------------------------------------------------------------------
 
 class TestToolDispatch:
-    """All 16 names dispatch to the expected handler."""
+    """All 17 names dispatch to the expected handler."""
 
     @pytest.mark.asyncio
     async def test_every_registered_name_dispatches(self, monkeypatch):
@@ -244,7 +245,7 @@ class TestToolDispatch:
         from tube_bridge.tools import (
             search, search_channels, channel_info, video_info, trending,
             channel_videos, playlist, transcript, available_languages,
-            comments, corpus_create, corpus_add, corpus_search,
+            video_frame, comments, corpus_create, corpus_add, corpus_search,
             corpus_list, corpus_delete,
         )
 
@@ -267,6 +268,8 @@ class TestToolDispatch:
             return {"text": "mock transcript"}
         async def _mock_available_languages(*args, **kwargs):
             return {"languages": []}
+        async def _mock_video_frame(*args, **kwargs):
+            return {"mime_type": "image/jpeg"}
         async def _mock_comments(*args, **kwargs):
             return {"comments": []}
         async def _mock_corpus_create(*args, **kwargs):
@@ -296,6 +299,7 @@ class TestToolDispatch:
             "playlist": _mock_playlist,
             "transcript": _mock_transcript,
             "available_languages": _mock_available_languages,
+            "video_frame": _mock_video_frame,
             "comments": _mock_comments,
             "corpus_create": _mock_corpus_create,
             "corpus_add": _mock_corpus_add,
@@ -381,6 +385,6 @@ class TestDocstringHonesty:
             actual_count = count
         else:
             actual_count = 0
-        assert actual_count >= 16, (
-            f"HELP_TEXT tool count is {actual_count}, must be >= 16"
+        assert actual_count >= 17, (
+            f"HELP_TEXT tool count is {actual_count}, must be >= 17"
         )

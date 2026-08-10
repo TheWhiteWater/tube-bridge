@@ -1,7 +1,7 @@
-"""Parameterized dispatch tests for all 16 MCP tools with exact call-argument
+"""Parameterized dispatch tests for all 17 MCP tools with exact call-argument
 verification.
 
-Every operation handler (15 handlers + 1 help branch) is tested with mocked
+Every operation handler (16 handlers + 1 help branch) is tested with mocked
 upstreams. Each test asserts:
 - The handler was called exactly once
 - The exact awaited call arguments match the dispatch code, including defaults
@@ -266,7 +266,35 @@ async def test_dispatch_youtube_get_transcript_full_args(mocker):
 
 
 # ---------------------------------------------------------------------------
-# 9. youtube_get_available_languages — available_languages(extract_video_id(url))
+# 9. youtube_get_frame — video_frame(extract_video_id(url), timestamp_ms, width)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_dispatch_youtube_get_frame_defaults(mocker):
+    await _dispatch_and_assert(
+        mocker,
+        "youtube_get_frame",
+        {"url": "dQw4w9WgXcQ", "timestamp_ms": 30_000},
+        "tube_bridge.server.video_frame",
+        ("dQw4w9WgXcQ", 30_000, 640),
+        expected_extract_video_id_arg="dQw4w9WgXcQ",
+    )
+
+
+@pytest.mark.asyncio
+async def test_dispatch_youtube_get_frame_custom_width(mocker):
+    await _dispatch_and_assert(
+        mocker,
+        "youtube_get_frame",
+        {"url": "dQw4w9WgXcQ", "timestamp_ms": 1234, "max_width": 1280},
+        "tube_bridge.server.video_frame",
+        ("dQw4w9WgXcQ", 1234, 1280),
+        expected_extract_video_id_arg="dQw4w9WgXcQ",
+    )
+
+
+# ---------------------------------------------------------------------------
+# 10. youtube_get_available_languages — available_languages(extract_video_id(url))
 # ---------------------------------------------------------------------------
 
 @pytest.mark.asyncio

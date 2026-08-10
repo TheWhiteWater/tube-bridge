@@ -36,8 +36,8 @@ def _build_app():
 # ---------------------------------------------------------------------------
 
 @pytest.mark.asyncio
-async def test_health_reports_tools_16_no_auth(monkeypatch):
-    """GET /health without auth key → 200, tools=16, auth=disabled.
+async def test_health_reports_tools_17_no_auth(monkeypatch):
+    """GET /health without auth key → 200, tools=17, auth=disabled.
 
     Auth key is explicitly unset before app creation.
     """
@@ -54,14 +54,14 @@ async def test_health_reports_tools_16_no_auth(monkeypatch):
         data = resp.json()
         assert data["status"] == "ok"
         assert data["server"] == "tube-bridge"
-        assert data["tools"] == 16, f"Expected tools=16, got {data.get('tools')}"
+        assert data["tools"] == 17, f"Expected tools=17, got {data.get('tools')}"
         assert data["auth"] == "disabled", (
             f"Expected auth=disabled without TUBE_BRIDGE_AUTH_KEY, got {data.get('auth')}")
 
 
 @pytest.mark.asyncio
 async def test_health_reports_auth_enabled_when_key_set(monkeypatch):
-    """GET /health with auth key set → 200, tools=16, auth=enabled.
+    """GET /health with auth key set → 200, tools=17, auth=enabled.
 
     Auth key is explicitly set before app creation.
     """
@@ -77,7 +77,7 @@ async def test_health_reports_auth_enabled_when_key_set(monkeypatch):
         assert resp.status_code == 200, f"Expected 200, got {resp.status_code}"
         data = resp.json()
         assert data["status"] == "ok"
-        assert data["tools"] == 16
+        assert data["tools"] == 17
         assert data["auth"] == "enabled", (
             f"Expected auth=enabled with TUBE_BRIDGE_AUTH_KEY set, got {data.get('auth')}")
 
@@ -299,15 +299,16 @@ def test_mcp_smoke_imports_without_error():
         pytest.fail(f"mcp_client_smoke.py import failed: {e}")
 
 
-def test_mcp_smoke_expected_tools_is_16_unique():
-    """EXPECTED_TOOLS must contain exactly 16 unique names."""
+def test_mcp_smoke_expected_tools_is_17_unique():
+    """EXPECTED_TOOLS must contain exactly 17 unique names."""
     mod = _load_smoke_module()
     expected = mod.EXPECTED_TOOLS
-    assert len(expected) == 16, (
-        f"EXPECTED_TOOLS has {len(expected)} entries, expected 16")
+    assert len(expected) == 17, (
+        f"EXPECTED_TOOLS has {len(expected)} entries, expected 17")
     assert len(set(expected)) == len(expected), (
         "EXPECTED_TOOLS has duplicate names")
     assert "youtube_search" in expected
+    assert "youtube_get_frame" in expected
     assert "corpus_delete" in expected
     assert "tube_bridge_help" in expected
 
@@ -334,11 +335,11 @@ def test_mcp_smoke_parse_args_with_auth():
 def test_mcp_smoke_emit_result_success():
     """emit_result with success=True produces valid JSON result."""
     mod = _load_smoke_module()
-    result_str = mod.emit_result(True, 16, mod.EXPECTED_TOOLS)
+    result_str = mod.emit_result(True, 17, mod.EXPECTED_TOOLS)
     result = json.loads(result_str)
     assert result["ok"] is True
-    assert result["tool_count"] == 16
-    assert len(result["tool_names"]) == 16
+    assert result["tool_count"] == 17
+    assert len(result["tool_names"]) == 17
 
 
 def test_mcp_smoke_emit_result_failure():

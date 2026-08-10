@@ -8,11 +8,11 @@ None. ADR-003 resolves the active product boundary: self-hosted distribution onl
 
 ### Q1: Tool and data-source model
 
-**Resolved.** Exactly 16 tools. Thirteen are keyless-capable; three require the user's Data API key. Search/video information/trending use Data API when configured and yt-dlp fallback where supported.
+**Resolved.** The authorized v1.1.0 release line has exactly 17 tools. Fourteen are keyless-capable; three require the user's Data API key. Search/video information/trending use Data API when configured and yt-dlp fallback where supported.
 
 ### Q2: Transcript behavior
 
-**Resolved.** One transcript tool, manual captions preferred over ASR. Confirmed caption absence remains distinct from upstream/network/proxy failures.
+**Resolved.** One transcript tool selects the original/default language cohort, with manual captions preferred over ASR only inside that cohort. Confirmed caption absence remains distinct from upstream/network/proxy failures.
 
 ### Q3: Transports and auth
 
@@ -43,7 +43,7 @@ None. ADR-003 resolves the active product boundary: self-hosted distribution onl
 - ADR-001 remains historical authority for the self-hosted/open-core boundary; its hosted-demo clauses are superseded.
 - ADR-002 is superseded in full.
 - ADR-003 is active.
-- `v1.0.0` and `v1.0.2` remain immutable, unyanked history; `v1.0.3` is current and self-hosted-only.
+- `v1.0.0`–`v1.0.3` remain immutable, unyanked history; `v1.1.0` is the authorized self-hosted-only candidate. Publication state is recorded separately from source version.
 - Grabbit remains a separate MCP with no integration roadmap.
 
 ## Conditional Operational Questions
