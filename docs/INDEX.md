@@ -35,7 +35,7 @@
 
 ## Active State
 
-- Authorized release candidate: `v1.1.0`, with 17 runtime tools plus a GitHub Agent Plugin preview bundle. External publication and downloaded-artifact status are tracked in Publication Readiness; earlier artifacts remain immutable release history.
+- Current public release: `v1.1.0`, with 17 runtime tools plus a GitHub Agent Plugin preview bundle. The historical authorization record (“Authorized release candidate: `v1.1.0`”) is closed by the live evidence in Publication Readiness; earlier artifacts remain immutable release history.
 - Public distribution: GitHub, PyPI and GHCR.
 - Product: self-hosted software only.
 - Auth: optional static Bearer for self-hosted HTTP.

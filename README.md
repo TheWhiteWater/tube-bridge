@@ -32,7 +32,7 @@ docker run --rm -p 8080:8080 ghcr.io/thewhitewater/tube-bridge:latest
 
 ## Agent Plugin Preview
 
-The v1.1.0 GitHub release is configured to include `tube-bridge-agent-plugin-1.1.0.zip`, a portable Agent Plugins v1 bundle with:
+The v1.1.0 GitHub Release includes `tube-bridge-agent-plugin-1.1.0.zip`, a portable Agent Plugins v1 bundle with:
 
 - one discoverable `tube-bridge-research` skill;
 - the 17-tool local stdio MCP configuration;
@@ -208,11 +208,11 @@ python3 server.py --http --port 8080 --host 0.0.0.0
 
 ### Current State
 - **MIT self-hosted library** — 17 MCP tools, all transports, cache/corpus logic.
-- **v1.1.0 release line** — the authorized candidate targets GitHub Release, PyPI, and public GHCR. Publication state and downloaded-artifact evidence are recorded in `docs/planning/PUBLICATION_READINESS.md` rather than inferred from source version strings.
+- **Current release: v1.1.0** — published and independently downloaded/verified from GitHub Release, PyPI, and public GHCR. Evidence is recorded in `docs/planning/PUBLICATION_READINESS.md`.
 - **No hosted demo** — the project does not provide public hosted access, tester invites, accounts, managed storage, or an SLA. Install it yourself to evaluate it.
 
 ### Full Publication Scope
-The self-hosted runtime's public distribution surfaces are GitHub Release, PyPI, and GHCR. The Agent Plugin preview is packaged as a GitHub Release asset and source-tree bundle; it is not an additional hosted service.
+The self-hosted runtime is published through GitHub Release, PyPI, and GHCR. The Agent Plugin preview is published as a GitHub Release asset and source-tree bundle; it is not an additional hosted service.
 
 ### What tube-bridge Is NOT
 - Not a SaaS or managed transcript-hosting product.

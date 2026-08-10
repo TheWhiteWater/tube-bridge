@@ -1,0 +1,63 @@
+{
+  "kind": "brainops.verification",
+  "version": "0.1",
+  "project": "tube-bridge",
+  "release": "v1.1.0",
+  "status": "passed",
+  "tag_commit": "f7afa9cce0c59753be8105c7931ec3a44f8ea59d",
+  "pull_request": "https://github.com/TheWhiteWater/tube-bridge/pull/1",
+  "release_workflow": {
+    "run_id": 31391398028,
+    "url": "https://github.com/TheWhiteWater/tube-bridge/actions/runs/31391398028",
+    "conclusion": "success",
+    "jobs": [
+      "verify-and-build",
+      "publish-pypi",
+      "publish-container",
+      "github-release"
+    ]
+  },
+  "github_release": {
+    "url": "https://github.com/TheWhiteWater/tube-bridge/releases/tag/v1.1.0",
+    "latest": true,
+    "assets": {
+      "tube_bridge-1.1.0-py3-none-any.whl": "sha256:ffad2bc8f30ddc2d8cd3b40b4535c8ecab1310697e4c03c99a5b4283bf0349de",
+      "tube_bridge-1.1.0.tar.gz": "sha256:058686fa6ddcd98f0a08ba67d2e233eedc2f5fa50e2116430ffa6e1009051a6f",
+      "tube-bridge-agent-plugin-1.1.0.zip": "sha256:e76accc86e6576464f360e80defda07821a198e21e15b6f3fbe13b004b02a2e3",
+      "SHA256SUMS": "sha256:5c96404224b1234f67da95f52811d92c850c333ab42b10d3566093f54cd9aa6e"
+    }
+  },
+  "pypi": {
+    "url": "https://pypi.org/project/tube-bridge/1.1.0/",
+    "cross_registry_bytes_match_github": true,
+    "clean_install": "PASS",
+    "dependency_check": "PASS",
+    "stdio_server_version": "1.1.0",
+    "tool_count": 17,
+    "live_frame": {
+      "bytes": 31181,
+      "sha256": "25913919aebc1f0e54f6dd8600bbd43ba0530162f1b884f15f8f773a9af12dc9",
+      "mime_type": "image/jpeg",
+      "actual_timestamp_ms": null
+    }
+  },
+  "ghcr": {
+    "tags": ["1.1.0", "1.1", "latest"],
+    "digest": "sha256:207d3a6356ee65b93412f8842557792f73dde884769420340a46d278cb0eef8d",
+    "health_auth_mcp": "PASS",
+    "tool_count": 17,
+    "runtime_boundary": "PASS"
+  },
+  "agent_plugin": {
+    "skill_count": 1,
+    "skill": "tube-bridge-research",
+    "stdio_server_version": "1.1.0",
+    "tool_count": 17,
+    "private_source_scan": "PASS",
+    "corpus_v2_claim": "contract_only"
+  },
+  "railway": "not_deployed_or_modified",
+  "created_by_agent_id": "W-1244",
+  "created_session_id": "S-01240",
+  "created_at": "2026-08-10T13:20:17Z"
+}

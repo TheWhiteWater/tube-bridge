@@ -1,7 +1,7 @@
 # Project Vision — tube-bridge
 
 **Last updated:** 2026-08-10
-**Status:** MIT self-hosted MCP; v1.1.0 release candidate authorized. Last externally verified release remains v1.0.3 until the active publication gate closes. There is no public hosted demo.
+**Status:** Published MIT self-hosted MCP. v1.1.0 is externally verified across GitHub, PyPI and GHCR; the Agent Plugin preview is a GitHub Release asset. There is no public hosted demo.
 
 ## North Star
 
@@ -64,8 +64,8 @@ Browser Claude Custom Connector is not a supported target for this private insta
 
 ## Current Evidence
 
-- Authorized release candidate and source tree: `v1.1.0`, 17 tools, including bounded ephemeral frame extraction. External publication state is tracked in `docs/planning/PUBLICATION_READINESS.md`.
-- The v1.1.0 GitHub release plan additionally packages an Agent Plugin preview with one research skill, methodology, examples, templates, and the frozen but not-yet-runtime Corpus v2 contract.
+- Current public release and source tree: `v1.1.0`, 17 tools, including bounded ephemeral frame extraction.
+- GitHub Release additionally distributes the Agent Plugin preview with one research skill, methodology, examples, templates, and the frozen but not-yet-runtime Corpus v2 contract.
 - Original core freeze: 125 deterministic tests.
 - Active tree: 188 deterministic tests, including frame extraction/tool, Agent Plugin, Corpus v2 storage, subtitle selection, distribution, retirement/privacy, and v1.0.3 historical release contracts.
 - Wheel/sdist, `twine check`, isolated install, installed CLI/MCP, Docker runtime, PyPI, GitHub Release, public GHCR, and hosted Python 3.12/3.13 CI are verification surfaces.

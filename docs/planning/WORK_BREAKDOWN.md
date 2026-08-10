@@ -48,10 +48,10 @@
 
 ## Block E — Documentation and Release History
 
-**Status:** v1.0.3 accepted; v1.1.0 publication authorized
+**Status:** v1.1.0 published and externally verified
 
 - self-hosting-only public language;
-- v1.1.0 will supersede v1.0.3 on GitHub, PyPI and GHCR only after hosted publication and downloaded-artifact verification, without rewriting history;
+- the pre-publication condition “v1.1.0 will supersede v1.0.3” is satisfied across GitHub, PyPI and GHCR without rewriting history;
 - functional `v1.0.0`/`v1.0.2` unyanked history preserved;
 - ADR-001 hosted-demo clauses and ADR-002 marked superseded;
 - private infrastructure excluded from public product claims.
@@ -96,15 +96,18 @@
 
 ## Block H — Publish v1.1.0 Runtime and Agent Plugin Preview
 
-**Status:** Authorized; publication verification in progress
+**Status:** Complete; v1.1.0 published and externally verified
 
 - [x] Operator authorized GitHub Release, PyPI and GHCR publication; Railway excluded.
 - [x] 17-tool frame/subtitle/plugin/Corpus-contract source line independently audited.
-- [x] Local deterministic suite, build/twine, clean install, Docker and live Pi ImageContent smoke pass.
-- [ ] Branch CI passes.
-- [ ] Tag `v1.1.0`; release workflow publishes wheel, sdist, GHCR image and Agent Plugin ZIP.
-- [ ] Download and inspect every public artifact; verify version/help/17 tools/hashes/no private metadata.
-- [ ] Record final Station evidence and post-publication state.
+- [x] Local 188-test/build/twine, clean install, Docker and live Pi ImageContent smoke pass.
+- [x] Branch/PR and merge-commit CI pass on Python 3.12/3.13; merge run `31391181342`.
+- [x] Tag `v1.1.0`; release workflow `31391398028` publishes wheel, sdist, GHCR image and Agent Plugin ZIP.
+- [x] GitHub/PyPI wheel+sdist hashes match; release `SHA256SUMS` verifies by basename.
+- [x] Clean PyPI install exposes v1.1.0/17 tools and returns a valid ephemeral JPEG `ImageContent`.
+- [x] GHCR `1.1.0`, `1.1` and `latest` resolve to digest `sha256:207d3a6356ee65b93412f8842557792f73dde884769420340a46d278cb0eef8d`; pulled MCP/auth/17-tool and image-boundary checks pass.
+- [x] Public Agent Plugin ZIP has one skill, launches the 17-tool stdio MCP, and contains no private methodology source or deployment metadata.
+- [x] Final Station evidence and post-publication state recorded; Railway remained untouched.
 
 ## Dependency Graph
 

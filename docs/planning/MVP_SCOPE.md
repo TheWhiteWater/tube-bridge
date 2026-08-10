@@ -50,8 +50,8 @@ Fourteen are keyless-capable. Three require the user's `YOUTUBE_API_KEY`.
 
 | Capability | Status | Evidence |
 |---|---|---|
-| 17-tool catalog and dispatch | v1.1.0 candidate PASS; publication pending | Frozen core plus frame contracts |
-| 14 keyless / 3 Data API tools | v1.1.0 candidate PASS; publication pending | Source and tool contracts |
+| 17-tool catalog and dispatch | Published and verified in v1.1.0 | Frozen core, frame contracts and public MCP smokes |
+| 14 keyless / 3 Data API tools | Published and verified in v1.1.0 | Source, package and pulled-image contracts |
 | stdio/HTTP/SSE + static Bearer | Shipped | Transport and MCP integration tests |
 | cache/corpus SQLite lifecycle | Shipped | Core SQLite tests plus ADR-003 compatibility contract |
 | packaging and installed CLI | Published | Wheel/sdist/twine, isolated install and PyPI checks |
@@ -61,7 +61,7 @@ Fourteen are keyless-capable. Three require the user's `YOUTUBE_API_KEY`.
 
 ## Definition of Done
 
-- [x] Exactly 17 tools and 14/3 key split in the authorized v1.1.0 candidate; v1.0.3 remains immutable release history.
+- [x] Exactly 17 tools and 14/3 key split in published v1.1.0; v1.0.3 remains immutable release history.
 - [x] Self-hosted stdio/HTTP/SSE transports.
 - [x] Optional static Bearer for header-capable clients.
 - [x] User-managed cache and semantic corpora.

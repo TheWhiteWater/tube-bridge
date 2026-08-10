@@ -94,6 +94,6 @@ Pi and Claude Code CLI may use the Operator's private Railway service because th
 
 ## Publication
 
-Authorized candidate `v1.1.0` targets GitHub, PyPI and GHCR as the self-hosted-only 17-tool runtime. The GitHub release plan additionally carries the Agent Plugin preview bundle; dependency bootstrap remains operator-managed. Publication state must come from `docs/planning/PUBLICATION_READINESS.md`, not source version strings. Historical `v1.0.0`–`v1.0.3` artifacts remain immutable, unyanked release history.
+Current public release `v1.1.0` is verified across GitHub, PyPI and GHCR as the self-hosted-only 17-tool runtime. GitHub additionally carries the Agent Plugin preview bundle; dependency bootstrap remains operator-managed. Historical `v1.0.0`–`v1.0.3` artifacts remain immutable, unyanked release history.
 
 Public documentation must describe self-hosting only. Do not advertise Railway demo access, hosted retention, tester invites, OAuth, accounts, billing, managed quota, or uptime guarantees.

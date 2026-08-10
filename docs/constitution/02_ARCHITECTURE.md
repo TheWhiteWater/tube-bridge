@@ -182,7 +182,7 @@ Two-layer cache for transcripts and video metadata:
 2. Package documentation and the synchronous installed `tube_bridge.cli:main` entrypoint are verified from an isolated wheel.
 3. The active tree has 188 deterministic tests, preserving the original core/release/privacy gates and adding frame, plugin, subtitle, and Corpus v2 contracts. `test_tools.py` remains optional live smoke.
 4. Wheel+sdist/twine, exact dependency lock, Docker MCP handshake, SQLite lifecycle contracts and final hosted Python 3.12/3.13 CI for the ADR-003 transition pass.
-5. v1.0.3 GitHub/PyPI/GHCR publication is complete. v1.1.0 remains an authorized candidate until the hosted and downloaded-artifact gates in Publication Readiness close; no hosted-demo gate exists.
+5. v1.1.0 GitHub/PyPI/GHCR publication and downloaded-artifact verification are complete; the Agent Plugin preview is a GitHub Release asset and no hosted-demo gate exists.
 
 ADR-003 is the active product authority. ADR-001's hosted-demo clauses and ADR-002 are superseded but remain preserved as historical documents and Git/Station evidence.
 
