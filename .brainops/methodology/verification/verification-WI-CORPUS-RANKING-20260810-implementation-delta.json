@@ -3,7 +3,7 @@
   "version": "0.1",
   "project": "tube-bridge",
   "work_item_id": "WI-CORPUS-RANKING-20260810",
-  "status": "source_candidate_pre_commit",
+  "status": "source_candidate_committed_ci_and_conformance_passed",
   "authority": [
     "docs/research/2026-08-10-corpus-v1-rag-retrieval-dogfood.md",
     "docs/audits/2026-08-10-corpus-v1-ranking-convergence.md",
@@ -50,6 +50,13 @@
     "live_receipt_sha256": "319f60489b79f290fbe2c312e1ecafc2bceb4169fefdb760bafd851dc074be56",
     "source_audit": "PASS P0=0 P1=0",
     "documentation_audits": "three bounded packs PASS P0=0 P1=0"
+  },
+  "candidate": {
+    "commit": "72c87e558c51ca4aacec9da5900c59f05a672def",
+    "pull_request": "https://github.com/TheWhiteWater/tube-bridge/pull/2",
+    "pull_request_ci": "https://github.com/TheWhiteWater/tube-bridge/actions/runs/31414985993",
+    "push_ci": "https://github.com/TheWhiteWater/tube-bridge/actions/runs/31414980436",
+    "station_conformance": ".brainops/methodology/audits/2026-08-10T17-46-25-588Z-cde3dd46-codex/station-codex-audit.json"
   },
   "publication": "not_authorized_or_performed",
   "railway": "not_deployed_or_modified",

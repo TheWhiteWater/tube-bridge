@@ -58,4 +58,13 @@ Sanitized receipt: `docs/research/evidence/2026-08-10-corpus-v1-ranking-live.jso
 
 ## Station Conformance State
 
-The first Station conformance call returned **INCONCLUSIVE**, not PASS, because it ran before a durable implementation commit/hosted-CI receipt and before WorkItem evidence refs were attached. That receipt is preserved at `.brainops/methodology/audits/2026-08-10T17-32-29-330Z-d3d987a8-codex/station-codex-audit.json`. It must not be represented as acceptance. Final Station conformance is rerun only after commit, PR CI and WorkItem evidence attachment.
+Two pre-acceptance Station calls returned **INCONCLUSIVE**, not PASS:
+
+1. `.brainops/methodology/audits/2026-08-10T17-32-29-330Z-d3d987a8-codex/station-codex-audit.json` ran before a durable implementation commit/hosted-CI receipt and before WorkItem evidence refs were attached.
+2. `.brainops/methodology/audits/2026-08-10T17-44-03-272Z-da6a1605-codex/station-codex-audit.json` received an incorrectly transcribed candidate SHA and external links without inline decision evidence.
+
+Both are preserved and must not be represented as acceptance. After correcting the WorkItem ref and supplying an inline 93 KB packet containing the exact commit, PR jobs, both successful CI runs, freezes, implementation delta, Station verification, live receipt and independent audit outputs, Station conformance returned **PASS**:
+
+- receipt: `.brainops/methodology/audits/2026-08-10T17-46-25-588Z-cde3dd46-codex/station-codex-audit.json`
+- accepted candidate: `72c87e558c51ca4aacec9da5900c59f05a672def`
+- authority: merge-only; no release, publication, deployment, Railway, Corpus v2 or embedding authority implied.
