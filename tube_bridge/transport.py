@@ -41,8 +41,10 @@ def create_app(server: Server, host: str, port: int):
         await sse.handle_post_message(scope, receive, send)
 
     async def health(scope, receive, send):
+        from .server import TOOL_CATALOG
+
         response = JSONResponse({
-            "status": "ok", "server": "tube-bridge", "tools": 16,
+            "status": "ok", "server": "tube-bridge", "tools": len(TOOL_CATALOG),
             "auth": "enabled" if auth_key else "disabled",
         })
         await response(scope, receive, send)

@@ -1,6 +1,6 @@
 # AGENTS.md — tube-bridge
 
-**Project:** Self-hosted YouTube MCP server — 16 tools
+**Project:** Self-hosted YouTube MCP server — v1.1.0, 17 tools, plus Agent Plugin preview
 **Stack:** Python 3.12+, MCP 1.28.1, yt-dlp, youtube-transcript-api, SQLite, sqlite-vec, fastembed
 **License:** MIT
 
@@ -31,7 +31,7 @@ python3 test_tools.py         # optional live YouTube smoke
 
 ```text
 tube_bridge/
-├── server.py          # 16-tool catalog, MCP registration, help and dispatch
+├── server.py          # 17-tool catalog, MCP registration, help and dispatch
 ├── tools.py           # YouTube and corpus tool implementations
 ├── cli.py             # synchronous installed entrypoint; stdio/HTTP selection
 ├── transport.py       # Streamable HTTP/SSE, optional static Bearer, health
@@ -41,6 +41,7 @@ tube_bridge/
     ├── client.py      # yt-dlp subprocess, retry, proxy
     ├── api.py         # Data API v3 via stdlib urllib
     ├── transcript.py  # transcript extraction; real upstream errors preserved
+    ├── frame.py       # bounded timestamp→JPEG extraction
     └── models.py      # VideoInfo
 ```
 
@@ -48,11 +49,12 @@ Retired modules `oauth.py`, `demo_policy.py`, and `demo_ttl.py` must remain abse
 
 ## Core Contract
 
-- Exactly 16 tools from `TOOL_CATALOG`.
-- 13 keyless-capable tools; 3 require `YOUTUBE_API_KEY`.
+- Exactly 17 source-tree tools from `TOOL_CATALOG`.
+- 14 keyless-capable tools; 3 require `YOUTUBE_API_KEY`.
 - `youtube_search`, video information and trending use Data API first when configured and yt-dlp fallback where supported.
 - The Data API client uses Python stdlib `urllib`; do not add the Google SDK without an ADR.
-- Transcripts use `youtube-transcript-api`, with manual captions preferred over ASR.
+- Transcripts use `youtube-transcript-api`; select the original/default language cohort first, then prefer matching manual captions over ASR.
+- `youtube_get_frame` exposes one ephemeral 64–1280px JPEG as MCP `ImageContent`; raw JPEG ≤1.5 MB, base64 image data ≤2 MB, no batch, no frame/clip persistence.
 - Network/proxy failures must not be collapsed into a false “no captions” result.
 - Embeddings are local through fastembed after assets are available.
 
@@ -85,13 +87,13 @@ Pi and Claude Code CLI may use the Operator's private Railway service because th
 
 - `test_tools.py` is optional live smoke only.
 - Original core freeze: 125 tests.
-- Active suite after ADR-003 retirement/privacy and v1.0.3 release addenda: 137 deterministic tests.
+- Active source-tree suite: 188 deterministic tests, including frame, plugin, subtitle, Corpus v2, distribution, retirement/privacy, and historical release contracts.
 - Source/test changes require RED, independent contract audit, frozen SHA-256, GREEN, independent source audit, and hosted CI.
 - Do not modify a frozen test after source work begins; use an audited addendum or superseding product ADR.
 - Build/release verification uses a disposable tools environment when system Python lacks `build`/`twine`.
 
 ## Publication
 
-Current release `v1.0.3` is distributed through GitHub, PyPI and GHCR as the self-hosted-only default. Historical `v1.0.0` and `v1.0.2` artifacts remain immutable, unyanked history and are explicitly superseded by `v1.0.3`.
+Authorized candidate `v1.1.0` targets GitHub, PyPI and GHCR as the self-hosted-only 17-tool runtime. The GitHub release plan additionally carries the Agent Plugin preview bundle; dependency bootstrap remains operator-managed. Publication state must come from `docs/planning/PUBLICATION_READINESS.md`, not source version strings. Historical `v1.0.0`–`v1.0.3` artifacts remain immutable, unyanked release history.
 
 Public documentation must describe self-hosting only. Do not advertise Railway demo access, hosted retention, tester invites, OAuth, accounts, billing, managed quota, or uptime guarantees.

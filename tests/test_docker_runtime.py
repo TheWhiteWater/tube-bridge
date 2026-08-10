@@ -25,13 +25,21 @@ def _free_port():
 
 @pytest.mark.slow
 def test_docker_image_serves_authenticated_mcp():
-    """Build the actual image and prove authenticated MCP initialize/tools-list=16."""
+    """Build the actual image and prove authenticated MCP initialize/tools-list=17."""
     assert (PROJECT_ROOT / "requirements-release.txt").is_file(), (
         "requirements-release.txt must exist before Docker release verification"
     )
     dockerfile = (PROJECT_ROOT / "Dockerfile").read_text()
     assert "--require-hashes" in dockerfile and "requirements-release.txt" in dockerfile
     assert "--no-deps" in dockerfile
+    assert "COPY . ." not in dockerfile
+    assert "COPY tube_bridge /app/tube_bridge" in dockerfile
+    dockerignore = (PROJECT_ROOT / ".dockerignore").read_text().splitlines()
+    for required_exclusion in {
+        ".git", ".env", ".env.*", ".brainops", ".tme", "docs", "skills",
+        "tests", "plugin.json", "mcp.json", "dist", "plugin-dist",
+    }:
+        assert required_exclusion in dockerignore
 
     tag = f"tube-bridge-rc-test:{uuid.uuid4().hex[:12]}"
     container = None
@@ -43,6 +51,23 @@ def test_docker_image_serves_authenticated_mcp():
             capture_output=True, text=True, timeout=1200,
         )
         assert build.returncode == 0, build.stdout[-4000:] + build.stderr[-4000:]
+        boundary = subprocess.run(
+            [
+                "docker", "run", "--rm", "--entrypoint", "python", tag, "-c",
+                (
+                    "from pathlib import Path; "
+                    "names={p.name for p in Path('/app').iterdir()}; "
+                    "required={'LICENSE','README.md','pyproject.toml','requirements-release.txt','tube_bridge'}; "
+                    "assert names == required, f'unexpected image paths: {sorted(names-required)!r}'; "
+                    "forbidden={'.git','.github','.brainops','.tme','.hermes','docs','skills',"
+                    "'tests','plugin.json','mcp.json','railway.toml','server.py','test_tools.py'}; "
+                    "leaked=names & forbidden; "
+                    "assert not leaked, f'repository-only image paths: {sorted(leaked)!r}'"
+                ),
+            ],
+            capture_output=True, text=True, timeout=60,
+        )
+        assert boundary.returncode == 0, boundary.stdout + boundary.stderr
         run = subprocess.run(
             ["docker", "run", "--rm", "-d", "-p", f"127.0.0.1:{port}:8080",
              "-e", f"TUBE_BRIDGE_AUTH_KEY={auth}",
@@ -79,8 +104,8 @@ def test_docker_image_serves_authenticated_mcp():
         assert smoke.returncode == 0, smoke.stdout + smoke.stderr
         payload = json.loads(smoke.stdout)
         assert payload["ok"] is True
-        assert payload["tool_count"] == 16
-        assert len(payload["tool_names"]) == 16
+        assert payload["tool_count"] == 17
+        assert len(payload["tool_names"]) == 17
     finally:
         if container:
             subprocess.run(["docker", "rm", "-f", container], capture_output=True, timeout=30)

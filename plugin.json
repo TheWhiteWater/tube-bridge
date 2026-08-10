@@ -1,0 +1,18 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "tube-bridge",
+  "version": "1.1.0",
+  "description": "Self-hosted YouTube research system bundling a 17-tool MCP with timestamped frame extraction, canonical workflow, corpus doctrine, onboarding, and reusable research templates.",
+  "homepage": "https://github.com/TheWhiteWater/tube-bridge",
+  "repository": "https://github.com/TheWhiteWater/tube-bridge",
+  "license": "MIT",
+  "keywords": [
+    "youtube",
+    "mcp",
+    "transcripts",
+    "frames",
+    "research",
+    "corpus",
+    "semantic-search"
+  ]
+}

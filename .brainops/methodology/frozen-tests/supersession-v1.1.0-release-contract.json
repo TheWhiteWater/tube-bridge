@@ -1,0 +1,39 @@
+{
+  "kind": "brainops.frozen_tests_supersession",
+  "version": "0.1",
+  "project": "tube-bridge",
+  "release_candidate": "v1.1.0",
+  "authority": "docs/adr/004-v1.1.0-release-test-contract-supersession.md",
+  "reason": "The operator-authorized v1.1.0 release changes the public catalog from 16 to 17 tools, adds MCP ImageContent, deterministic subtitle selection, an Agent Plugin preview, and an explicit Docker allowlist. Historical release tests and hashes remain evidence for v1.0.3 but cannot be current authority for the new contract.",
+  "supersedes_current_hash_authority": [
+    ".brainops/methodology/frozen-tests/frozen-tdd-wi-00028-core-publication-001-python.json",
+    ".brainops/methodology/frozen-tests/frozen-20260809073048-tests.json",
+    ".brainops/methodology/frozen-tests/frozen-20260809051810-test_self_hosted_only_contract.py.json"
+  ],
+  "preserves_as_historical_evidence": true,
+  "authoritative_manifest": ".brainops/methodology/frozen-tests/frozen-v1.1.0-release-candidate-tests.json",
+  "authoritative_manifest_sha256": "6940770d2f5bfd1fd8bc7e0fed2a3598bea73903be4d988787e32a47591d82b5",
+  "pre_freeze_evidence": [
+    "188 deterministic tests collected",
+    "8 subtitle selection and safe-retry tests passed",
+    "operator explicitly authorized v1.1.0 publication in session S-01240"
+  ],
+  "required_exit": [
+    "authoritative manifest hashes match the final candidate",
+    "complete deterministic suite passes",
+    "wheel, sdist, Agent Plugin ZIP and Docker release gates pass",
+    "independent final audit reports P0=0 and P1=0"
+  ],
+  "exit_evidence": {
+    "manifest_hash_check": "PASS",
+    "deterministic_suite": "188/188 PASS",
+    "local_release_artifacts": "PASS",
+    "independent_audit": ".brainops/methodology/audits/2026-08-10T13-00-50Z-codex-v1.1.0-release-convergence.json",
+    "independent_verdict": "PASS",
+    "p0": 0,
+    "p1": 0
+  },
+  "created_by_agent_id": "W-1244",
+  "created_session_id": "S-01240",
+  "created_at": "2026-08-10T12:23:33Z"
+}

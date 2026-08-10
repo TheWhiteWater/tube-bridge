@@ -1,7 +1,7 @@
 # Project Vision — tube-bridge
 
-**Last updated:** 2026-08-09
-**Status:** Published MIT self-hosted MCP. There is no public hosted demo.
+**Last updated:** 2026-08-10
+**Status:** MIT self-hosted MCP; v1.1.0 release candidate authorized. Last externally verified release remains v1.0.3 until the active publication gate closes. There is no public hosted demo.
 
 ## North Star
 
@@ -21,13 +21,13 @@ Each user controls their own YouTube API key, proxy, Bearer auth, storage, quota
 
 ## Tool Baseline
 
-The MCP server registers exactly 16 tools from `TOOL_CATALOG`:
+The current source-tree MCP server registers exactly 17 tools from `TOOL_CATALOG`:
 
-- 10 YouTube discovery/transcript/metadata tools;
+- 11 YouTube discovery/transcript/frame/metadata tools;
 - 5 local corpus tools;
 - 1 help tool.
 
-Thirteen tools can operate without a YouTube Data API key. Three require `YOUTUBE_API_KEY`: comments, channel search, and channel information. Search, video information, and trending upgrade to Data API results when a key is present and fall back to yt-dlp where supported.
+Fourteen tools can operate without a YouTube Data API key. Three require `YOUTUBE_API_KEY`: comments, channel search, and channel information. Search, video information, and trending upgrade to Data API results when a key is present and fall back to yt-dlp where supported. `youtube_get_frame` returns one bounded ephemeral JPEG as MCP `ImageContent`; it does not persist the clip or image.
 
 ## Transports and Auth
 
@@ -59,14 +59,15 @@ Browser Claude Custom Connector is not a supported target for this private insta
 - No user accounts, signup, durable hosted profiles, billing, entitlements, or managed identity.
 - No public upstream API key or proxy sharing.
 - No browser extension.
-- No video download/upload, comment posting, playlist mutation, or account management.
+- No full-video download, retained media library, upload, comment posting, playlist mutation, or account management. Timestamp frame extraction may use and immediately delete a bounded temporary clip.
 - Grabbit remains a completely separate companion MCP with no connector, dependency, shared service, or code integration.
 
 ## Current Evidence
 
-- Current public release: `v1.0.3`.
+- Authorized release candidate and source tree: `v1.1.0`, 17 tools, including bounded ephemeral frame extraction. External publication state is tracked in `docs/planning/PUBLICATION_READINESS.md`.
+- The v1.1.0 GitHub release plan additionally packages an Agent Plugin preview with one research skill, methodology, examples, templates, and the frozen but not-yet-runtime Corpus v2 contract.
 - Original core freeze: 125 deterministic tests.
-- Active tree: 137 deterministic tests: the 125-test core freeze, 5-test self-hosted-only retirement contract, 2-test private-endpoint help remediation, and 5-test v1.0.3 release-artifact contract.
+- Active tree: 188 deterministic tests, including frame extraction/tool, Agent Plugin, Corpus v2 storage, subtitle selection, distribution, retirement/privacy, and v1.0.3 historical release contracts.
 - Wheel/sdist, `twine check`, isolated install, installed CLI/MCP, Docker runtime, PyPI, GitHub Release, public GHCR, and hosted Python 3.12/3.13 CI are verification surfaces.
 - `test_tools.py` remains an optional live YouTube smoke, not a deterministic gate.
 

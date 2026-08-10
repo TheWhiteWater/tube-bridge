@@ -5,7 +5,10 @@ import functools
 
 from . import cache
 from .youtube import client as yt
-from .youtube import api, transcript as tr
+from .youtube import api, frame as frame_extractor, transcript as tr
+
+
+MAX_FRAME_JPEG_BYTES = 1_500_000
 
 
 # ---------------------------------------------------------------------------
@@ -311,6 +314,25 @@ async def available_languages(video_id: str) -> dict:
         "total_languages": len(langs),
         "languages": langs,
     }
+
+
+async def video_frame(video_id: str, timestamp_ms: int, max_width: int = 640):
+    """Return one ephemeral frame artifact for MCP ImageContent serialization."""
+    if isinstance(max_width, bool) or not isinstance(max_width, int):
+        raise ValueError("max_width must be an integer")
+    if not 64 <= max_width <= 1280:
+        raise ValueError("max_width must be between 64 and 1280")
+    artifact = await asyncio.to_thread(
+        frame_extractor.extract_frame,
+        video_id,
+        timestamp_ms=timestamp_ms,
+        max_width=max_width,
+    )
+    if len(artifact.data) > MAX_FRAME_JPEG_BYTES:
+        raise RuntimeError(
+            f"Frame exceeds {MAX_FRAME_JPEG_BYTES}-byte response limit"
+        )
+    return artifact
 
 
 # ---------------------------------------------------------------------------

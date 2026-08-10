@@ -2,7 +2,9 @@
 
 **YouTube MCP server for AI agents — search, discovery, transcripts, comments, semantic corpus.**
 
-16 tools. 13 without API key. 3 with optional YouTube Data API v3 key.
+17 tools. 14 without API key. 3 with optional YouTube Data API v3 key.
+
+`v1.1.0` adds bounded timestamp-to-JPEG extraction, deterministic default-language subtitle selection, and a portable Agent Plugin preview for evidence-oriented research.
 
 [![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://python.org)
 [![MCP](https://img.shields.io/badge/MCP-1.28.1-green.svg)](https://modelcontextprotocol.io)
@@ -13,10 +15,10 @@
 ## Quick Start
 
 ```bash
-# 1. Install the published package
+# 1. Install the package
 pip install tube-bridge
 
-# 2. Run (no API key needed for 13 of 16 tools)
+# 2. Run (no API key needed for 14 of 17 tools)
 tube-bridge                    # stdio mode (local MCP clients)
 tube-bridge --http             # HTTP mode (remote, port 8080)
 
@@ -26,9 +28,23 @@ docker run --rm -p 8080:8080 ghcr.io/thewhitewater/tube-bridge:latest
 # MCP endpoints: stdio via `tube-bridge`, HTTP at http://localhost:8080/mcp
 ```
 
-**16 tools: 13 callable without any setup. 3 unlock with a Data API v3 key. 5 corpus tools use local embeddings.**
+**17 tools: 14 callable without any setup. 3 unlock with a Data API v3 key. 5 corpus tools use local embeddings.**
 
-## Tools (16)
+## Agent Plugin Preview
+
+The v1.1.0 GitHub release is configured to include `tube-bridge-agent-plugin-1.1.0.zip`, a portable Agent Plugins v1 bundle with:
+
+- one discoverable `tube-bridge-research` skill;
+- the 17-tool local stdio MCP configuration;
+- evidence, adversary-review, and source-lineage methodology;
+- worked examples and reusable research templates;
+- the frozen Corpus v2 storage contract, clearly separated from the current v1 corpus runtime.
+
+Agent Plugins v1 does not standardize dependency installation. Install Python 3.12+, ffmpeg, and the package dependencies into the `python3` environment used by your plugin host before launching the MCP. The plugin bundle contains no credentials; API keys, proxy settings, cache location, and retention remain operator-controlled.
+
+The plugin is a preview because dependency bootstrap and client-specific loading remain host responsibilities. The skill content and MCP contract are covered by the deterministic test suite.
+
+## Tools (17)
 
 | Tool | API Key | Description |
 |------|:-------:|-------------|
@@ -37,7 +53,8 @@ docker run --rm -p 8080:8080 ghcr.io/thewhitewater/tube-bridge:latest
 | `youtube_get_trending` | ❌→✅ | Trending videos. API v3 primary, yt-dlp fallback |
 | `youtube_get_channel_videos` | ❌ | Recent uploads from any channel (@handle or URL) |
 | `youtube_get_playlist` | ❌ | All videos in a playlist |
-| `youtube_get_transcript` | ❌ | Transcript/subtitles. Plain text or [MM:SS] timestamps. Manual > ASR |
+| `youtube_get_transcript` | ❌ | Transcript/subtitles. Original/default language; manual > ASR within that language |
+| `youtube_get_frame` | ❌ | One ephemeral JPEG near an integer-millisecond timestamp; best-effort frame boundary, MCP ImageContent, no persistence |
 | `youtube_get_available_languages` | ❌ | Subtitle languages with manual/auto-generated flags |
 | `youtube_get_comments` | ✅ | Top-level comments with likes and reply counts |
 | `youtube_search_channels` | ✅ | Channel search with subscriber counts and filters |
@@ -50,6 +67,8 @@ docker run --rm -p 8080:8080 ghcr.io/thewhitewater/tube-bridge:latest
 | `corpus_delete` | ❌ | Delete a corpus and all its chunks/vectors permanently |
 
 **Key:** ❌ = no key needed; ✅ = key required; ❌→✅ = works without key, upgrades with key.
+
+`youtube_get_frame` requires an `ffmpeg` executable on `PATH`; the published container installs it. Source/PyPI operators install ffmpeg with their OS package manager.
 
 ### Transport Endpoints
 
@@ -116,7 +135,8 @@ tube_bridge/
 └── youtube/
     ├── client.py      # yt-dlp subprocess client (retry + backoff + proxy)
     ├── api.py         # YouTube Data API v3 client (stdlib urllib, no third-party Google SDK)
-    ├── transcript.py  # youtube-transcript-api wrapper (manual > ASR, proxy)
+    ├── transcript.py  # youtube-transcript-api wrapper (default-language selection, proxy)
+    ├── frame.py       # bounded timestamp→JPEG extraction (yt-dlp + ffmpeg)
     └── models.py      # VideoInfo dataclass
 ```
 
@@ -187,12 +207,12 @@ python3 server.py --http --port 8080 --host 0.0.0.0
 ## Product Boundary
 
 ### Current State
-- **MIT self-hosted library** — 16 MCP tools, all transports, cache/corpus logic.
-- **Published core** — GitHub Release, PyPI package, and public GHCR image are live. Frozen 125-test core acceptance, clean install, installed CLI/MCP, Docker handshake, wheel+sdist, twine, and hosted CI pass.
+- **MIT self-hosted library** — 17 MCP tools, all transports, cache/corpus logic.
+- **v1.1.0 release line** — the authorized candidate targets GitHub Release, PyPI, and public GHCR. Publication state and downloaded-artifact evidence are recorded in `docs/planning/PUBLICATION_READINESS.md` rather than inferred from source version strings.
 - **No hosted demo** — the project does not provide public hosted access, tester invites, accounts, managed storage, or an SLA. Install it yourself to evaluate it.
 
 ### Full Publication Scope
-The self-hosted core is fully published through GitHub Release, PyPI, and GHCR. That is the complete public product surface.
+The self-hosted runtime's public distribution surfaces are GitHub Release, PyPI, and GHCR. The Agent Plugin preview is packaged as a GitHub Release asset and source-tree bundle; it is not an additional hosted service.
 
 ### What tube-bridge Is NOT
 - Not a SaaS or managed transcript-hosting product.
@@ -212,7 +232,7 @@ The self-hosted core is fully published through GitHub Release, PyPI, and GHCR. 
 python3 test_tools.py
 ```
 
-This remains an optional live smoke against YouTube. Formal acceptance uses `python3 -m pytest tests -q`; the active suite contains 137 deterministic tests: the original 125-test core freeze, the 5-test self-hosted-only retirement contract, the 2-test private-endpoint help remediation, and the 5-test v1.0.3 release-artifact contract. Hosted GitHub Actions CI runs on Python 3.12 and 3.13.
+This remains an optional live smoke against YouTube. Formal acceptance uses `python3 -m pytest tests -q`; the source-tree suite contains 188 deterministic tests, preserving the original release/privacy gates and adding frame, plugin, subtitle-selection, and Corpus v2 contracts. Hosted GitHub Actions CI runs on Python 3.12 and 3.13.
 
 ## Known Limitations
 

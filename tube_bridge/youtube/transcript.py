@@ -26,11 +26,60 @@ def _get_api():
     return _api
 
 
+def _language_family(language_code: str) -> str:
+    """Return the base BCP-47 language subtag used for track matching."""
+    return language_code.strip().lower().replace("_", "-").split("-", 1)[0]
+
+
+def _ordered_tracks(tracks: list[Any], lang: str | None) -> tuple[list[Any], str | None]:
+    """Choose one language cohort without falling through to a foreign dub."""
+    manual = [track for track in tracks if not track.is_generated]
+    generated = [track for track in tracks if track.is_generated]
+
+    if lang:
+        return (
+            [track for track in manual if track.language_code == lang]
+            + [track for track in generated if track.language_code == lang],
+            lang,
+        )
+
+    if generated:
+        default_code = generated[0].language_code
+        default_family = _language_family(default_code)
+        matching_manual = [
+            track for track in manual if track.language_code == default_code
+        ] + [
+            track
+            for track in manual
+            if track.language_code != default_code
+            and _language_family(track.language_code) == default_family
+        ]
+        matching_generated = [
+            track for track in generated if track.language_code == default_code
+        ] + [
+            track
+            for track in generated
+            if track.language_code != default_code
+            and _language_family(track.language_code) == default_family
+        ]
+        return matching_manual + matching_generated, default_code
+
+    if manual:
+        return [manual[0]], manual[0].language_code
+
+    return [], None
+
+
 def get_transcript(video_id: str, lang: str | None = None) -> tuple[list[dict], str, bool]:
-    """Get transcript segments. Returns (segments, language_code, is_generated).
-    Prioritizes manual subtitles over auto-generated (ASR)."""
+    """Get transcript segments as ``(segments, language_code, is_generated)``.
+
+    With no explicit language, stay in the original/default language cohort and
+    prefer a matching manual track over ASR. Never fall through to an unrelated
+    foreign manual track merely because it is manual.
+    """
     api = _get_api()
     last_error: Exception | None = None
+    fallback_language = lang
 
     def _try_fetch(transcript_obj) -> list[dict] | None:
         nonlocal last_error
@@ -42,15 +91,9 @@ def get_transcript(video_id: str, lang: str | None = None) -> tuple[list[dict], 
             return None
 
     try:
-        transcript_list = api.list(video_id)
-        manual = [t for t in transcript_list if not t.is_generated]
-        generated = [t for t in transcript_list if t.is_generated]
+        tracks, fallback_language = _ordered_tracks(list(api.list(video_id)), lang)
 
-        if lang:
-            manual = [t for t in manual if t.language_code == lang]
-            generated = [t for t in generated if t.language_code == lang]
-
-        for t in manual + generated:
+        for t in tracks:
             segments = _try_fetch(t)
             if segments:
                 return segments, t.language_code, t.is_generated
@@ -60,13 +103,29 @@ def get_transcript(video_id: str, lang: str | None = None) -> tuple[list[dict], 
     except Exception as e:
         last_error = e
 
-    try:
-        languages = [lang] if lang else None
-        transcript = api.fetch(video_id, languages=languages)
-        segments = [{"text": s.text, "start": s.start, "duration": s.duration} for s in transcript]
-        return segments, lang or "unknown", False
-    except Exception as e:
-        last_error = e
+    # A direct retry is safe only after a language was established explicitly or
+    # from a successfully listed default cohort. Calling api.fetch() without a
+    # language defaults to English in youtube-transcript-api and can silently
+    # cross into an unrelated dub after a listing/network failure.
+    if fallback_language:
+        previous_error = last_error
+        try:
+            transcript = api.fetch(video_id, languages=[fallback_language])
+            segments = [{"text": s.text, "start": s.start, "duration": s.duration} for s in transcript]
+            selected_language = getattr(transcript, "language_code", fallback_language)
+            selected_is_generated = bool(getattr(transcript, "is_generated", False))
+            return segments, selected_language, selected_is_generated
+        except Exception as e:
+            # Do not let an absence-shaped retry error erase an earlier network,
+            # proxy, or track-fetch failure.
+            if (
+                isinstance(e, (TranscriptsDisabled, NoTranscriptFound))
+                and previous_error is not None
+                and not isinstance(previous_error, (TranscriptsDisabled, NoTranscriptFound))
+            ):
+                last_error = previous_error
+            else:
+                last_error = e
 
     # A confirmed "this video has no captions" (TranscriptsDisabled/NoTranscriptFound) is
     # indistinguishable, otherwise, from every other failure mode (IP block, network error,

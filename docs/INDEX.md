@@ -1,6 +1,6 @@
 # tube-bridge — Project Index
 
-**Self-hosted MIT YouTube MCP. 16 tools; 13 keyless-capable, 3 with a user-owned Data API key. No public hosted demo.**
+**Self-hosted MIT YouTube MCP. Source tree: 17 tools; 14 keyless-capable, 3 with a user-owned Data API key. No public hosted demo.**
 
 ## Quick Navigation
 
@@ -20,27 +20,29 @@
 | [Publication Readiness](planning/PUBLICATION_READINESS.md) | Core-only release gates |
 | [Open Questions](planning/OPEN_QUESTIONS.md) | Resolved and conditional questions |
 | [ADR-003](adr/003-self-hosted-only-private-operator-railway.md) | Active self-hosted-only/private-infrastructure decision |
+| [ADR-004](adr/004-v1.1.0-release-test-contract-supersession.md) | v1.1.0 release-test hash authority and historical-manifest preservation |
 | [ADR-001](adr/001-demo-api-quota-and-product-boundary.md) | Historical; demo clauses superseded |
 | [ADR-002](adr/002-demo-oauth-test-identity.md) | Historical; superseded in full |
+| [v1.1.0 release notes](releases/v1.1.0.md) | Frame, subtitle, plugin preview and upgrade boundaries |
 | [v1.0.0 metadata hygiene](audits/2026-08-09-v1.0.0-release-metadata-hygiene.md) | Historical release disposition |
 
 ## Tool Inventory
 
-`TOOL_CATALOG` registers 10 YouTube tools, 5 corpus tools and 1 help tool.
+`TOOL_CATALOG` registers 11 YouTube tools, 5 corpus tools and 1 help tool.
 
-- Keyless-capable: search fallback, video info, trending, channel videos, playlist, transcript, available languages, all five corpus tools and help.
+- Keyless-capable: search fallback, video info, trending, channel videos, playlist, transcript, one ephemeral timestamped frame, available languages, all five corpus tools and help.
 - Data API required: comments, channel search and channel information.
 
 ## Active State
 
-- Current public release: `v1.0.3`.
+- Authorized release candidate: `v1.1.0`, with 17 runtime tools plus a GitHub Agent Plugin preview bundle. External publication and downloaded-artifact status are tracked in Publication Readiness; earlier artifacts remain immutable release history.
 - Public distribution: GitHub, PyPI and GHCR.
 - Product: self-hosted software only.
 - Auth: optional static Bearer for self-hosted HTTP.
 - Storage: user-managed cache/corpus databases with no forced TTL.
-- Tests: original 125-test core freeze, five ADR-003 retirement tests, two private-endpoint help tests, and five v1.0.3 release-artifact tests (137 total).
+- Tests: 188 deterministic source-tree tests, including the preserved release/privacy contracts plus frame, plugin, subtitle, and Corpus v2 contracts.
 - Completed WorkItem: WI-00060 closed after source/docs/CI/private-Railway verification and final conformance PASS.
-- Completed WorkItem: WI-00067 published and verified self-hosted-only v1.0.3 across GitHub, PyPI and GHCR; final conformance PASS.
+- Completed WorkItem: WI-00067 published and verified self-hosted-only v1.0.3 across GitHub, PyPI and GHCR; final conformance PASS. The authorized v1.1.0 candidate will supersede it only after its publication gate closes, without altering historical artifacts.
 - Historical demo/OAuth WorkItems WI-00047 and WI-00057 are terminal with superseded/cancelled resolutions and do not define current product behavior.
 - Grabbit is a completely separate MCP.
 

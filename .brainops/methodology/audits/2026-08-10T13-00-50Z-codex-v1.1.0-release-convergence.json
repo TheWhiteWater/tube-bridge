@@ -1,0 +1,35 @@
+{
+  "ok": true,
+  "kind": "brainops.methodology_audit",
+  "profile_id": "methodology.release_convergence_audit",
+  "model_profile_id": "auditor.codex_cli_read_only",
+  "runtime_surface": "codex_cli",
+  "provider": "openai-codex",
+  "model": "configured-codex-cli",
+  "project": "tube-bridge",
+  "target": {
+    "type": "release_candidate",
+    "ref": "v1.1.0 working tree on release/v1.1.0"
+  },
+  "status": "passed",
+  "verdict": "PASS",
+  "severity_counts": {
+    "p0": 0,
+    "p1": 0
+  },
+  "summary": "Definitive read-only convergence audit passed after iterative remediation. Runtime, frame, subtitle, 17-tool, Agent Plugin, Corpus v2 contract-only, Docker/GHCR, wheel/sdist/plugin isolation, checksum, documentation, frozen-test supersession, and no-Railway boundaries have no P0/P1 findings.",
+  "evidence_checked": [
+    "188/188 deterministic tests PASS",
+    "19 test-file hashes and byte counts match frozen-v1.1.0-release-candidate-tests.json",
+    "authoritative manifest SHA-256 6940770d2f5bfd1fd8bc7e0fed2a3598bea73903be4d988787e32a47591d82b5",
+    "wheel, sdist and Agent Plugin ZIP embed current transcript.py SHA-256 5b0a6c3466946574a99584fc8e4c6590e582f24924109b94b07c4d6db88d06d6",
+    "twine and private-metadata artifact scanner PASS",
+    "Docker explicit allowlist and pre-push image boundary/secret scan",
+    "publication documentation remains candidate-honest",
+    "Railway is absent from release deployment automation"
+  ],
+  "residual_gate": "Hosted branch CI, tag workflow, and downloaded public artifact verification remain required before post-publication closure.",
+  "created_by_agent_id": "W-1244",
+  "created_session_id": "S-01240",
+  "created_at": "2026-08-10T13:00:50Z"
+}

@@ -4,7 +4,7 @@
 Uses mcp.ClientSession with streamable_http_client to perform:
 1. initialize handshake
 2. list_tools request
-3. Validate exactly 16 unique tool names match expected set
+3. Validate exactly 17 unique tool names match expected set
 
 Emits JSON result on stdout; exits nonzero on any failure.
 No embedded auth values — credentials are passed via CLI only.
@@ -39,6 +39,7 @@ EXPECTED_TOOLS = [
     "youtube_get_channel_videos",
     "youtube_get_playlist",
     "youtube_get_transcript",
+    "youtube_get_frame",
     "youtube_get_available_languages",
     "youtube_get_comments",
     "tube_bridge_help",
@@ -78,7 +79,7 @@ def emit_result(ok: bool, tool_count: int, tool_names: list[str],
         "tool_names": sorted(tool_names),
     }
     if not ok:
-        result["expected_count"] = 16
+        result["expected_count"] = len(EXPECTED_TOOLS)
         if error_type:
             result["error_type"] = error_type
         if error_message:
@@ -104,7 +105,7 @@ async def run_smoke(url: str, auth_token: str | None = None) -> tuple[bool, int,
                 tools_result = await session.list_tools()
                 names = [tool.name for tool in tools_result.tools]
 
-                if len(names) != 16:
+                if len(names) != len(EXPECTED_TOOLS):
                     return False, len(names), names
 
                 if len(set(names)) != len(names):

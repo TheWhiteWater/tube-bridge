@@ -18,7 +18,7 @@ AI Agent
        ▼
 tube-bridge
   ├── tube_bridge/cli.py          installed entrypoint and transport selection
-  ├── tube_bridge/server.py       16-tool catalog, registration, help, dispatch
+  ├── tube_bridge/server.py       17-tool catalog, registration, help, dispatch
   ├── tube_bridge/tools.py        tool implementations
   ├── tube_bridge/transport.py    HTTP/SSE, optional Bearer, health
   ├── tube_bridge/cache.py        cache.db
@@ -82,6 +82,6 @@ The Operator's private Railway deployment is personal infrastructure protected b
 
 ## Product Boundary
 
-- **Included:** all 16 tools, all active transports, optional static Bearer, cache/corpus logic, packaging and container distribution.
+- **Included:** all 17 source-tree tools, all active transports, optional static Bearer, cache/corpus logic, packaging and container distribution.
 - **Excluded:** public demo, OAuth, tester program, accounts, hosted retention, shared quota/key access, billing, SLA, browser extension, and managed hosting.
 - **Separate:** Grabbit is a different MCP with no connector, dependency, shared service, or implementation roadmap.

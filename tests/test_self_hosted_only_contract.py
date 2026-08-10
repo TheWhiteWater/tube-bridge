@@ -119,16 +119,22 @@ def test_existing_corpus_schema_remains_compatible_without_demo_mode(monkeypatch
 
 def test_transcript_network_failure_remains_distinct_from_missing_captions(monkeypatch):
     class BrokenApi:
+        def __init__(self):
+            self.fetch_calls = 0
+
         def list(self, video_id):
             raise OSError("upstream unavailable")
 
         def fetch(self, video_id, languages=None):
-            raise ConnectionError("proxy path unavailable")
+            self.fetch_calls += 1
+            raise AssertionError("implicit-language retry is unsafe")
 
-    monkeypatch.setattr(transcript_module, "_api", BrokenApi())
+    broken_api = BrokenApi()
+    monkeypatch.setattr(transcript_module, "_api", broken_api)
 
-    with pytest.raises(RuntimeError, match="ConnectionError: proxy path unavailable"):
+    with pytest.raises(RuntimeError, match="OSError: upstream unavailable"):
         transcript_module.get_transcript("abcdefghijk")
+    assert broken_api.fetch_calls == 0
 
     class MissingCaptionsApi:
         def list(self, video_id):

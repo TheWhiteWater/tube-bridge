@@ -2,7 +2,7 @@
 
 ## Overview
 
-tube-bridge is a **modular Python package** (`tube_bridge/`) with a packaged synchronous CLI and a root compatibility launcher. It wraps three data sources behind a unified MCP interface with 16 tools:
+tube-bridge is a **modular Python package** (`tube_bridge/`) with a packaged synchronous CLI and a root compatibility launcher. It wraps YouTube sources and local processing behind a unified MCP interface with 17 tools:
 
 ```
 Agent (Claude / Codex / Hermes)
@@ -13,15 +13,16 @@ Agent (Claude / Codex / Hermes)
    ▼
 server.py                       — Source-checkout compatibility wrapper
 tube_bridge/cli.py              — Canonical synchronous installed CLI: stdio or HTTP
-tube_bridge/server.py           — 16-tool catalog, MCP wiring, HELP derivation, and separately verified dispatch
-tube_bridge/tools.py            — 15 operational tool implementations (async, cached, dual-source); tube_bridge_help is handled directly in server.py
+tube_bridge/server.py           — 17-tool catalog, MCP wiring, HELP derivation, and separately verified dispatch
+tube_bridge/tools.py            — 16 operational tool implementations (async, cached, dual-source); tube_bridge_help is handled directly in server.py
 tube_bridge/transport.py        — HTTP/SSE ASGI app builder + optional static Bearer + /health
 tube_bridge/cache.py            — cache.db: persistent SQLite for transcripts + video metadata
 tube_bridge/corpus.py           — corpus.db: sqlite-vec vectors + fastembed embeddings
 tube_bridge/youtube/
    ├── client.py       — yt-dlp subprocess (retry, backoff, proxy)
    ├── api.py          — Data API v3 client (stdlib urllib, no Google SDK)
-   ├── transcript.py   — youtube-transcript-api (manual > ASR, proxy)
+   ├── transcript.py   — youtube-transcript-api (default-language selection, proxy)
+   ├── frame.py        — bounded timestamp→JPEG extraction exposed by `youtube_get_frame`
    └── models.py       — VideoInfo dataclass
 ```
 
@@ -44,20 +45,20 @@ tube_bridge/youtube/
 ## Tool Registration & Dispatch
 
 **Tool registration** (`tube_bridge/server.py`):
-- `TOOL_CATALOG` is the single authority for exactly 16 registered names, descriptions and JSON input schemas; `list_tools()` returns its MCP `Tool` objects.
-- 10 YouTube interaction tools + 5 corpus tools + 1 help tool.
+- `TOOL_CATALOG` is the single authority for exactly 17 registered names, descriptions and JSON input schemas; `list_tools()` returns its MCP `Tool` objects.
+- 11 YouTube interaction tools + 5 corpus tools + 1 help tool.
 - Each tool schema declares required parameters, optional parameters with defaults, and type constraints. Not every schema contains enum constraints; schemas use standard JSON Schema `type` declarations (`string`, `integer`, `boolean`, `object`).
 
 **Tool dispatch** (`tube_bridge/server.py` `call_tool()` + `_handle_tool()`):
-- `call_tool()` wraps the result in `TextContent` with JSON serialization.
+- `call_tool()` wraps ordinary results in JSON `TextContent`; `youtube_get_frame` returns ordered metadata `TextContent` plus JPEG `ImageContent`.
 - Errors have explicit branches for `ValueError`, `RuntimeError`, and generic `Exception`, returned as structured tool payloads.
 - `_handle_tool()` is a separate `match`/`case` dispatcher routing tool names to async implementation functions in `tube_bridge/tools.py`.
 
-`HELP_TEXT` is derived from `TOOL_CATALOG`. Dispatch remains separate; frozen catalog/help/schema/dispatch tests enforce exactly the same 16-name set.
+`HELP_TEXT` is derived from `TOOL_CATALOG`. Dispatch remains separate; frozen catalog/help/schema/dispatch tests enforce exactly the same 17-name set.
 
 ## Tool Implementation Patterns
 
-Fifteen operational tool implementations are delegated to `tube_bridge/tools.py`; `tube_bridge_help` is handled directly in `tube_bridge/server.py` by returning `HELP_TEXT`:
+Sixteen operational tool implementations are delegated to `tube_bridge/tools.py`; `tube_bridge_help` is handled directly in `tube_bridge/server.py` by returning `HELP_TEXT`:
 
 ### Dual-Source Pattern (search, video_info, trending)
 
@@ -94,12 +95,18 @@ Two-layer cache for transcripts and video metadata:
 
 ### Transcript Priority
 
-`tube_bridge/youtube/transcript.py` implements manual > ASR priority:
+`tube_bridge/youtube/transcript.py` uses deterministic language-cohort selection:
 1. List available transcripts via `youtube-transcript-api`.
-2. Segregate into manual (`not t.is_generated`) and auto-generated (`t.is_generated`).
-3. If a language code is specified, filter both lists.
-4. Try manual transcripts first, then auto-generated, then a direct `fetch()` call as last resort.
-5. Lazy singleton `_get_api()` reuses the API instance; proxy configuration is applied at first instantiation.
+2. An explicit language code strictly selects that code, manual before generated.
+3. Without an explicit language, the first ASR track identifies the original/default language family; exact-code manual, regional manual, then ASR tracks in that family are tried.
+4. If no ASR track exists, only the provider's first manual track is treated as default.
+5. Selection never falls through to an unrelated foreign manual track. Lazy singleton `_get_api()` reuses the proxy-configured API instance.
+
+### Frame Extraction Boundary
+
+`tube_bridge/youtube/frame.py` provides `extract_frame(video, timestamp_ms, max_width)`. It downloads only a four-second section around the requested integer-millisecond timestamp, seeks to a best-effort decoded frame boundary within that clip, renders one bounded JPEG through ffmpeg, computes SHA-256, and removes temporary media. Inputs become a canonical YouTube watch URL and subprocesses never use a shell. Proxy credentials are never included in raised errors.
+
+`youtube_get_frame` exposes this primitive as one ephemeral MCP response: JSON metadata followed by `ImageContent`. The public width is 64–1280 pixels, raw JPEG is capped at 1,500,000 bytes, base64 image data at 2,000,000 characters, batching is absent, and neither clip nor image is persisted.
 
 ### Retry & Resilience
 
@@ -159,7 +166,7 @@ Two-layer cache for transcripts and video metadata:
 ## Product Layers (Architecture)
 
 ### Core Self-Hosted MCP — This Repository
-- All 16 tools, all transports, cache/corpus logic.
+- All 17 tools, all transports, cache/corpus logic.
 - No external database/vector/embedding service required. Requires network connectivity to YouTube upstreams.
 - Users bring their own `YOUTUBE_API_KEY` for the 3 API-keyed tools.
 - MIT-licensed; installable from source. No SaaS, accounts, billing, or managed hosting.
@@ -171,11 +178,11 @@ Two-layer cache for transcripts and video metadata:
 
 ## Release-Candidate Readiness
 
-1. One catalog defines all 16 registered tool schemas and HELP metadata; a separate dispatcher is contract-tested against the same 16-name set.
+1. One catalog defines all 17 registered tool schemas and HELP metadata; a separate dispatcher is contract-tested against the same 17-name set.
 2. Package documentation and the synchronous installed `tube_bridge.cli:main` entrypoint are verified from an isolated wheel.
-3. The core freeze remains 125 tests; the active tree adds five self-hosted-only retirement tests, two private-endpoint help tests, and five v1.0.3 release-artifact tests for 137 deterministic tests. `test_tools.py` remains optional live smoke.
+3. The active tree has 188 deterministic tests, preserving the original core/release/privacy gates and adding frame, plugin, subtitle, and Corpus v2 contracts. `test_tools.py` remains optional live smoke.
 4. Wheel+sdist/twine, exact dependency lock, Docker MCP handshake, SQLite lifecycle contracts and final hosted Python 3.12/3.13 CI for the ADR-003 transition pass.
-5. GitHub Release, PyPI and public GHCR publication are complete; no hosted-demo gate exists.
+5. v1.0.3 GitHub/PyPI/GHCR publication is complete. v1.1.0 remains an authorized candidate until the hosted and downloaded-artifact gates in Publication Readiness close; no hosted-demo gate exists.
 
 ADR-003 is the active product authority. ADR-001's hosted-demo clauses and ADR-002 are superseded but remain preserved as historical documents and Git/Station evidence.
 
@@ -187,7 +194,7 @@ ADR-003 is the active product authority. ADR-001's hosted-demo clauses and ADR-0
 
 3. **Lazy transcript API** — `YouTubeTranscriptApi` is instantiated once and reused via a module-level singleton.
 
-4. **Manual > ASR** — Transcript priority: manual subtitles first, auto-generated second.
+4. **Default language before track type** — Stay in the original/default language cohort; within it, prefer exact manual captions, regional manual captions, then ASR.
 
 5. **Modular package** — Clean module boundaries: server wiring/catalog, packaged CLI, tool implementations, transport, cache, corpus, and YouTube subpackage. Root `server.py` is only a compatibility wrapper.
 

@@ -29,7 +29,7 @@ Source authorities: `VideoInfo` in `tube_bridge/youtube/models.py` and `extract_
 
 ## Public Response Envelopes
 
-All tools return JSON via `TextContent`. Schemas are not frozen; breaking changes require an ADR.
+All tools return JSON metadata via `TextContent`; `youtube_get_frame` additionally returns one JPEG `ImageContent`. Schemas are not frozen; breaking changes require an ADR.
 
 ### Source field rules
 - `"source"` — which upstream provided the data (API or yt-dlp); present on dual-source results.
@@ -149,9 +149,23 @@ With `with_timestamps: true`, `text` becomes:
 [00:01] All right, so here we are, in front of the elephants
 [00:05] the cool thing about these guys is that they have really...
 ```
-No `cached` flag on public envelope. Persistent cache used internally (`_get_transcript_cached` at tools.py 263–272), but `cache.get_transcript()`'s `"cached": true` (cache.py 34) is discarded before output. Manual > ASR priority.
+No `cached` flag on public envelope. Persistent cache used internally (`_get_transcript_cached` at tools.py 263–272), but `cache.get_transcript()`'s `"cached": true` is discarded before output. Default selection stays in the inferred original language cohort and prefers manual over ASR only within that cohort.
 
-Source: `tube_bridge/tools.py` 264–304, `tube_bridge/cache.py` 27–35.
+Source: `tube_bridge/tools.py`, `tube_bridge/cache.py`.
+
+### youtube_get_frame
+
+The MCP result contains two ordered content blocks:
+
+1. Text metadata:
+```json
+{"video_id":"H6lZ182QaVk","requested_timestamp_ms":30000,"actual_timestamp_ms":null,
+ "timestamp_accuracy":"best_effort_frame_boundary","mime_type":"image/jpeg",
+ "bytes":31181,"sha256":"...","retention":"ephemeral"}
+```
+2. MCP `ImageContent` with the same JPEG base64-encoded and `mimeType: "image/jpeg"`.
+
+Input requires `url` and non-negative integer `timestamp_ms`. `max_width` defaults to 640 and is bounded to 64–1280. Response `requested_timestamp_ms` is not a measured source PTS; `actual_timestamp_ms` remains null and ffmpeg returns a best-effort decoded frame boundary. One call returns one image; raw JPEG must not exceed 1,500,000 bytes and its base64 data must not exceed 2,000,000 characters. The four-second temporary clip and rendered frame are deleted before return. No cache/database row is written.
 
 ### youtube_get_available_languages
 ```json
@@ -191,7 +205,7 @@ API-only. Subscriber enrichment via separate `channels.list` call. Client-side `
 
 ### tube_bridge_help
 
-Returns `HELP_TEXT`, derived from the same 16-entry `TOOL_CATALOG` used by MCP registration (10 YouTube interaction + 5 corpus + 1 help). Dispatch is separate and frozen tests enforce the same 16-name set. The response includes an authoritative numeric count and complete tool metadata without duplicate keys.
+Returns `HELP_TEXT`, derived from the same 17-entry `TOOL_CATALOG` used by MCP registration (11 YouTube interaction + 5 corpus + 1 help). Dispatch is separate and frozen tests enforce the same 17-name set. The response includes an authoritative numeric count and complete tool metadata without duplicate keys.
 
 Source authority: `TOOL_CATALOG`, `HELP_TEXT`, `list_tools()` and `_handle_tool()` in `tube_bridge/server.py`.
 

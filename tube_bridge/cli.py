@@ -37,3 +37,7 @@ def main(argv: list[str] | None = None) -> None:
     """Parse arguments synchronously and run the async transport."""
     args = build_parser().parse_args(argv)
     asyncio.run(_run(args))
+
+
+if __name__ == "__main__":
+    main()

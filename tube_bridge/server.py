@@ -1,22 +1,28 @@
 """tube-bridge — MCP server wiring: tool registration + dispatch."""
 
+import base64
 import json
 
 from mcp.server import Server
-from mcp.types import Tool, TextContent
+from mcp.types import ImageContent, Tool, TextContent
 
 from .tools import (
     search, search_channels,
     video_info, trending, channel_videos, playlist,
-    transcript, available_languages,
+    transcript, available_languages, video_frame,
     comments, channel_info,
     corpus_create, corpus_add, corpus_search, corpus_list, corpus_delete,
 )
 from .youtube.client import extract_video_id
+from .youtube.frame import ExtractedFrame
+
+VERSION = "1.1.0"
+MAX_FRAME_IMAGE_DATA_CHARS = 2_000_000
+
 
 HELP_TEXT = {
     "server": "tube-bridge",
-    "version": "1.0.3",
+    "version": VERSION,
     "description": "YouTube MCP server — search, discovery, transcripts, comments.",
     "architecture": {
         "dual_source": "Data API v3 primary, yt-dlp fallback for search, video_info, trending",
@@ -29,12 +35,13 @@ HELP_TEXT = {
         "Datacenter IPs (Railway, AWS): transcripts may fail with bot detection. No Data API v3 alternative.",
         "yt-dlp anonymous search degraded by YouTube. Prefer Data API v3 when key is set.",
         "Trending yt-dlp URL fragile — Data API v3 used as primary when key present.",
+        "youtube_get_frame requires yt-dlp network access and an ffmpeg executable on PATH.",
     ],
     "api_key_setup": "Set YOUTUBE_API_KEY env var. Get from https://console.cloud.google.com/apis/library/youtube.googleapis.com",
 }
 
 
-server = Server("tube-bridge")
+server = Server("tube-bridge", version=VERSION)
 
 
 def _build_tools() -> list[Tool]:
@@ -125,7 +132,7 @@ def _build_tools() -> list[Tool]:
         ),
         Tool(
             name="youtube_get_transcript",
-            description="Transcript/subtitles of a YouTube video. Plain text or timestamped. Manual > ASR priority.",
+            description="Transcript/subtitles of a YouTube video. Uses the original/default language; manual > ASR within that language.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -134,6 +141,30 @@ def _build_tools() -> list[Tool]:
                     "with_timestamps": {"type": "boolean", "description": "Include [MM:SS] timestamps (default: false)", "default": False},
                 },
                 "required": ["url"],
+            },
+        ),
+        Tool(
+            name="youtube_get_frame",
+            description="Extract one ephemeral JPEG near an integer-millisecond timestamp. Returns metadata plus MCP ImageContent; accuracy is best-effort at a decoded frame boundary.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "url": {"type": "string", "description": "YouTube video URL or ID"},
+                    "timestamp_ms": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "Frame timestamp in integer milliseconds",
+                    },
+                    "max_width": {
+                        "type": "integer",
+                        "minimum": 64,
+                        "maximum": 1280,
+                        "default": 640,
+                        "description": "Maximum JPEG width in pixels (default 640)",
+                    },
+                },
+                "required": ["url", "timestamp_ms"],
+                "additionalProperties": False,
             },
         ),
         Tool(
@@ -246,18 +277,43 @@ async def list_tools() -> list[Tool]:
 
 
 @server.call_tool()
-async def call_tool(name: str, arguments: dict) -> list[TextContent]:
+async def call_tool(name: str, arguments: dict) -> list[TextContent | ImageContent]:
     try:
         result = await _handle_tool(name, arguments)
+        if isinstance(result, ExtractedFrame):
+            metadata = {
+                "video_id": result.video_id,
+                "requested_timestamp_ms": result.requested_timestamp_ms,
+                "actual_timestamp_ms": None,
+                "timestamp_accuracy": "best_effort_frame_boundary",
+                "mime_type": result.mime_type,
+                "bytes": len(result.data),
+                "sha256": result.sha256,
+                "retention": "ephemeral",
+            }
+            encoded_image = base64.b64encode(result.data).decode("ascii")
+            if len(encoded_image) > MAX_FRAME_IMAGE_DATA_CHARS:
+                raise RuntimeError("Frame exceeds serialized image response limit")
+            return [
+                TextContent(
+                    type="text",
+                    text=json.dumps(metadata, ensure_ascii=False, indent=2),
+                ),
+                ImageContent(
+                    type="image",
+                    data=encoded_image,
+                    mimeType=result.mime_type,
+                ),
+            ]
         return [TextContent(type="text", text=json.dumps(result, ensure_ascii=False, indent=2))]
     except ValueError as e:
         return [TextContent(type="text", text=json.dumps({"error": str(e)}, ensure_ascii=False))]
     except RuntimeError as e:
         return [TextContent(type="text", text=json.dumps({"error": str(e)}, ensure_ascii=False))]
-    except Exception as e:
+    except Exception:
         return [TextContent(
             type="text",
-            text=json.dumps({"error": f"Unexpected error: {e}"}, ensure_ascii=False),
+            text=json.dumps({"error": "Unexpected error"}, ensure_ascii=False),
         )]
 
 
@@ -289,6 +345,13 @@ async def _handle_tool(name: str, args: dict):
                 extract_video_id(args["url"]),
                 args.get("lang"),
                 args.get("with_timestamps", False),
+            )
+
+        case "youtube_get_frame":
+            return await video_frame(
+                extract_video_id(args["url"]),
+                args["timestamp_ms"],
+                args.get("max_width", 640),
             )
 
         case "youtube_get_available_languages":

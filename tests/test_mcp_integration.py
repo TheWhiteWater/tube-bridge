@@ -9,7 +9,7 @@ Validates:
 - /health reports ok with correct tool count
 - Unauthorized /mcp requests are rejected when auth is configured
 - Authorized MCP initialize succeeds
-- tools/list returns exactly 16 expected tool names
+- tools/list returns exactly 17 expected tool names
 - Error handling for structured failure modes
 """
 
@@ -30,7 +30,7 @@ import httpx
 from mcp import ClientSession
 from mcp.client.streamable_http import streamable_http_client
 
-# Expected 16 tool names from the current tube-bridge registry
+# Expected 17 tool names from the current tube-bridge registry
 EXPECTED_TOOL_NAMES = sorted([
     "youtube_search",
     "youtube_search_channels",
@@ -40,6 +40,7 @@ EXPECTED_TOOL_NAMES = sorted([
     "youtube_get_channel_videos",
     "youtube_get_playlist",
     "youtube_get_transcript",
+    "youtube_get_frame",
     "youtube_get_available_languages",
     "youtube_get_comments",
     "tube_bridge_help",
@@ -160,7 +161,7 @@ class TestMCPHandshake:
 
     @pytest.mark.asyncio
     async def test_health_endpoint(self, server):
-        """GET /health returns 200 with status=ok and tools=16."""
+        """GET /health returns 200 with status=ok and tools=17."""
         import urllib.request
         req = urllib.request.Request(f"{server['url']}/health")
         with urllib.request.urlopen(req, timeout=5) as resp:
@@ -169,8 +170,8 @@ class TestMCPHandshake:
             assert data.get("status") == "ok"
             assert data.get("server") == "tube-bridge"
             # tools count should be 16
-            assert data.get("tools") == 16, (
-                f"/health reports {data.get('tools')} tools, expected 16"
+            assert data.get("tools") == 17, (
+                f"/health reports {data.get('tools')} tools, expected 17"
             )
 
     @pytest.mark.asyncio
@@ -183,8 +184,8 @@ class TestMCPHandshake:
                 assert init_result is not None
 
     @pytest.mark.asyncio
-    async def test_tools_list_returns_sixteen(self, server):
-        """tools/list over /mcp returns exactly 16 unique expected names."""
+    async def test_tools_list_returns_seventeen(self, server):
+        """tools/list over /mcp returns exactly 17 unique expected names."""
         url = f"{server['url']}/mcp"
         async with streamable_http_client(url) as (read_stream, write_stream, _):
             async with ClientSession(read_stream, write_stream) as session:
@@ -192,8 +193,8 @@ class TestMCPHandshake:
                 tools_result = await session.list_tools()
                 names = sorted([tool.name for tool in tools_result.tools])
 
-                assert len(names) == 16, (
-                    f"tools/list returned {len(names)} tools, expected 16: {names}"
+                assert len(names) == 17, (
+                    f"tools/list returned {len(names)} tools, expected 17: {names}"
                 )
                 assert names == EXPECTED_TOOL_NAMES, (
                     f"tools/list names mismatch.\n"
@@ -252,8 +253,8 @@ class TestMCPAuth:
                     assert init_result is not None
 
     @pytest.mark.asyncio
-    async def test_authorized_tools_list_returns_sixteen(self, auth_server):
-        """Authorized tools/list returns exactly 16 tools."""
+    async def test_authorized_tools_list_returns_seventeen(self, auth_server):
+        """Authorized tools/list returns exactly 17 tools."""
         headers = {"Authorization": f"Bearer {auth_server['auth_key']}"}
         url = f"{auth_server['url']}/mcp"
         async with httpx.AsyncClient(headers=headers) as http_client:
@@ -264,7 +265,7 @@ class TestMCPAuth:
                     await session.initialize()
                     tools_result = await session.list_tools()
                     names = sorted([tool.name for tool in tools_result.tools])
-                    assert len(names) == 16, (
+                    assert len(names) == 17, (
                         f"Authorized tools/list returned {len(names)} tools"
                     )
                     assert names == EXPECTED_TOOL_NAMES
