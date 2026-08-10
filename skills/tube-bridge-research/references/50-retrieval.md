@@ -15,7 +15,9 @@ Best for:
 
 ## Current corpus search
 
-`corpus_search` performs dense retrieval over flat overlapping windows. Use it to locate candidate spans across indexed videos.
+> **Release boundary:** this section describes the current source tree after public v1.1.0. Immutable PyPI/GHCR v1.1.0 artifacts do not yet include the ranking and result-metadata hardening; publishing it requires a separately authorized patch release.
+
+`corpus_search` performs dense retrieval over flat overlapping windows, then suppresses same-video timestamp overlap and limits first-pass source domination before deterministic refill. Hits include source title when cached plus canonical video and timestamp URLs. Use it to locate candidate spans across indexed videos.
 
 Best for:
 
@@ -29,7 +31,8 @@ Limitations:
 - no chapter or parent-child navigation
 - no explicit previous or next links
 - no logical or cross-video relation graph
-- overlap can return near-duplicate hits
+- deduplication removes positively overlapping returned windows but does not reconstruct original segment boundaries
+- the per-video cap improves multi-source visibility but is not evidence of source independence or relevance
 - score is relative ranking evidence, not calibrated confidence
 
 After a hit, identify its video and time span and inspect the timestamped source transcript around that location.

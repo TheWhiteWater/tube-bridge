@@ -1,0 +1,207 @@
+{
+  "kind": "tube-bridge.corpus-v1-ranking-live-evidence",
+  "version": 1,
+  "created_at": "2026-08-10T17:27:05.137501+00:00",
+  "base_commit": "3fb2d41de10fc40ee43a4fb11625386e9756e958",
+  "runtime_source_sha256": {
+    "tube_bridge/corpus.py": "e749e1ffe731108998899345b84cdcefea07f066458a385f63eebf2798d0ed84",
+    "tube_bridge/tools.py": "24a7d6fcedbff172dea45535e135849a045495fd90574393388ab926e7614d86",
+    "tube_bridge/server.py": "8da67c9c544b08a9b18fc320d522ec48ab02255f1989a03b360d22bbcb2f2b26"
+  },
+  "frozen_test_sha256": {
+    "tests/test_corpus_search_ranking.py": "d831c0ed077ea0ee12bfe934a09c9b014b11ca6884b99fe6999f73d856d1a031",
+    "tests/test_corpus_search_ranking_addendum.py": "15d1520fbf42bd97345a58f6e4368c16415a8598a8ae2dbc0141d93be86bda0e"
+  },
+  "verification_commands": [
+    "TUBE_BRIDGE_RELEASE_TOOLS_PYTHON=/tmp/tube-release-tools/bin/python python3 -m pytest -q tests",
+    "/tmp/tube-release-tools/bin/python -m build --outdir /tmp/tube-corpus-ranking-dist",
+    "/tmp/tube-release-tools/bin/python -m twine check /tmp/tube-corpus-ranking-dist/*"
+  ],
+  "verification_results": {
+    "deterministic_tests": "211/211 PASS",
+    "build_twine": "PASS"
+  },
+  "corpus": {
+    "corpus_id": "rag-retrieval-ranking-live",
+    "embedding_model": "BAAI/bge-small-en-v1.5",
+    "video_count": 4,
+    "chunk_count": 64,
+    "video_ids": [
+      "u-ocR-2P_YA",
+      "buzWGXOydD8",
+      "Aw7iQjKAX2k",
+      "x6Is1kShF5Q"
+    ],
+    "legacy_table_migration": {
+      "target_vector_count": 64,
+      "legacy_table_removed": true
+    }
+  },
+  "queries": [
+    {
+      "name": "context",
+      "text": "How does each method preserve document-level context that fixed independent chunks lose?",
+      "top_k": 8,
+      "before_source_counts": {
+        "u-ocR-2P_YA": 4,
+        "buzWGXOydD8": 3,
+        "x6Is1kShF5Q": 1
+      },
+      "after_source_counts": {
+        "u-ocR-2P_YA": 4,
+        "buzWGXOydD8": 1,
+        "x6Is1kShF5Q": 1,
+        "Aw7iQjKAX2k": 2
+      },
+      "hits": [
+        {
+          "video_id": "u-ocR-2P_YA",
+          "title": "Build Contextual Retrieval with Anthropic and Pinecone",
+          "start_ts": 838.639,
+          "end_ts": 920.759,
+          "score": 0.3926,
+          "timestamp_url": "https://youtube.com/watch?v=u-ocR-2P_YA&t=838s"
+        },
+        {
+          "video_id": "buzWGXOydD8",
+          "title": "Late chunking improves context recall in RAG pipelines",
+          "start_ts": 58.96,
+          "end_ts": 143.08,
+          "score": 0.3555,
+          "timestamp_url": "https://youtube.com/watch?v=buzWGXOydD8&t=58s"
+        },
+        {
+          "video_id": "x6Is1kShF5Q",
+          "title": "Introducing PageIndex: Next-Generation Reasoning-based RAG",
+          "start_ts": 64.879,
+          "end_ts": 148.12,
+          "score": 0.2677,
+          "timestamp_url": "https://youtube.com/watch?v=x6Is1kShF5Q&t=64s"
+        },
+        {
+          "video_id": "u-ocR-2P_YA",
+          "title": "Build Contextual Retrieval with Anthropic and Pinecone",
+          "start_ts": 2951.44,
+          "end_ts": 3033.839,
+          "score": 0.2619,
+          "timestamp_url": "https://youtube.com/watch?v=u-ocR-2P_YA&t=2951s"
+        },
+        {
+          "video_id": "u-ocR-2P_YA",
+          "title": "Build Contextual Retrieval with Anthropic and Pinecone",
+          "start_ts": 3131.16,
+          "end_ts": 3214.6400000000003,
+          "score": 0.2444,
+          "timestamp_url": "https://youtube.com/watch?v=u-ocR-2P_YA&t=3131s"
+        },
+        {
+          "video_id": "u-ocR-2P_YA",
+          "title": "Build Contextual Retrieval with Anthropic and Pinecone",
+          "start_ts": 1496.08,
+          "end_ts": 1579.559,
+          "score": 0.2394,
+          "timestamp_url": "https://youtube.com/watch?v=u-ocR-2P_YA&t=1496s"
+        },
+        {
+          "video_id": "Aw7iQjKAX2k",
+          "title": "GraphRAG vs. Traditional RAG: Higher Accuracy & Insight with LLM",
+          "start_ts": 55.72,
+          "end_ts": 140.369,
+          "score": 0.2382,
+          "timestamp_url": "https://youtube.com/watch?v=Aw7iQjKAX2k&t=55s"
+        },
+        {
+          "video_id": "Aw7iQjKAX2k",
+          "title": "GraphRAG vs. Traditional RAG: Higher Accuracy & Insight with LLM",
+          "start_ts": 176.277,
+          "end_ts": 252.32999999999998,
+          "score": 0.1874,
+          "timestamp_url": "https://youtube.com/watch?v=Aw7iQjKAX2k&t=176s"
+        }
+      ]
+    },
+    {
+      "name": "comparison",
+      "text": "Which method wins in a head-to-head benchmark on the same dataset, latency budget, storage budget, and retrieval metric?",
+      "top_k": 8,
+      "before_source_counts": {
+        "u-ocR-2P_YA": 5,
+        "buzWGXOydD8": 3
+      },
+      "after_source_counts": {
+        "u-ocR-2P_YA": 4,
+        "buzWGXOydD8": 2,
+        "x6Is1kShF5Q": 1,
+        "Aw7iQjKAX2k": 1
+      },
+      "hits": [
+        {
+          "video_id": "u-ocR-2P_YA",
+          "title": "Build Contextual Retrieval with Anthropic and Pinecone",
+          "start_ts": 778.8,
+          "end_ts": 861.6800000000001,
+          "score": 0.2872,
+          "timestamp_url": "https://youtube.com/watch?v=u-ocR-2P_YA&t=778s"
+        },
+        {
+          "video_id": "buzWGXOydD8",
+          "title": "Late chunking improves context recall in RAG pipelines",
+          "start_ts": 0.12,
+          "end_ts": 83.4,
+          "score": 0.2636,
+          "timestamp_url": "https://youtube.com/watch?v=buzWGXOydD8&t=0s"
+        },
+        {
+          "video_id": "u-ocR-2P_YA",
+          "title": "Build Contextual Retrieval with Anthropic and Pinecone",
+          "start_ts": 1078.08,
+          "end_ts": 1160.679,
+          "score": 0.239,
+          "timestamp_url": "https://youtube.com/watch?v=u-ocR-2P_YA&t=1078s"
+        },
+        {
+          "video_id": "u-ocR-2P_YA",
+          "title": "Build Contextual Retrieval with Anthropic and Pinecone",
+          "start_ts": 3131.16,
+          "end_ts": 3214.6400000000003,
+          "score": 0.2383,
+          "timestamp_url": "https://youtube.com/watch?v=u-ocR-2P_YA&t=3131s"
+        },
+        {
+          "video_id": "buzWGXOydD8",
+          "title": "Late chunking improves context recall in RAG pipelines",
+          "start_ts": 121.079,
+          "end_ts": 166.23899999999998,
+          "score": 0.2237,
+          "timestamp_url": "https://youtube.com/watch?v=buzWGXOydD8&t=121s"
+        },
+        {
+          "video_id": "u-ocR-2P_YA",
+          "title": "Build Contextual Retrieval with Anthropic and Pinecone",
+          "start_ts": 2951.44,
+          "end_ts": 3033.839,
+          "score": 0.2206,
+          "timestamp_url": "https://youtube.com/watch?v=u-ocR-2P_YA&t=2951s"
+        },
+        {
+          "video_id": "x6Is1kShF5Q",
+          "title": "Introducing PageIndex: Next-Generation Reasoning-based RAG",
+          "start_ts": 64.879,
+          "end_ts": 148.12,
+          "score": 0.2037,
+          "timestamp_url": "https://youtube.com/watch?v=x6Is1kShF5Q&t=64s"
+        },
+        {
+          "video_id": "Aw7iQjKAX2k",
+          "title": "GraphRAG vs. Traditional RAG: Higher Accuracy & Insight with LLM",
+          "start_ts": 176.277,
+          "end_ts": 252.32999999999998,
+          "score": 0.2028,
+          "timestamp_url": "https://youtube.com/watch?v=Aw7iQjKAX2k&t=176s"
+        }
+      ]
+    }
+  ],
+  "secrets_included": false,
+  "railway_modified": false
+}

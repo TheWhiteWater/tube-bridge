@@ -86,6 +86,33 @@ Scores are embedding similarities, not confidence or evidentiary weight.
 6. **Flat context:** results expose timestamped windows but no chapter/topic path or source-segment lineage beyond video/time.
 7. **Positive-result bias:** a request for missing limitations still returns semantically nearby benefit claims instead of an explicit `no evidence found` result.
 
+## Bounded Corpus v1 Remediation Validation
+
+A follow-up source branch implemented only the first ranking-layer fixes; it did not change embeddings, chunk generation, Corpus v2, tool names, or Railway. The same four videos were rebuilt locally into **64 chunks** and queried through the real embedding/runtime path.
+
+- Context-preservation query, `top_k=8`: Pinecone 4, Weaviate 1, PageIndex 1, IBM 2. All four videos were represented; no returned same-video intervals overlapped.
+- Controlled-comparison query, `top_k=8`: Pinecone 4, Weaviate 2, PageIndex 1, IBM 1. Before remediation this probe returned only Pinecone and Weaviate passages.
+- Every hit included its cached title, canonical video URL and inspectable integer-second timestamp URL.
+- The long Pinecone source remained capped at `ceil(8 / 2) = 4`, while deterministic refill still returned eight results.
+- Full deterministic suite after independent P1 remediation: **211/211 PASS**.
+- Repeated `force_reembed` now removes only replaced vector rows; legacy dash/underscore table collisions are split transactionally into hash-named tables; saturated equal-distance boundaries receive stable tie resolution.
+
+This validates bounded overlap deduplication, source-aware first-pass caps, refill, result links, vector lifecycle and legacy collision migration. It does not establish semantic superiority, remove the need for source-quality review, or implement Corpus v2. The changes are source-tree work until separately reviewed/merged/released.
+
+### Reproduction receipt
+
+The sanitized receipt [`evidence/2026-08-10-corpus-v1-ranking-live.json`](evidence/2026-08-10-corpus-v1-ranking-live.json) records:
+
+- both exact English query strings and `top_k=8`;
+- before/after source distributions and every returned title, span, score and timestamp URL;
+- the four video IDs, 64-chunk count and embedding model;
+- base commit plus exact SHA-256 hashes for the three runtime source files and both frozen test files;
+- the full-suite, build and twine commands/results;
+- successful 64-vector legacy-table migration;
+- explicit `secrets_included=false` and `railway_modified=false`.
+
+Receipt SHA-256: `319f60489b79f290fbe2c312e1ecafc2bceb4169fefdb760bafd851dc074be56`.
+
 ## Bounded Recommendation for Corpus v2
 
 1. Keep the immutable timestamped transcript as canonical source.

@@ -2,7 +2,9 @@
 
 from contextlib import contextmanager
 
+import hashlib
 import json
+import math
 import os
 import re
 import sqlite3
@@ -28,7 +30,69 @@ def _validate_corpus_id(corpus_id: str) -> None:
 
 
 def _vec_table(corpus_id: str) -> str:
+    """Return a collision-resistant SQL identifier for one corpus vector table."""
+    _validate_corpus_id(corpus_id)
+    digest = hashlib.sha256(corpus_id.encode("utf-8")).hexdigest()[:32]
+    return f"vec_{digest}"
+
+
+def _legacy_vec_table(corpus_id: str) -> str:
+    """Return the pre-hash v1 table name used by released databases."""
+    _validate_corpus_id(corpus_id)
     return f"vec_{corpus_id.replace('-', '_')}"
+
+
+def _table_exists(conn: sqlite3.Connection, table: str) -> bool:
+    return conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (table,)
+    ).fetchone() is not None
+
+
+def _legacy_vec_dimension(conn: sqlite3.Connection, table: str) -> int:
+    row = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name=?", (table,)
+    ).fetchone()
+    if not row or not row[0]:
+        raise RuntimeError(f"Could not inspect legacy vector table {table}")
+    match = re.search(
+        r"vec0\s*\(\s*embedding\s+float\[(\d+)\]\s*\)",
+        row[0],
+        flags=re.IGNORECASE,
+    )
+    if not match:
+        raise RuntimeError(f"Could not determine vector dimension for {table}")
+    dimension = int(match.group(1))
+    if dimension < 1:
+        raise RuntimeError(f"Invalid vector dimension for {table}")
+    return dimension
+
+
+def _migrate_legacy_vec_tables(conn: sqlite3.Connection) -> None:
+    """Split legacy dash/underscore tables into collision-free per-corpus tables."""
+    groups: dict[str, list[str]] = {}
+    for (corpus_id,) in conn.execute(
+        "SELECT corpus_id FROM corpora ORDER BY corpus_id"
+    ).fetchall():
+        groups.setdefault(_legacy_vec_table(corpus_id), []).append(corpus_id)
+
+    for legacy_table, corpus_ids in groups.items():
+        if not _table_exists(conn, legacy_table):
+            continue
+        dimension = _legacy_vec_dimension(conn, legacy_table)
+        for corpus_id in corpus_ids:
+            target_table = _vec_table(corpus_id)
+            conn.execute(
+                f"CREATE VIRTUAL TABLE IF NOT EXISTS {target_table} "
+                f"USING vec0(embedding float[{dimension}])"
+            )
+            conn.execute(
+                f"INSERT OR REPLACE INTO {target_table} (rowid, embedding) "
+                f"SELECT v.rowid, v.embedding FROM {legacy_table} v "
+                "JOIN corpus_chunks c ON c.id = v.rowid "
+                "WHERE c.corpus_id = ?",
+                (corpus_id,),
+            )
+        conn.execute(f"DROP TABLE {legacy_table}")
 
 
 def _get_conn() -> sqlite3.Connection:
@@ -38,6 +102,7 @@ def _get_conn() -> sqlite3.Connection:
         sqlite_vec.load(conn)
         conn.enable_load_extension(False)
         conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("BEGIN IMMEDIATE")
         conn.execute(
             "CREATE TABLE IF NOT EXISTS corpora ("
             "corpus_id TEXT PRIMARY KEY, label TEXT, embedding_model TEXT, "
@@ -56,11 +121,22 @@ def _get_conn() -> sqlite3.Connection:
         )
         conn.execute(
             "CREATE TABLE IF NOT EXISTS corpus_added_videos ("
-            "corpus_id TEXT, video_id TEXT, added_at REAL, PRIMARY KEY(corpus_id, video_id))"
+            "corpus_id TEXT, video_id TEXT, added_at REAL, title TEXT, "
+            "PRIMARY KEY(corpus_id, video_id))"
         )
+        added_video_columns = {
+            row[1]
+            for row in conn.execute(
+                "PRAGMA table_info(corpus_added_videos)"
+            ).fetchall()
+        }
+        if "title" not in added_video_columns:
+            conn.execute("ALTER TABLE corpus_added_videos ADD COLUMN title TEXT")
+        _migrate_legacy_vec_tables(conn)
         conn.commit()
         return conn
     except Exception:
+        conn.rollback()
         conn.close()
         raise
 
@@ -213,12 +289,14 @@ def corpus_add(
     video_id: str,
     segments: list[dict],
     force_reembed: bool = False,
+    title: str | None = None,
 ) -> dict:
     """Add a transcript to a user-managed corpus. Idempotent."""
     _validate_corpus_id(corpus_id)
     current_model = os.environ.get(
         "TUBE_BRIDGE_EMBEDDING_MODEL", "BAAI/bge-small-en-v1.5"
     )
+    normalized_title = title.strip() if isinstance(title, str) and title.strip() else None
 
     # Validate before CPU-heavy embedding without holding a database lock.
     with _connection() as conn:
@@ -267,7 +345,8 @@ def corpus_add(
                 "embedding model."
             )
         existing = conn.execute(
-            "SELECT 1 FROM corpus_added_videos WHERE corpus_id=? AND video_id=?",
+            "SELECT title FROM corpus_added_videos "
+            "WHERE corpus_id=? AND video_id=?",
             (corpus_id, video_id),
         ).fetchone()
         if existing and not force_reembed:
@@ -277,7 +356,22 @@ def corpus_add(
                 "video_id": video_id,
                 "status": "already_indexed",
             }
+        stored_title = normalized_title or (existing[0] if existing else None)
+        vec_table = _vec_table(corpus_id)
         if force_reembed:
+            old_chunk_ids = [
+                old_row[0]
+                for old_row in conn.execute(
+                    "SELECT id FROM corpus_chunks "
+                    "WHERE corpus_id=? AND video_id=?",
+                    (corpus_id, video_id),
+                ).fetchall()
+            ]
+            if old_chunk_ids and _table_exists(conn, vec_table):
+                for chunk_id in old_chunk_ids:
+                    conn.execute(
+                        f"DELETE FROM {vec_table} WHERE rowid=?", (chunk_id,)
+                    )
             conn.execute(
                 "DELETE FROM corpus_chunks WHERE corpus_id=? AND video_id=?",
                 (corpus_id, video_id),
@@ -287,7 +381,6 @@ def corpus_add(
                 (corpus_id, video_id),
             )
 
-        vec_table = _vec_table(corpus_id)
         for chunk, embedding in zip(chunks, embeddings):
             conn.execute(
                 "INSERT INTO corpus_chunks "
@@ -312,8 +405,9 @@ def corpus_add(
                 (chunk_id, json.dumps(embedding)),
             )
         conn.execute(
-            "INSERT OR REPLACE INTO corpus_added_videos VALUES (?, ?, ?)",
-            (corpus_id, video_id, time.time()),
+            "INSERT OR REPLACE INTO corpus_added_videos "
+            "(corpus_id,video_id,added_at,title) VALUES (?, ?, ?, ?)",
+            (corpus_id, video_id, time.time(), stored_title),
         )
         conn.commit()
 
@@ -325,9 +419,55 @@ def corpus_add(
     }
 
 
+def _search_candidate_limit(*, top_k: int, total_chunks: int) -> int:
+    """Bound ranking work while over-fetching enough candidates for diversity."""
+    return min(total_chunks, max(top_k * 8, top_k + 32))
+
+
+def _intervals_overlap(left: dict, right: dict) -> bool:
+    """Return true only when two same-video timestamp intervals overlap."""
+    if left["video_id"] != right["video_id"]:
+        return False
+    if None in (left["start_ts"], left["end_ts"], right["start_ts"], right["end_ts"]):
+        return False
+    return max(left["start_ts"], right["start_ts"]) < min(
+        left["end_ts"], right["end_ts"]
+    )
+
+
+def _rank_search_candidates(candidates: list[dict], top_k: int) -> list[dict]:
+    """Deduplicate overlaps, cap dominant videos, then deterministically refill."""
+    deduplicated: list[dict] = []
+    for candidate in candidates:
+        if any(_intervals_overlap(candidate, kept) for kept in deduplicated):
+            continue
+        deduplicated.append(candidate)
+
+    if len({candidate["video_id"] for candidate in deduplicated}) <= 1:
+        return deduplicated[:top_k]
+
+    max_per_video = math.ceil(top_k / 2)
+    selected: list[dict] = []
+    deferred: list[dict] = []
+    source_counts: dict[str, int] = {}
+    for candidate in deduplicated:
+        video_id = candidate["video_id"]
+        if source_counts.get(video_id, 0) < max_per_video and len(selected) < top_k:
+            selected.append(candidate)
+            source_counts[video_id] = source_counts.get(video_id, 0) + 1
+        else:
+            deferred.append(candidate)
+
+    if len(selected) < top_k:
+        selected.extend(deferred[: top_k - len(selected)])
+    return selected
+
+
 def corpus_search(corpus_id: str, query: str, top_k: int = 10) -> dict:
-    """Semantic search within a corpus."""
+    """Semantic search with overlap deduplication and source-aware ranking."""
     _validate_corpus_id(corpus_id)
+    if isinstance(top_k, bool) or not isinstance(top_k, int) or not 1 <= top_k <= 50:
+        raise ValueError("top_k must be an integer between 1 and 50")
     current_model = os.environ.get(
         "TUBE_BRIDGE_EMBEDDING_MODEL", "BAAI/bge-small-en-v1.5"
     )
@@ -342,9 +482,21 @@ def corpus_search(corpus_id: str, query: str, top_k: int = 10) -> dict:
                 f"Corpus '{corpus_id}' uses '{row[0]}' but current model is "
                 f"'{current_model}'. Delete and recreate the corpus with the new model."
             )
+        total_chunks = conn.execute(
+            "SELECT COUNT(*) FROM corpus_chunks WHERE corpus_id=?", (corpus_id,)
+        ).fetchone()[0]
+
+    if total_chunks == 0:
+        return {
+            "corpus_id": corpus_id,
+            "query": query,
+            "total_results": 0,
+            "chunks": [],
+        }
 
     embedding = _embed([query])[0]
     vec_table = _vec_table(corpus_id)
+    candidate_k = _search_candidate_limit(top_k=top_k, total_chunks=total_chunks)
     with _connection() as conn:
         conn.execute("BEGIN IMMEDIATE")
         row = conn.execute(
@@ -361,28 +513,62 @@ def corpus_search(corpus_id: str, query: str, top_k: int = 10) -> dict:
             f"CREATE VIRTUAL TABLE IF NOT EXISTS {vec_table} "
             f"USING vec0(embedding float[{len(embedding)}])"
         )
+        serialized_embedding = json.dumps(embedding)
         results = conn.execute(
             f"""
-            SELECT c.id, c.video_id, c.start_ts, c.end_ts, c.text, v.distance
+            SELECT c.id, c.video_id, c.start_ts, c.end_ts, c.text,
+                   av.title, v.distance
             FROM {vec_table} v
             JOIN corpus_chunks c ON c.id = v.rowid
+            LEFT JOIN corpus_added_videos av
+              ON av.corpus_id = c.corpus_id AND av.video_id = c.video_id
             WHERE v.embedding MATCH ? AND c.corpus_id = ? AND k = ?
-            ORDER BY v.distance
+            ORDER BY v.distance, c.video_id, c.start_ts, c.id
             """,
-            (json.dumps(embedding), corpus_id, top_k),
+            (serialized_embedding, corpus_id, candidate_k),
         ).fetchall()
+        if (
+            candidate_k < total_chunks
+            and len(results) == candidate_k
+            and len(results) > 1
+            and results[-1][6] == results[-2][6]
+        ):
+            # sqlite-vec chooses the KNN set before outer ORDER BY tie-breaks.
+            # Only for a saturated observed boundary tie, rescore locally stored
+            # vectors with the equivalent L2 scalar and apply stable SQL ordering.
+            results = conn.execute(
+                f"""
+                SELECT c.id, c.video_id, c.start_ts, c.end_ts, c.text,
+                       av.title, vec_distance_l2(v.embedding, ?) AS distance
+                FROM {vec_table} v
+                JOIN corpus_chunks c ON c.id = v.rowid
+                LEFT JOIN corpus_added_videos av
+                  ON av.corpus_id = c.corpus_id AND av.video_id = c.video_id
+                WHERE c.corpus_id = ?
+                ORDER BY distance, c.video_id, c.start_ts, c.id
+                LIMIT ?
+                """,
+                (serialized_embedding, corpus_id, candidate_k),
+            ).fetchall()
         conn.commit()
 
-    chunks = [
-        {
-            "video_id": row[1],
-            "start_ts": row[2],
-            "end_ts": row[3],
-            "text": row[4],
-            "score": round(1.0 - row[5], 4) if row[5] is not None else 0.0,
-        }
-        for row in results
-    ]
+    candidates = []
+    for row in results:
+        video_url = f"https://youtube.com/watch?v={row[1]}"
+        start_seconds = max(0, int(row[2] or 0))
+        candidates.append(
+            {
+                "video_id": row[1],
+                "title": row[5],
+                "video_url": video_url,
+                "timestamp_url": f"{video_url}&t={start_seconds}s",
+                "start_ts": row[2],
+                "end_ts": row[3],
+                "text": row[4],
+                "score": round(1.0 - row[6], 4) if row[6] is not None else 0.0,
+            }
+        )
+    chunks = _rank_search_candidates(candidates, top_k)
     return {
         "corpus_id": corpus_id,
         "query": query,
