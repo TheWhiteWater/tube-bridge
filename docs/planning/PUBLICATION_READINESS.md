@@ -1,7 +1,7 @@
 # Publication Readiness — tube-bridge
 
 **Last updated:** 2026-08-10
-**Status:** v1.1.0 is published and independently verified across GitHub Release, PyPI and GHCR. The Agent Plugin preview is live as a GitHub Release asset. Railway was not deployed or modified.
+**Status:** v1.1.1 is the Operator-authorized Corpus v1 ranking patch candidate. Publication requires complete local, independent, hosted and downloaded-artifact PASS. v1.1.0 remains immutable. Railway is outside the release surface.
 
 ## Public Surface
 
@@ -14,7 +14,19 @@ The only public product is the MIT self-hosted MCP distributed through:
 
 Users deploy their own instance and own credentials, storage, quota, retention, auth, availability and compliance. Agent Plugins v1 does not standardize dependency installation; the preview bundle requires an operator-prepared Python 3.12+ environment and ffmpeg.
 
-## v1.1.0 Gates
+## v1.1.1 Patch Gates
+
+| # | Area | Priority | Status | Evidence |
+|---|---|:---:|---|---|
+| P1 | Corpus v1 behavior | P0 | Resolved | Frozen ranking suites, 211-test preflight and fresh four-video/64-chunk live rerun pass: all four sources represented, strict overlap suppressed, titles and timestamp URLs present. |
+| P2 | Release identity and supersession | P0 | In progress | ADR-005 and frozen `test_v1_1_1_release_contract.py` bind exact 1.1.1 package/plugin/server/docs identity and preserve v1.1.0 receipts. |
+| P3 | Complete release candidate | P0 | Pending | Requires full 218-test suite, build/twine, clean install, plugin ZIP, artifact scanners and Docker boundary. |
+| P4 | Independent and Station audit | P0 | Pending | Requires P0=0/P1=0 and Station conformance PASS for the exact candidate commit. |
+| P5 | Public publication | P0 | Pending | Tag workflow must publish GitHub/PyPI/GHCR and all four jobs must pass. |
+| P6 | Downloaded artifacts | P0 | Pending | GitHub/PyPI byte equality, clean official-PyPI install, pulled GHCR and public plugin ZIP must pass. |
+| P7 | Railway isolation | P0 | Resolved | No Railway deployment or configuration is authorized; workflow contains leak scanners only. |
+
+## Historical v1.1.0 Gates
 
 | # | Area | Priority | Status | Evidence |
 |---|---|:---:|---|---|
@@ -47,7 +59,7 @@ Users deploy their own instance and own credentials, storage, quota, retention, 
 
 ## Private Operator Railway
 
-The existing Railway service remains personal infrastructure and was not a v1.1.0 launch surface. It was not deployed, modified, or advertised by this release. Its hostname and credentials are not published as a demo.
+The existing Railway service remains personal infrastructure and is not a v1.1.1 launch surface. It is not deployed, modified, or advertised by this release. Its hostname and credentials are not published as a demo.
 
 ## Historical Supersession
 
@@ -56,7 +68,8 @@ The existing Railway service remains personal infrastructure and was not a v1.1.
 - ADR-003 and WI-00060 own the active self-hosted-only transition.
 - WI-00067 records the accepted v1.0.3 release; v1.1.0 preserves that history.
 - ADR-004 records v1.1.0 test-hash supersession without rewriting prior manifests.
+- ADR-005 records the v1.1.1 patch contract and preserves v1.1.0 artifact evidence.
 
 ## Exit Rule
 
-Closed. Branch/merge CI, tag release workflow, GitHub assets, PyPI wheel/sdist, pulled GHCR MCP, public Agent Plugin ZIP, checksums, secret/private-metadata scans and independent artifact hashes all pass. Railway remains explicitly outside the release surface.
+v1.1.1 remains blocked until branch/merge CI, tag release workflow, GitHub assets, PyPI wheel/sdist, pulled GHCR MCP, public Agent Plugin ZIP, checksums, secret/private-metadata scans and independent artifact hashes all pass. Railway remains explicitly outside the release surface.

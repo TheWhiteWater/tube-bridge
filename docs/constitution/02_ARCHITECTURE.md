@@ -183,9 +183,9 @@ Two-layer cache for transcripts and video metadata:
 
 1. One catalog defines all 17 registered tool schemas and HELP metadata; a separate dispatcher is contract-tested against the same 17-name set.
 2. Package documentation and the synchronous installed `tube_bridge.cli:main` entrypoint are verified from an isolated wheel.
-3. The active tree has 211 deterministic tests, preserving core/release/privacy gates and adding frame, plugin, subtitle, Corpus v2, and Corpus v1 ranking/migration/rollback contracts. `test_tools.py` remains optional live smoke.
+3. The active tree has 218 deterministic tests, preserving core/release/privacy gates and adding frame, plugin, subtitle, Corpus v2, and Corpus v1 ranking/migration/rollback contracts. `test_tools.py` remains optional live smoke.
 4. Wheel+sdist/twine, exact dependency lock, Docker MCP handshake, SQLite lifecycle contracts and final hosted Python 3.12/3.13 CI for the ADR-003 transition pass.
-5. v1.1.0 GitHub/PyPI/GHCR publication and downloaded-artifact verification are complete; the Agent Plugin preview is a GitHub Release asset and no hosted-demo gate exists.
+5. v1.1.1 is the authorized Corpus v1 ranking patch for GitHub/PyPI/GHCR; v1.1.0 publication evidence remains immutable, the Agent Plugin preview remains a GitHub Release asset, and no hosted-demo gate exists.
 
 ADR-003 is the active product authority. ADR-001's hosted-demo clauses and ADR-002 are superseded but remain preserved as historical documents and Git/Station evidence.
 

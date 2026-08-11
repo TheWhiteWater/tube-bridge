@@ -4,7 +4,7 @@
 
 17 tools. 14 without API key. 3 with optional YouTube Data API v3 key.
 
-`v1.1.0` adds bounded timestamp-to-JPEG extraction, deterministic default-language subtitle selection, and a portable Agent Plugin preview for evidence-oriented research.
+`v1.1.1` adds audited Corpus v1 overlap deduplication, source-aware ranking, titles, and canonical timestamp URLs to the 17-tool self-hosted runtime introduced in v1.1.0.
 
 [![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://python.org)
 [![MCP](https://img.shields.io/badge/MCP-1.28.1-green.svg)](https://modelcontextprotocol.io)
@@ -32,7 +32,7 @@ docker run --rm -p 8080:8080 ghcr.io/thewhitewater/tube-bridge:latest
 
 ## Agent Plugin Preview
 
-The v1.1.0 GitHub Release includes `tube-bridge-agent-plugin-1.1.0.zip`, a portable Agent Plugins v1 bundle with:
+The v1.1.1 GitHub Release includes `tube-bridge-agent-plugin-1.1.1.zip`, a portable Agent Plugins v1 bundle with:
 
 - one discoverable `tube-bridge-research` skill;
 - the 17-tool local stdio MCP configuration;
@@ -110,7 +110,7 @@ export YOUTUBE_API_KEY="your-key-here"
 
 Semantic search over YouTube transcripts using local embeddings. Useful for research workflows — build a corpus of videos on a topic and search across them.
 
-The ranking behavior below describes the current source tree after the immutable public v1.1.0 artifacts. It requires a future separately authorized patch release before it is available from PyPI/GHCR.
+The ranking behavior below is included in the public v1.1.1 self-hosted release. Historical v1.1.0 artifacts remain immutable.
 
 ```
 corpus_create("ai-agents", "AI Agents Research")     # Named corpus
@@ -212,7 +212,7 @@ python3 server.py --http --port 8080 --host 0.0.0.0
 
 ### Current State
 - **MIT self-hosted library** — 17 MCP tools, all transports, cache/corpus logic.
-- **Current release: v1.1.0** — published and independently downloaded/verified from GitHub Release, PyPI, and public GHCR. Evidence is recorded in `docs/planning/PUBLICATION_READINESS.md`.
+- **Current release: v1.1.1** — self-hosted patch release across GitHub Release, PyPI, and public GHCR. Publication evidence is recorded in `docs/planning/PUBLICATION_READINESS.md`; historical v1.1.0 artifacts remain immutable.
 - **No hosted demo** — the project does not provide public hosted access, tester invites, accounts, managed storage, or an SLA. Install it yourself to evaluate it.
 
 ### Full Publication Scope
@@ -236,7 +236,7 @@ The self-hosted runtime is published through GitHub Release, PyPI, and GHCR. The
 python3 test_tools.py
 ```
 
-This remains an optional live smoke against YouTube. Formal acceptance uses `python3 -m pytest tests -q`; the source-tree suite contains 211 deterministic tests, preserving the release/privacy gates and adding frame, plugin, subtitle-selection, Corpus v2, Corpus v1 ranking, migration and rollback contracts. Hosted GitHub Actions CI runs on Python 3.12 and 3.13.
+This remains an optional live smoke against YouTube. Formal acceptance uses `python3 -m pytest tests -q`; the source-tree suite contains 218 deterministic tests, preserving the release/privacy gates and adding frame, plugin, subtitle-selection, Corpus v2, Corpus v1 ranking, migration and rollback contracts. Hosted GitHub Actions CI runs on Python 3.12 and 3.13.
 
 ## Known Limitations
 

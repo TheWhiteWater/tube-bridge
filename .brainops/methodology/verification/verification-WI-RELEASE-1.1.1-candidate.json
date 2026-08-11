@@ -1,0 +1,51 @@
+{
+  "kind": "brainops.verification",
+  "version": "0.1",
+  "project": "tube-bridge",
+  "work_item_id": "WI-RELEASE-1.1.1-20260811",
+  "release_target": "v1.1.1",
+  "status": "local_candidate_passed_publication_pending",
+  "scope": "Publish already-merged Corpus v1 ranking/result hardening as an immutable self-hosted patch release.",
+  "non_scope": [
+    "Corpus v2 runtime or cutover",
+    "embedding or multilingual retrieval changes",
+    "private Railway deployment or configuration",
+    "rewriting or yanking v1.1.0"
+  ],
+  "frozen_contract": {
+    "test": "tests/test_v1_1_1_release_contract.py",
+    "sha256": "74a65ea72d04162eee68d9d5f4ed1c66828ae124e4eb4ce3273a435244567c2d",
+    "manifest": ".brainops/methodology/frozen-tests/frozen-20260810182216-test_v1_1_1_release_contract.py.json",
+    "independent_contract_audit": "PASS; P0=0; P1=0"
+  },
+  "verification": {
+    "pre_version_bump_full_suite": "211 passed in 42.22s using disposable release-tools Python",
+    "focused_release_and_ranking": "30 passed",
+    "full_release_candidate_suite": "218 passed in 41.91s",
+    "station_bounded_suite": "204 passed in 9.29s",
+    "build": "PASS",
+    "twine": "PASS",
+    "artifact_scanner": "wheel, sdist and plugin ZIP PASS",
+    "isolated_hash_locked_install": "version 1.1.1; 17 tools; pip check PASS",
+    "docker": "health/auth/MCP 17-tool and exact /app boundary PASS",
+    "fresh_live_corpus": "four videos/64 chunks; both 8-hit queries represent all four sources; no strict same-video overlap; titles and canonical timestamp URLs PASS"
+  },
+  "local_artifacts": {
+    "tube_bridge-1.1.1-py3-none-any.whl": "sha256:45accdd16251451f01515db69d880c18efe9cc52859808ccfacf2d7cf66c725b",
+    "tube_bridge-1.1.1.tar.gz": "sha256:73cf70ecef7a59d3fad76cd759ca9cc6d352a40ef53813d4405ed4fae420157e",
+    "tube-bridge-agent-plugin-1.1.1.zip": "sha256:b8793471942908849fca6592ed9fddca8f9431bc9328ac5e323cadc2462d5147"
+  },
+  "live_evidence": {
+    "path": "docs/research/evidence/2026-08-11-corpus-v1.1.1-live.json",
+    "sha256": "9ae01f58ae315f91b11a0e89d620e74d06b3369b394f9e8180c2f7dad347d81a"
+  },
+  "environment_notes": [
+    "An initial full-suite invocation without TUBE_BRIDGE_RELEASE_TOOLS_PYTHON produced 208 passes and three build-tool setup failures; the contract-required disposable release-tools rerun passed 211/211 before version changes.",
+    "A --system-site-packages pip check exposed unrelated global Kali package conflicts; the true isolated hash-locked environment passed pip check.",
+    "A first Docker verifier expected a non-contract health version field; corrected checks used the public health schema and MCP initialization version."
+  ],
+  "publication": "pending exact candidate commit, hosted CI, Station conformance and tag workflow",
+  "railway": "not_deployed_or_modified",
+  "created_by_agent_id": "W-1244",
+  "created_session_id": "S-01240"
+}

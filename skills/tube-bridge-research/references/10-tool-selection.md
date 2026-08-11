@@ -32,7 +32,7 @@ When `lang` is omitted, the runtime stays in the inferred original/default langu
 
 ## Local corpus operations
 
-> **Release boundary:** title capture, overlap deduplication, source caps, refill and timestamp URLs below describe the current source tree after public v1.1.0. Immutable PyPI/GHCR v1.1.0 artifacts retain the earlier flat result behavior until a separately authorized patch release.
+> **Release boundary:** title capture, overlap deduplication, source caps, refill and timestamp URLs below are included in public v1.1.1. Immutable v1.1.0 artifacts retain the earlier flat result behavior.
 
 - `corpus_create`: create a named local corpus with one embedding model.
 - `corpus_add`: fetch, chunk, and embed a selected video transcript; capture a title only when already present in local metadata cache; idempotent unless forced.

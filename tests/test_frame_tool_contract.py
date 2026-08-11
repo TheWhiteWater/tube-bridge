@@ -30,8 +30,8 @@ def test_frame_tool_minor_version_is_coherent_across_runtime_and_plugin():
     root = Path(__file__).resolve().parents[1]
     project = tomllib.loads((root / "pyproject.toml").read_text())["project"]
     plugin = json.loads((root / "plugin.json").read_text())
-    assert project["version"] == plugin["version"] == HELP_TEXT["version"] == "1.1.0"
-    assert server.create_initialization_options().server_version == "1.1.0"
+    assert project["version"] == plugin["version"] == HELP_TEXT["version"] == "1.1.1"
+    assert server.create_initialization_options().server_version == "1.1.1"
 
 
 def test_frame_tool_schema_is_single_image_and_bounded():

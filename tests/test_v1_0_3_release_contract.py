@@ -12,7 +12,7 @@ from tube_bridge.server import HELP_TEXT
 
 ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_VERSION = "1.0.3"
-DEVELOPMENT_VERSION = "1.1.0"
+DEVELOPMENT_VERSION = "1.1.1"
 SCANNER = ROOT / "scripts/verify-release-artifacts.py"
 DEPLOY_FIELD = "_".join(("deploy", "url"))
 RAILWAY_SUFFIX = "." + ".".join(("railway", "app"))

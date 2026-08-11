@@ -49,6 +49,7 @@ An accepted ADR records architecture authority; implementation still requires th
 | [ADR-002](../adr/002-demo-oauth-test-identity.md) | **Superseded** | OAuth/tester design is retired. |
 | [ADR-003](../adr/003-self-hosted-only-private-operator-railway.md) | **Accepted / active** | Only the self-hosted MCP is public; Operator Railway is private static-Bearer infrastructure. |
 | [ADR-004](../adr/004-v1.1.0-release-test-contract-supersession.md) | **Accepted / release-specific** | v1.1.0 supersedes historical test-hash authority while preserving all prior manifests as evidence. |
+| [ADR-005](../adr/005-v1.1.1-release-contract.md) | **Accepted / release-specific** | v1.1.1 publishes the audited Corpus v1 ranking payload without Railway deployment or Corpus v2 cutover. |
 
 ## Active Product Rule
 

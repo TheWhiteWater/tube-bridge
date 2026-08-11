@@ -15,7 +15,7 @@ Best for:
 
 ## Current corpus search
 
-> **Release boundary:** this section describes the current source tree after public v1.1.0. Immutable PyPI/GHCR v1.1.0 artifacts do not yet include the ranking and result-metadata hardening; publishing it requires a separately authorized patch release.
+> **Release boundary:** the ranking and result-metadata hardening in this section is included in public v1.1.1. Immutable v1.1.0 artifacts retain the earlier flat result behavior.
 
 `corpus_search` performs dense retrieval over flat overlapping windows, then suppresses same-video timestamp overlap and limits first-pass source domination before deterministic refill. Hits include source title when cached plus canonical video and timestamp URLs. Use it to locate candidate spans across indexed videos.
 

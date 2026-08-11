@@ -1,7 +1,7 @@
 # Project Vision — tube-bridge
 
 **Last updated:** 2026-08-10
-**Status:** Published MIT self-hosted MCP. v1.1.0 is externally verified across GitHub, PyPI and GHCR; the Agent Plugin preview is a GitHub Release asset. There is no public hosted demo.
+**Status:** Published MIT self-hosted MCP. v1.1.1 is the operator-authorized Corpus v1 ranking patch across GitHub, PyPI and GHCR; the Agent Plugin preview remains a GitHub Release asset. There is no public hosted demo.
 
 ## North Star
 
@@ -64,10 +64,10 @@ Browser Claude Custom Connector is not a supported target for this private insta
 
 ## Current Evidence
 
-- Current public release: `v1.1.0`, 17 tools, including bounded ephemeral frame extraction. The source tree keeps the same tool surface and may contain separately gated, unreleased hardening after that immutable release.
+- Current public release: `v1.1.1`, 17 tools, including bounded ephemeral frame extraction and audited Corpus v1 overlap deduplication, source-aware ranking, titles and canonical timestamp URLs. Historical v1.1.0 artifacts remain immutable.
 - GitHub Release additionally distributes the Agent Plugin preview with one research skill, methodology, examples, templates, and the frozen but not-yet-runtime Corpus v2 contract.
 - Original core freeze: 125 deterministic tests.
-- Active tree: 211 deterministic tests, including frame extraction/tool, Agent Plugin, Corpus v2 storage, subtitle selection, Corpus v1 ranking/migration/rollback, distribution, retirement/privacy, and historical release contracts.
+- Active tree: 218 deterministic tests, including frame extraction/tool, Agent Plugin, Corpus v2 storage, subtitle selection, Corpus v1 ranking/migration/rollback, distribution, retirement/privacy, and historical release contracts.
 - Wheel/sdist, `twine check`, isolated install, installed CLI/MCP, Docker runtime, PyPI, GitHub Release, public GHCR, and hosted Python 3.12/3.13 CI are verification surfaces.
 - `test_tools.py` remains an optional live YouTube smoke, not a deterministic gate.
 

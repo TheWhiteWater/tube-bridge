@@ -1,6 +1,6 @@
 # AGENTS.md — tube-bridge
 
-**Project:** Self-hosted YouTube MCP server — v1.1.0, 17 tools, plus Agent Plugin preview
+**Project:** Self-hosted YouTube MCP server — v1.1.1, 17 tools, plus Agent Plugin preview
 **Stack:** Python 3.12+, MCP 1.28.1, yt-dlp, youtube-transcript-api, SQLite, sqlite-vec, fastembed
 **License:** MIT
 
@@ -87,13 +87,13 @@ Pi and Claude Code CLI may use the Operator's private Railway service because th
 
 - `test_tools.py` is optional live smoke only.
 - Original core freeze: 125 tests.
-- Active source-tree suite: 211 deterministic tests, including frame, plugin, subtitle, Corpus v2, Corpus v1 ranking/migration/rollback, distribution, retirement/privacy, and historical release contracts.
+- Active source-tree suite: 218 deterministic tests, including frame, plugin, subtitle, Corpus v2, Corpus v1 ranking/migration/rollback, distribution, retirement/privacy, and historical release contracts.
 - Source/test changes require RED, independent contract audit, frozen SHA-256, GREEN, independent source audit, and hosted CI.
 - Do not modify a frozen test after source work begins; use an audited addendum or superseding product ADR.
 - Build/release verification uses a disposable tools environment when system Python lacks `build`/`twine`.
 
 ## Publication
 
-Current public release `v1.1.0` is verified across GitHub, PyPI and GHCR as the self-hosted-only 17-tool runtime. GitHub additionally carries the Agent Plugin preview bundle; dependency bootstrap remains operator-managed. Historical `v1.0.0`–`v1.0.3` artifacts remain immutable, unyanked release history.
+Current public release `v1.1.1` adds audited Corpus v1 ranking/result hardening to the self-hosted-only 17-tool runtime across GitHub, PyPI and GHCR. GitHub additionally carries the Agent Plugin preview bundle; dependency bootstrap remains operator-managed. Historical `v1.0.0`–`v1.1.0` artifacts remain immutable, unyanked release history.
 
 Public documentation must describe self-hosting only. Do not advertise Railway demo access, hosted retention, tester invites, OAuth, accounts, billing, managed quota, or uptime guarantees.
