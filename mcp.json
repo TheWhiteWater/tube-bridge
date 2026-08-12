@@ -1,0 +1,17 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "tube-bridge": {
+      "type": "stdio",
+      "command": "python3",
+      "args": [
+        "-m",
+        "tube_bridge.cli"
+      ],
+      "env": {
+        "TUBE_BRIDGE_CACHE": "${PLUGIN_DATA}/cache"
+      },
+      "cwd": "${PLUGIN_ROOT}"
+    }
+  }
+}

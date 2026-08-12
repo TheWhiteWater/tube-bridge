@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Runtime data
+*.db
+.cache/
+.tube_bridge*/
+plugin-dist/
+
+# Local configuration and credentials
+.env
+.env.*
+
+# Local automation and private operator work
+.brainops/
+.hermes/
+.tme/
+operator/
