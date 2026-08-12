@@ -1,0 +1,258 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: read
+
+jobs:
+  verify-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Verify public source boundary
+        run: python scripts/check-public-tree.py
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - name: Verify tag matches package version
+        run: |
+          python - <<'PY'
+          import os
+          import pathlib
+          import tomllib
+
+          project = tomllib.loads(pathlib.Path("pyproject.toml").read_text())["project"]
+          if project["name"] != "tube-bridge":
+              raise SystemExit(f"unexpected project identity: {project['name']!r}")
+          tag = os.environ["GITHUB_REF_NAME"]
+          if tag != f"v{project['version']}":
+              raise SystemExit(f"tag {tag!r} does not match package version {project['version']!r}")
+          PY
+      - name: Install exact runtime dependencies
+        run: python -m pip install --require-hashes -r requirements-release.txt
+      - name: Install project and exact release tooling
+        run: |
+          python -m pip install --no-deps .
+          python -m pip install setuptools==83.0.0 wheel==0.47.0 pytest==9.0.2 pytest-asyncio==1.3.0 pytest-mock==3.15.1 build==1.5.0 twine==7.0.0
+      - name: Frozen test suite
+        run: python -m pytest tests -q
+      - name: Build and validate distributions
+        run: |
+          python -m build --no-isolation
+          python -m twine check dist/*
+          python - <<'PY'
+          import email.parser
+          import pathlib
+          import tarfile
+          import zipfile
+
+          import tomllib
+
+          project = tomllib.loads(pathlib.Path("pyproject.toml").read_text())["project"]
+          version = project["version"]
+          wheel_name = f"tube_bridge-{version}-py3-none-any.whl"
+          sdist_name = f"tube_bridge-{version}.tar.gz"
+          expected = {wheel_name, sdist_name}
+          files = {path.name for path in pathlib.Path("dist").iterdir() if path.is_file()}
+          if files != expected:
+              raise SystemExit(f"unexpected release artifacts: {sorted(files)!r}")
+
+          with zipfile.ZipFile(pathlib.Path("dist") / wheel_name) as archive:
+              metadata = archive.read(f"tube_bridge-{version}.dist-info/METADATA").decode()
+          wheel_meta = email.parser.Parser().parsestr(metadata)
+
+          with tarfile.open(pathlib.Path("dist") / sdist_name, "r:gz") as archive:
+              member = archive.extractfile(f"tube_bridge-{version}/PKG-INFO")
+              if member is None:
+                  raise SystemExit("sdist PKG-INFO is missing")
+              sdist_meta = email.parser.Parser().parsestr(member.read().decode())
+
+          for label, parsed in (("wheel", wheel_meta), ("sdist", sdist_meta)):
+              if parsed["Name"] != "tube-bridge" or parsed["Version"] != version:
+                  raise SystemExit(
+                      f"{label} identity mismatch: {parsed['Name']!r} {parsed['Version']!r}"
+                  )
+          PY
+      - name: Verify self-hosted-only artifact content
+        run: python scripts/verify-release-artifacts.py dist/*
+      - name: Build and verify Agent Plugin preview bundle
+        run: |
+          python scripts/build-agent-plugin.py --output-dir plugin-dist
+          python scripts/verify-release-artifacts.py plugin-dist/*
+          python - <<'PY'
+          import json
+          import pathlib
+          import tomllib
+          import zipfile
+
+          version = tomllib.loads(pathlib.Path("pyproject.toml").read_text())["project"]["version"]
+          archive_path = pathlib.Path("plugin-dist") / f"tube-bridge-agent-plugin-{version}.zip"
+          root = f"tube-bridge-agent-plugin-{version}"
+          with zipfile.ZipFile(archive_path) as archive:
+              names = set(archive.namelist())
+              manifest = json.loads(archive.read(f"{root}/plugin.json"))
+          required = {
+              f"{root}/plugin.json",
+              f"{root}/mcp.json",
+              f"{root}/skills/tube-bridge-research/SKILL.md",
+              f"{root}/tube_bridge/server.py",
+              f"{root}/requirements-release.txt",
+          }
+          if not required <= names:
+              raise SystemExit(f"Agent Plugin bundle is incomplete: {sorted(required - names)!r}")
+          if manifest.get("version") != version:
+              raise SystemExit("Agent Plugin bundle version mismatch")
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: python-distributions
+          path: dist/
+          if-no-files-found: error
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: agent-plugin-preview
+          path: plugin-dist/
+          if-no-files-found: error
+
+  publish-pypi:
+    needs: verify-and-build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: python-distributions
+          path: dist/
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
+
+  publish-container:
+    needs: verify-and-build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - name: Log in to GHCR
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Generate image metadata
+        id: meta
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
+        with:
+          images: ghcr.io/thewhitewater/tube-bridge
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest
+      - name: Build release candidate image
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          load: true
+          push: false
+          tags: tube-bridge-release-candidate:${{ github.sha }}
+          labels: ${{ steps.meta.outputs.labels }}
+      - name: Inspect release candidate image boundary
+        run: |
+          docker run --rm -i --entrypoint python tube-bridge-release-candidate:${{ github.sha }} - <<'PY'
+          from pathlib import Path
+
+          root = Path("/app")
+          required = {
+              "LICENSE", "README.md", "pyproject.toml",
+              "requirements-release.txt", "tube_bridge",
+          }
+          names = {path.name for path in root.iterdir()}
+          missing = required - names
+          if missing:
+              raise SystemExit(f"runtime image missing required paths: {sorted(missing)!r}")
+          unexpected = names - required
+          if unexpected:
+              raise SystemExit(f"runtime image contains unexpected top-level paths: {sorted(unexpected)!r}")
+          forbidden = {
+              ".git", ".github", ".brainops", ".tme", ".hermes", "operator",
+              "docs", "skills", "tests", "plugin.json", "mcp.json",
+              "server.py", "test_tools.py", "CONTRIBUTING.md", "SECURITY.md",
+          }
+          leaked = names & forbidden
+          if leaked:
+              raise SystemExit(f"runtime image contains repository-only paths: {sorted(leaked)!r}")
+
+          import re
+          secret_patterns = (
+              re.compile(rb"sk-[A-Za-z0-9_-]{20,}"),
+              re.compile(rb"AIza[0-9A-Za-z_-]{30,}"),
+              re.compile(rb"Bearer\s+[A-Za-z0-9._~+/-]{20,}", re.IGNORECASE),
+              re.compile(rb"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----"),
+              re.compile(rb"/home/[A-Za-z0-9._-]+/"),
+              re.compile(rb"/Users/[A-Za-z0-9._-]+/"),
+          )
+          findings = []
+          for path in root.rglob("*"):
+              if not path.is_file() or "site-packages" in path.parts:
+                  continue
+              content = path.read_bytes()
+              if any(pattern.search(content) for pattern in secret_patterns):
+                  findings.append(str(path))
+          if findings:
+              raise SystemExit(f"runtime image secret/private-marker scan failed: {findings!r}")
+          PY
+      - name: Publish inspected image
+        env:
+          RELEASE_TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          while IFS= read -r tag; do
+            test -n "$tag" || continue
+            docker tag tube-bridge-release-candidate:${{ github.sha }} "$tag"
+            docker push "$tag"
+          done <<< "$RELEASE_TAGS"
+
+  github-release:
+    needs:
+      - publish-pypi
+      - publish-container
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: python-distributions
+          path: dist/
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: agent-plugin-preview
+          path: plugin-dist/
+      - name: Generate public artifact checksums
+        run: |
+          (cd dist && sha256sum *) > SHA256SUMS
+          (cd plugin-dist && sha256sum *) >> SHA256SUMS
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
+        with:
+          body_path: docs/releases/${{ github.ref_name }}.md
+          files: |
+            dist/*
+            plugin-dist/*
+            SHA256SUMS
