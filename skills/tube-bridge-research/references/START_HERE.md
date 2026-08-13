@@ -8,7 +8,7 @@ The package contains:
 
 - `plugin.json`: portable plugin identity and version
 - `mcp.json`: local stdio MCP launch contract
-- `tube_bridge/`: the released 17-tool v1.1.2 runtime
+- `tube_bridge/`: the released 17-tool v1.1.3 runtime
 - `SKILL.md`: the canonical research workflow and routing map
 - `references/`: doctrine and operating detail loaded on demand
 - `assets/templates/`: reusable research records

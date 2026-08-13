@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import re
 import tomllib
 
 from tube_bridge.server import HELP_TEXT, VERSION, server
@@ -11,7 +12,7 @@ from tube_bridge.server import HELP_TEXT, VERSION, server
 
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY_NAME = "io.github.TheWhiteWater/tube-bridge"
-RELEASE_VERSION = "1.1.2"
+RELEASE_VERSION = "1.1.3"
 PUBLISHER_VERSION = "1.8.1"
 PUBLISHER_SHA256 = "a06c9096dcb9727c13555b6be26c7effa707b01f06a4c561ba7a3635443cf2cc"
 
@@ -96,6 +97,17 @@ def test_package_and_container_prove_registry_ownership() -> None:
     )
 
 
+def test_readme_auth_example_cannot_be_mistaken_for_a_bearer_secret() -> None:
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    bearer_literal = re.compile(
+        r"Bearer\s+[A-Za-z0-9._~+/-]{20,}",
+        re.IGNORECASE,
+    )
+
+    assert bearer_literal.search(readme) is None
+    assert '"Authorization": "Bearer <your-key>"' in readme
+
+
 def test_release_workflow_publishes_registry_metadata_after_pypi() -> None:
     workflow = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
 
@@ -110,9 +122,9 @@ def test_release_workflow_publishes_registry_metadata_after_pypi() -> None:
 
 
 def test_release_notes_describe_metadata_only_scope() -> None:
-    notes = (ROOT / "docs/releases/v1.1.2.md").read_text(encoding="utf-8")
+    notes = (ROOT / "docs/releases/v1.1.3.md").read_text(encoding="utf-8")
 
-    assert notes.startswith("# tube-bridge v1.1.2\n")
+    assert notes.startswith("# tube-bridge v1.1.3\n")
     assert REGISTRY_NAME in notes
     assert "no MCP tool or runtime behavior changes" in notes
-    assert "pip install tube-bridge==1.1.2" in notes
+    assert "pip install tube-bridge==1.1.3" in notes
