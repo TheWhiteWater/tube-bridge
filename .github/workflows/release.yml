@@ -136,6 +136,54 @@ jobs:
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
 
+  publish-mcp-registry:
+    needs: publish-pypi
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Wait for verified PyPI metadata
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import time
+          import urllib.error
+          import urllib.request
+
+          version = os.environ["GITHUB_REF_NAME"].removeprefix("v")
+          marker = "mcp-name: io.github.TheWhiteWater/tube-bridge"
+          url = f"https://pypi.org/pypi/tube-bridge/{version}/json"
+          for attempt in range(30):
+              try:
+                  with urllib.request.urlopen(url, timeout=15) as response:
+                      payload = json.load(response)
+                  if payload["info"]["version"] == version and marker in payload["info"]["description"]:
+                      print(f"PyPI metadata for {version} is ready")
+                      break
+              except (KeyError, OSError, urllib.error.HTTPError, json.JSONDecodeError):
+                  pass
+              if attempt == 29:
+                  raise SystemExit(f"PyPI metadata for {version} did not converge")
+              time.sleep(10)
+          PY
+      - name: Install checksum-pinned MCP publisher
+        run: |
+          curl --fail --location --silent --show-error \
+            --output mcp-publisher.tar.gz \
+            https://github.com/modelcontextprotocol/registry/releases/download/v1.8.1/mcp-publisher_linux_amd64.tar.gz
+          echo "a06c9096dcb9727c13555b6be26c7effa707b01f06a4c561ba7a3635443cf2cc  mcp-publisher.tar.gz" | sha256sum --check --strict
+          tar -xzf mcp-publisher.tar.gz mcp-publisher
+          ./mcp-publisher --version
+      - name: Authenticate to official MCP Registry
+        run: ./mcp-publisher login github-oidc
+      - name: Publish to official MCP Registry
+        run: ./mcp-publisher publish server.json
+
   publish-container:
     needs: verify-and-build
     runs-on: ubuntu-latest
@@ -189,7 +237,7 @@ jobs:
               raise SystemExit(f"runtime image contains unexpected top-level paths: {sorted(unexpected)!r}")
           forbidden = {
               ".git", ".github", ".brainops", ".tme", ".hermes", "operator",
-              "docs", "skills", "tests", "plugin.json", "mcp.json",
+              "docs", "skills", "tests", "plugin.json", "mcp.json", "server.json",
               "server.py", "test_tools.py", "CONTRIBUTING.md", "SECURITY.md",
           }
           leaked = names & forbidden
@@ -229,6 +277,7 @@ jobs:
     needs:
       - publish-pypi
       - publish-container
+      - publish-mcp-registry
     runs-on: ubuntu-latest
     permissions:
       contents: write
