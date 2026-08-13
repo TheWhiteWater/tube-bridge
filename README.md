@@ -83,7 +83,7 @@ Then configure the client header:
       "type": "http",
       "url": "https://your-host.example/mcp",
       "headers": {
-        "Authorization": "Bearer choose-a-long-random-value"
+        "Authorization": "Bearer <your-key>"
       }
     }
   }
