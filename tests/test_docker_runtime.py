@@ -37,7 +37,7 @@ def test_docker_image_serves_authenticated_mcp():
     dockerignore = (PROJECT_ROOT / ".dockerignore").read_text().splitlines()
     for required_exclusion in {
         ".git", ".env", ".env.*", ".brainops", ".hermes", ".tme", "operator",
-        "docs", "skills", "tests", "plugin.json", "mcp.json", "dist", "plugin-dist",
+        "docs", "skills", "tests", "plugin.json", "mcp.json", "server.json", "dist", "plugin-dist",
     }:
         assert required_exclusion in dockerignore
 
@@ -60,7 +60,7 @@ def test_docker_image_serves_authenticated_mcp():
                     "required={'LICENSE','README.md','pyproject.toml','requirements-release.txt','tube_bridge'}; "
                     "assert names == required, f'unexpected image paths: {sorted(names-required)!r}'; "
                     "forbidden={'.git','.github','.brainops','.tme','.hermes','operator','docs','skills',"
-                    "'tests','plugin.json','mcp.json','server.py','test_tools.py',"
+                    "'tests','plugin.json','mcp.json','server.json','server.py','test_tools.py',"
                     "'CONTRIBUTING.md','SECURITY.md'}; "
                     "leaked=names & forbidden; "
                     "assert not leaked, f'repository-only image paths: {sorted(leaked)!r}'"

@@ -1,0 +1,44 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.TheWhiteWater/tube-bridge",
+  "title": "tube-bridge",
+  "description": "YouTube MCP server for search, transcripts, frames, comments, channels, and local semantic corpora.",
+  "repository": {
+    "url": "https://github.com/TheWhiteWater/tube-bridge",
+    "source": "github"
+  },
+  "websiteUrl": "https://github.com/TheWhiteWater/tube-bridge#readme",
+  "version": "1.1.2",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "registryBaseUrl": "https://pypi.org",
+      "identifier": "tube-bridge",
+      "version": "1.1.2",
+      "runtimeHint": "uvx",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "YOUTUBE_API_KEY",
+          "description": "Optional YouTube Data API v3 key for comments, channel tools, and higher-quality search.",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "TUBE_BRIDGE_PROXY",
+          "description": "Optional HTTP(S) or SOCKS proxy URL for yt-dlp and transcript requests.",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "TUBE_BRIDGE_CACHE",
+          "description": "Optional directory for cache and corpus databases.",
+          "isRequired": false,
+          "format": "filepath"
+        }
+      ]
+    }
+  ]
+}

@@ -1,5 +1,7 @@
 # tube-bridge
 
+<!-- mcp-name: io.github.TheWhiteWater/tube-bridge -->
+
 **Self-hosted YouTube MCP server for AI agents.**
 
 Search YouTube, inspect videos and channels, fetch transcripts and comments, extract timestamped frames, and build local semantic-search corpora.
@@ -27,6 +29,12 @@ docker run --rm -p 8080:8080 ghcr.io/thewhitewater/tube-bridge:latest
 ```
 
 The HTTP MCP endpoint is `http://localhost:8080/mcp`.
+
+### Official MCP Registry
+
+Registry name: `io.github.TheWhiteWater/tube-bridge`
+
+Registry-aware clients can install the PyPI distribution with `uvx` and launch the stdio server without a hosted intermediary.
 
 ## MCP client configuration
 
