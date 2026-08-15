@@ -105,7 +105,7 @@ def test_plugin_manifest_targets_portable_v1_contract() -> None:
     assert manifest["$schema"] == PLUGIN_SCHEMA
     assert manifest["name"] == "tube-bridge"
     project = tomllib.loads((PROJECT_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
-    assert manifest["version"] == project["project"]["version"] == "1.1.3"
+    assert manifest["version"] == project["project"]["version"] == "1.1.4"
     assert manifest["license"] == "MIT"
 
 
@@ -276,14 +276,14 @@ def test_release_builder_emits_complete_bounded_plugin_zip(tmp_path: Path) -> No
     )
     assert completed.returncode == 0, completed.stderr
 
-    archive_path = tmp_path / "tube-bridge-agent-plugin-1.1.3.zip"
+    archive_path = tmp_path / "tube-bridge-agent-plugin-1.1.4.zip"
     assert archive_path.is_file()
-    root = "tube-bridge-agent-plugin-1.1.3"
+    root = "tube-bridge-agent-plugin-1.1.4"
     with zipfile.ZipFile(archive_path) as archive:
         names = set(archive.namelist())
         manifest = json.loads(archive.read(f"{root}/plugin.json"))
 
-    assert manifest["version"] == "1.1.3"
+    assert manifest["version"] == "1.1.4"
     assert {
         f"{root}/LICENSE",
         f"{root}/README.md",

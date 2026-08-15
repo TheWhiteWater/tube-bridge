@@ -529,6 +529,26 @@ def test_ytdlp_deterministic_failures_are_not_retryable(
     assert error.retryable is expected_retryable
 
 
+@pytest.mark.parametrize(
+    "stderr",
+    [
+        "ERROR: HTTP Error 429 via https://proxy-user:proxy-password@proxy.example:8080",
+        "ERROR: Private video referenced from /var/tmp/private-user/request.txt",
+        "ERROR: Unsupported URL: https://example.invalid/?token=private-token",
+        "ERROR: Sign in to confirm your age for private-account@example.invalid",
+        "ERROR: extractor crashed at /var/tmp/private-user/cache.db",
+    ],
+)
+def test_ytdlp_failure_classifies_without_exposing_raw_stderr(stderr):
+    from tube_bridge.youtube.client import ytdlp_failure
+
+    public_message = "Could not fetch video"
+    error = ytdlp_failure(public_message, stderr)
+
+    assert str(error) == public_message
+    assert stderr not in str(error)
+
+
 def test_frame_ytdlp_exit_preserves_classification_without_stderr_leak(monkeypatch):
     from tube_bridge.youtube import frame
 
