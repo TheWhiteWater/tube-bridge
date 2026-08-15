@@ -1,10 +1,23 @@
 """tube-bridge — YouTube Data API v3 client (optional, requires YOUTUBE_API_KEY)."""
 
 import json
+import math
 import os
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 import urllib.error
 import urllib.parse
 import urllib.request
+
+from ..errors import (
+    ErrorSource,
+    InvalidArgumentError,
+    NotFoundError,
+    QuotaExceededError,
+    RateLimitedError,
+    TubeBridgeError,
+    UpstreamUnavailableError,
+)
 
 
 def get_api_key() -> str | None:
@@ -12,11 +25,88 @@ def get_api_key() -> str | None:
     return os.environ.get("YOUTUBE_API_KEY")
 
 
+_QUOTA_REASONS = {
+    "quotaExceeded",
+    "dailyLimitExceeded",
+    "dailyLimitExceededUnreg",
+}
+_RATE_LIMIT_REASONS = {"rateLimitExceeded", "userRateLimitExceeded"}
+_TRANSIENT_HTTP_STATUSES = {408, 425, 500, 502, 503, 504}
+
+
+def _retry_after_seconds(headers) -> int | None:
+    raw = headers.get("Retry-After") if headers is not None else None
+    if not raw:
+        return None
+    value = str(raw).strip()
+    if value.isdecimal():
+        seconds = int(value)
+        return seconds if seconds >= 1 else None
+    try:
+        retry_at = parsedate_to_datetime(value)
+        if retry_at.tzinfo is None:
+            retry_at = retry_at.replace(tzinfo=timezone.utc)
+        seconds = math.ceil((retry_at - datetime.now(timezone.utc)).total_seconds())
+        return seconds if seconds >= 1 else None
+    except (TypeError, ValueError, OverflowError):
+        return None
+
+
+def _error_fields(payload: object, default_status: int) -> tuple[int, str, str]:
+    if not isinstance(payload, dict):
+        return default_status, "", str(payload)
+    error = payload.get("error", payload)
+    if not isinstance(error, dict):
+        return default_status, "", str(error)
+    status = error.get("code", default_status)
+    try:
+        status = int(status)
+    except (TypeError, ValueError):
+        status = default_status
+    entries = error.get("errors")
+    reason = ""
+    if isinstance(entries, list) and entries and isinstance(entries[0], dict):
+        reason = str(entries[0].get("reason", ""))
+    return status, reason, str(error.get("message", "YouTube Data API request failed"))
+
+
+def _raise_api_error(
+    status: int,
+    reason: str,
+    message: str,
+    *,
+    retry_after_seconds: int | None = None,
+) -> None:
+    if status == 429 or reason in _RATE_LIMIT_REASONS:
+        raise RateLimitedError(
+            message,
+            source=ErrorSource.YOUTUBE_DATA_API,
+            retry_after_seconds=retry_after_seconds,
+        )
+    if reason in _QUOTA_REASONS:
+        raise QuotaExceededError(message)
+    if status == 404:
+        raise NotFoundError(message, source=ErrorSource.YOUTUBE_DATA_API)
+    if status == 400:
+        raise InvalidArgumentError(message, source=ErrorSource.YOUTUBE_DATA_API)
+    retryable = status in _TRANSIENT_HTTP_STATUSES
+    raise UpstreamUnavailableError(
+        message,
+        source=ErrorSource.YOUTUBE_DATA_API,
+        retryable=retryable,
+        retry_after_seconds=retry_after_seconds if retryable else None,
+    )
+
+
 def api_call(endpoint: str, params: dict) -> dict:
-    """Make a YouTube Data API v3 request. Raises RuntimeError with specific error codes."""
+    """Make a typed YouTube Data API v3 request."""
     key = get_api_key()
     if not key:
-        raise RuntimeError("YOUTUBE_API_KEY not set. Set it to enable API-powered features.")
+        raise UpstreamUnavailableError(
+            "YOUTUBE_API_KEY not set. Set it to enable API-powered features.",
+            source=ErrorSource.YOUTUBE_DATA_API,
+            retryable=False,
+        )
     params["key"] = key
     url = f"https://www.googleapis.com/youtube/v3/{endpoint}?{urllib.parse.urlencode(params)}"
     req = urllib.request.Request(url, headers={"Accept": "application/json"})
@@ -24,22 +114,34 @@ def api_call(endpoint: str, params: dict) -> dict:
         with urllib.request.urlopen(req, timeout=15) as resp:
             data = json.loads(resp.read())
             if "error" in data:
-                err = data["error"]
-                code = err.get("code", 0)
-                reason = err.get("errors", [{}])[0].get("reason", "")
-                if code == 403 and reason == "quotaExceeded":
-                    raise RuntimeError("QUOTA_EXCEEDED: YouTube Data API daily quota exhausted.")
-                raise RuntimeError(f"API_ERROR_{code}: {err.get('message', str(err))}")
+                status, reason, message = _error_fields(data, 0)
+                _raise_api_error(status, reason, message)
             return data
-    except urllib.error.HTTPError as e:
-        body = e.read().decode() if e.fp else ""
-        if "quotaExceeded" in body:
-            raise RuntimeError("QUOTA_EXCEEDED: YouTube Data API daily quota exhausted.")
-        raise RuntimeError(f"HTTP_{e.code}: {body[:200]}")
-    except RuntimeError:
+    except urllib.error.HTTPError as error:
+        body = error.read().decode(errors="replace") if error.fp else ""
+        try:
+            payload = json.loads(body) if body else {}
+        except json.JSONDecodeError:
+            payload = {"error": {"code": error.code, "message": body[:200]}}
+        status, reason, message = _error_fields(payload, error.code)
+        _raise_api_error(
+            status,
+            reason,
+            message,
+            retry_after_seconds=_retry_after_seconds(error.headers),
+        )
+    except TubeBridgeError:
         raise
-    except Exception as e:
-        raise RuntimeError(f"NETWORK_ERROR: {e}")
+    except urllib.error.URLError as error:
+        raise UpstreamUnavailableError(
+            f"YouTube Data API network error: {error.reason}",
+            source=ErrorSource.YOUTUBE_DATA_API,
+        ) from error
+    except Exception as error:
+        raise UpstreamUnavailableError(
+            f"YouTube Data API network error: {error}",
+            source=ErrorSource.YOUTUBE_DATA_API,
+        ) from error
 
 
 def search_videos(query: str, max_results: int = 10, **filters) -> dict:
@@ -158,7 +260,10 @@ def channel_info(channel_id: str) -> dict:
     })
     items = data.get("items", [])
     if not items:
-        raise RuntimeError(f"Channel not found: {channel_id}")
+        raise NotFoundError(
+            f"Channel not found: {channel_id}",
+            source=ErrorSource.YOUTUBE_DATA_API,
+        )
     ch = items[0]
     sn = ch.get("snippet", {})
     st = ch.get("statistics", {})
@@ -236,7 +341,10 @@ def get_video_info(video_id: str) -> dict:
     })
     items = data.get("items", [])
     if not items:
-        raise RuntimeError(f"Video not found: {video_id}")
+        raise NotFoundError(
+            f"Video not found: {video_id}",
+            source=ErrorSource.YOUTUBE_DATA_API,
+        )
     v = items[0]
     sn = v.get("snippet", {})
     st = v.get("statistics", {})

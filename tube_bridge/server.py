@@ -3,9 +3,17 @@
 import base64
 import json
 
+import jsonschema
 from mcp.server import Server
-from mcp.types import ImageContent, Tool, TextContent
+from mcp.types import CallToolResult, ImageContent, Tool, TextContent
 
+from .errors import (
+    ErrorSource,
+    InternalError,
+    InvalidArgumentError,
+    TubeBridgeError,
+    UpstreamUnavailableError,
+)
 from .tools import (
     search, search_channels,
     video_info, trending, channel_videos, playlist,
@@ -282,9 +290,36 @@ async def list_tools() -> list[Tool]:
     return list(TOOL_CATALOG)
 
 
-@server.call_tool()
-async def call_tool(name: str, arguments: dict) -> list[TextContent | ImageContent]:
+def _error_result(error: TubeBridgeError) -> CallToolResult:
+    return CallToolResult(
+        content=[
+            TextContent(
+                type="text",
+                text=json.dumps(error.to_payload(), ensure_ascii=False),
+            )
+        ],
+        isError=True,
+    )
+
+
+def _validate_arguments(name: str, arguments: dict) -> None:
+    tool = next((tool for tool in TOOL_CATALOG if tool.name == name), None)
+    if tool is None:
+        return
     try:
+        jsonschema.validate(instance=arguments, schema=tool.inputSchema)
+    except jsonschema.ValidationError as error:
+        raise InvalidArgumentError(
+            f"Input validation error: {error.message}"
+        ) from error
+
+
+@server.call_tool(validate_input=False)
+async def call_tool(
+    name: str, arguments: dict
+) -> list[TextContent | ImageContent] | CallToolResult:
+    try:
+        _validate_arguments(name, arguments)
         result = await _handle_tool(name, arguments)
         if isinstance(result, ExtractedFrame):
             metadata = {
@@ -312,15 +347,20 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent | ImageConte
                 ),
             ]
         return [TextContent(type="text", text=json.dumps(result, ensure_ascii=False, indent=2))]
-    except ValueError as e:
-        return [TextContent(type="text", text=json.dumps({"error": str(e)}, ensure_ascii=False))]
-    except RuntimeError as e:
-        return [TextContent(type="text", text=json.dumps({"error": str(e)}, ensure_ascii=False))]
+    except TubeBridgeError as error:
+        return _error_result(error)
+    except ValueError as error:
+        return _error_result(InvalidArgumentError(str(error)))
+    except RuntimeError as error:
+        return _error_result(
+            UpstreamUnavailableError(
+                str(error),
+                source=ErrorSource.TUBE_BRIDGE,
+                retryable=False,
+            )
+        )
     except Exception:
-        return [TextContent(
-            type="text",
-            text=json.dumps({"error": "Unexpected error"}, ensure_ascii=False),
-        )]
+        return _error_result(InternalError())
 
 
 async def _handle_tool(name: str, args: dict):

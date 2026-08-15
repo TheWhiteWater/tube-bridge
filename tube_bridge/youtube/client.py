@@ -6,6 +6,13 @@ import re
 import subprocess
 import time
 
+from ..errors import (
+    ErrorSource,
+    InvalidArgumentError,
+    NotFoundError,
+    RateLimitedError,
+    UpstreamUnavailableError,
+)
 from .models import VideoInfo
 
 
@@ -92,6 +99,28 @@ def run_ytdlp_multi(args: list[str], timeout: int = 60, retries: int = 2) -> tup
                 continue
             return [], last_stderr
     return [], last_stderr
+
+
+def ytdlp_failure(message: str, stderr: str = ""):
+    """Classify a final yt-dlp failure from its only structured surface: stderr."""
+    detail = stderr.strip()
+    normalized = detail.lower()
+    rendered = message + (f": {detail}" if detail else "")
+    if "http error 429" in normalized or "too many requests" in normalized:
+        return RateLimitedError(rendered, source=ErrorSource.YT_DLP)
+    if "video unavailable" in normalized or "private video" in normalized:
+        return NotFoundError(rendered, source=ErrorSource.YT_DLP)
+    if (
+        "unsupported url" in normalized
+        or "invalid url" in normalized
+        or "is not a valid url" in normalized
+    ):
+        return InvalidArgumentError(rendered, source=ErrorSource.YT_DLP)
+    if "sign in to confirm your age" in normalized or "age-restricted" in normalized:
+        return UpstreamUnavailableError(
+            rendered, source=ErrorSource.YT_DLP, retryable=False
+        )
+    return UpstreamUnavailableError(rendered, source=ErrorSource.YT_DLP)
 
 
 def extract_video_id(url_or_id: str) -> str:
