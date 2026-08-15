@@ -12,7 +12,7 @@ from tube_bridge.server import HELP_TEXT, VERSION, server
 
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY_NAME = "io.github.TheWhiteWater/tube-bridge"
-RELEASE_VERSION = "1.1.3"
+RELEASE_VERSION = "1.1.4"
 PUBLISHER_VERSION = "1.8.1"
 PUBLISHER_SHA256 = "a06c9096dcb9727c13555b6be26c7effa707b01f06a4c561ba7a3635443cf2cc"
 
@@ -121,10 +121,11 @@ def test_release_workflow_publishes_registry_metadata_after_pypi() -> None:
     assert "MCP_GITHUB_TOKEN" not in workflow
 
 
-def test_release_notes_describe_metadata_only_scope() -> None:
-    notes = (ROOT / "docs/releases/v1.1.3.md").read_text(encoding="utf-8")
+def test_release_notes_describe_typed_error_security_scope() -> None:
+    notes = (ROOT / "docs/releases/v1.1.4.md").read_text(encoding="utf-8")
 
-    assert notes.startswith("# tube-bridge v1.1.3\n")
+    assert notes.startswith("# tube-bridge v1.1.4\n")
     assert REGISTRY_NAME in notes
-    assert "no MCP tool or runtime behavior changes" in notes
-    assert "pip install tube-bridge==1.1.3" in notes
+    assert "CallToolResult(isError=True)" in notes
+    assert "raw yt-dlp stderr" in notes
+    assert "pip install tube-bridge==1.1.4" in notes
