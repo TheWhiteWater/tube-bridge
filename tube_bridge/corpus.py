@@ -14,6 +14,7 @@ from typing import Any
 import sqlite_vec
 
 from .cache import CACHE_DIR
+from .errors import ErrorSource, InvalidArgumentError, NotFoundError
 
 DB_PATH = CACHE_DIR / "corpus.db"
 
@@ -304,14 +305,16 @@ def corpus_add(
             "SELECT embedding_model FROM corpora WHERE corpus_id=?", (corpus_id,)
         ).fetchone()
         if not row:
-            raise RuntimeError(
-                f"Corpus '{corpus_id}' not found. Use corpus_create first."
+            raise NotFoundError(
+                f"Corpus '{corpus_id}' not found. Use corpus_create first.",
+                source=ErrorSource.LOCAL_CORPUS,
             )
         if row[0] != current_model:
-            raise RuntimeError(
+            raise InvalidArgumentError(
                 f"Corpus was created with '{row[0]}' but current model is "
                 f"'{current_model}'. All chunks in a corpus must use the same "
-                "embedding model."
+                "embedding model.",
+                source=ErrorSource.LOCAL_CORPUS,
             )
         existing = conn.execute(
             "SELECT 1 FROM corpus_added_videos WHERE corpus_id=? AND video_id=?",
@@ -335,14 +338,16 @@ def corpus_add(
             "SELECT embedding_model FROM corpora WHERE corpus_id=?", (corpus_id,)
         ).fetchone()
         if not row:
-            raise RuntimeError(
-                f"Corpus '{corpus_id}' not found. Use corpus_create first."
+            raise NotFoundError(
+                f"Corpus '{corpus_id}' not found. Use corpus_create first.",
+                source=ErrorSource.LOCAL_CORPUS,
             )
         if row[0] != current_model:
-            raise RuntimeError(
+            raise InvalidArgumentError(
                 f"Corpus was created with '{row[0]}' but current model is "
                 f"'{current_model}'. All chunks in a corpus must use the same "
-                "embedding model."
+                "embedding model.",
+                source=ErrorSource.LOCAL_CORPUS,
             )
         existing = conn.execute(
             "SELECT title FROM corpus_added_videos "
@@ -476,11 +481,15 @@ def corpus_search(corpus_id: str, query: str, top_k: int = 10) -> dict:
             "SELECT embedding_model FROM corpora WHERE corpus_id=?", (corpus_id,)
         ).fetchone()
         if not row:
-            raise RuntimeError(f"Corpus '{corpus_id}' not found.")
+            raise NotFoundError(
+                f"Corpus '{corpus_id}' not found.",
+                source=ErrorSource.LOCAL_CORPUS,
+            )
         if row[0] != current_model:
-            raise RuntimeError(
+            raise InvalidArgumentError(
                 f"Corpus '{corpus_id}' uses '{row[0]}' but current model is "
-                f"'{current_model}'. Delete and recreate the corpus with the new model."
+                f"'{current_model}'. Delete and recreate the corpus with the new model.",
+                source=ErrorSource.LOCAL_CORPUS,
             )
         total_chunks = conn.execute(
             "SELECT COUNT(*) FROM corpus_chunks WHERE corpus_id=?", (corpus_id,)
@@ -503,11 +512,15 @@ def corpus_search(corpus_id: str, query: str, top_k: int = 10) -> dict:
             "SELECT embedding_model FROM corpora WHERE corpus_id=?", (corpus_id,)
         ).fetchone()
         if not row:
-            raise RuntimeError(f"Corpus '{corpus_id}' not found.")
+            raise NotFoundError(
+                f"Corpus '{corpus_id}' not found.",
+                source=ErrorSource.LOCAL_CORPUS,
+            )
         if row[0] != current_model:
-            raise RuntimeError(
+            raise InvalidArgumentError(
                 f"Corpus '{corpus_id}' uses '{row[0]}' but current model is "
-                f"'{current_model}'. Delete and recreate the corpus with the new model."
+                f"'{current_model}'. Delete and recreate the corpus with the new model.",
+                source=ErrorSource.LOCAL_CORPUS,
             )
         conn.execute(
             f"CREATE VIRTUAL TABLE IF NOT EXISTS {vec_table} "

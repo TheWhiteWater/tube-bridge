@@ -4,7 +4,19 @@ import os
 from typing import Any
 
 from youtube_transcript_api import YouTubeTranscriptApi
-from youtube_transcript_api._errors import TranscriptsDisabled, NoTranscriptFound
+from youtube_transcript_api._errors import (
+    AgeRestricted,
+    NoTranscriptFound,
+    TranscriptsDisabled,
+    VideoUnavailable,
+)
+
+from ..errors import (
+    ErrorSource,
+    NotFoundError,
+    TranscriptUnavailableError,
+    UpstreamUnavailableError,
+)
 
 
 _api: Any = None
@@ -131,11 +143,22 @@ def get_transcript(video_id: str, lang: str | None = None) -> tuple[list[dict], 
     # indistinguishable, otherwise, from every other failure mode (IP block, network error,
     # proxy misconfiguration) -- all of which used to collapse into the same generic message.
     # Surface the real cause whenever it's something other than a confirmed absence of captions.
-    if last_error is not None and not isinstance(last_error, (TranscriptsDisabled, NoTranscriptFound)):
-        raise RuntimeError(
-            f"No transcript found for video {video_id}: {type(last_error).__name__}: {last_error}"
+    if isinstance(last_error, VideoUnavailable):
+        raise NotFoundError(
+            f"Video not found: {video_id}",
+            source=ErrorSource.YOUTUBE_TRANSCRIPT_API,
         ) from last_error
-    raise RuntimeError(f"No transcript found for video {video_id}")
+    if isinstance(last_error, AgeRestricted):
+        raise TranscriptUnavailableError(
+            f"Transcript unavailable for age-restricted video {video_id}"
+        ) from last_error
+    if last_error is not None and not isinstance(last_error, (TranscriptsDisabled, NoTranscriptFound)):
+        raise UpstreamUnavailableError(
+            f"No transcript found for video {video_id}: "
+            f"{type(last_error).__name__}: {last_error}",
+            source=ErrorSource.YOUTUBE_TRANSCRIPT_API,
+        ) from last_error
+    raise TranscriptUnavailableError(f"No transcript found for video {video_id}")
 
 
 def get_available_languages(video_id: str) -> list[dict]:
@@ -153,9 +176,20 @@ def get_available_languages(video_id: str) -> list[dict]:
         return langs
     except (TranscriptsDisabled, NoTranscriptFound):
         return []
+    except VideoUnavailable as e:
+        raise NotFoundError(
+            f"Video not found: {video_id}",
+            source=ErrorSource.YOUTUBE_TRANSCRIPT_API,
+        ) from e
+    except AgeRestricted as e:
+        raise TranscriptUnavailableError(
+            f"Transcript unavailable for age-restricted video {video_id}"
+        ) from e
     except Exception as e:
         # Same distinction as get_transcript: don't let a block/network failure masquerade
         # as "this video simply has no captions" (an empty list looks identical to callers).
-        raise RuntimeError(
-            f"Could not list transcript languages for video {video_id}: {type(e).__name__}: {e}"
+        raise UpstreamUnavailableError(
+            f"Could not list transcript languages for video {video_id}: "
+            f"{type(e).__name__}: {e}",
+            source=ErrorSource.YOUTUBE_TRANSCRIPT_API,
         ) from e

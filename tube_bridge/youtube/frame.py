@@ -9,11 +9,29 @@ import subprocess
 import tempfile
 import time
 
-from .client import extract_video_id, get_proxy
+from ..errors import ErrorCode, ErrorSource, TubeBridgeError
+from .client import extract_video_id, get_proxy, ytdlp_failure
 
 
-class FrameExtractionError(RuntimeError):
-    """Frame extraction failed after input validation."""
+class FrameExtractionError(TubeBridgeError):
+    """Typed frame extraction failure with sanitized public text."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        code: ErrorCode = ErrorCode.UPSTREAM_UNAVAILABLE,
+        source: ErrorSource = ErrorSource.TUBE_BRIDGE,
+        retryable: bool = False,
+        retry_after_seconds: int | None = None,
+    ) -> None:
+        super().__init__(
+            message,
+            code=code,
+            source=source,
+            retryable=retryable,
+            retry_after_seconds=retry_after_seconds,
+        )
 
 
 @dataclass(frozen=True)
@@ -177,10 +195,23 @@ def extract_frame(
                 env=download_environment,
             )
         except (OSError, subprocess.TimeoutExpired) as error:
-            raise FrameExtractionError("yt-dlp could not extract the requested clip") from error
-        if downloaded.returncode != 0:
             raise FrameExtractionError(
-                f"yt-dlp could not extract the requested clip (exit {downloaded.returncode})"
+                "yt-dlp could not extract the requested clip",
+                source=ErrorSource.YT_DLP,
+                retryable=isinstance(error, subprocess.TimeoutExpired),
+            ) from error
+        if downloaded.returncode != 0:
+            classified = ytdlp_failure(
+                "yt-dlp could not extract the requested clip",
+                downloaded.stderr or "",
+            )
+            raise FrameExtractionError(
+                f"yt-dlp could not extract the requested clip "
+                f"(exit {downloaded.returncode})",
+                code=classified.code,
+                source=classified.source,
+                retryable=classified.retryable,
+                retry_after_seconds=classified.retry_after_seconds,
             )
 
         clips = [
@@ -189,7 +220,10 @@ def extract_frame(
             if path.is_file() and path.suffix not in {".part", ".ytdl"}
         ]
         if len(clips) != 1:
-            raise FrameExtractionError("yt-dlp did not produce exactly one bounded clip")
+            raise FrameExtractionError(
+                "yt-dlp did not produce exactly one bounded clip",
+                source=ErrorSource.YT_DLP,
+            )
 
         render_command = [
             "ffmpeg",

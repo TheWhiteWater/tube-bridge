@@ -4,6 +4,7 @@ import asyncio
 import functools
 
 from . import cache
+from .errors import QuotaExceededError
 from .youtube import client as yt
 from .youtube import api, frame as frame_extractor, transcript as tr
 
@@ -26,11 +27,8 @@ async def search(query: str, limit: int, args: dict) -> dict:
                    and v is not None}
         try:
             return await asyncio.to_thread(api.search_videos, query, limit, **filters)
-        except RuntimeError as e:
-            if "QUOTA_EXCEEDED" in str(e):
-                pass
-            else:
-                raise
+        except QuotaExceededError:
+            pass
 
     limit = min(limit, 50)
     items, stderr = yt.run_ytdlp_multi([
@@ -54,15 +52,14 @@ async def search(query: str, limit: int, args: dict) -> dict:
             "upload_date": data.get("upload_date"),
         })
 
-    result = {
+    if stderr and not videos:
+        raise yt.ytdlp_failure(f"Could not search YouTube for {query!r}", stderr)
+    return {
         "query": query,
         "source": "yt-dlp (anonymous)",
         "total_results": len(videos),
         "videos": videos,
     }
-    if stderr and not videos:
-        result["_warning"] = stderr
-    return result
 
 
 async def search_channels(query: str, limit: int, args: dict) -> dict:
@@ -91,11 +88,8 @@ def _video_info_cached(video_id: str) -> dict:
             result = api.get_video_info(video_id)
             cache.set_video_info(video_id, result)
             return result
-        except RuntimeError as e:
-            if "QUOTA_EXCEEDED" in str(e):
-                pass
-            else:
-                raise
+        except QuotaExceededError:
+            pass
 
     # Fallback: yt-dlp
     url = f"https://youtube.com/watch?v={video_id}"
@@ -105,7 +99,9 @@ def _video_info_cached(video_id: str) -> dict:
     ], timeout=30)
 
     if not data:
-        raise RuntimeError(f"Could not fetch info for video {video_id}" + (f": {stderr}" if stderr else ""))
+        raise yt.ytdlp_failure(
+            f"Could not fetch info for video {video_id}", stderr
+        )
 
     info = yt.parse_video_info(data)
     result = info.to_dict()
@@ -135,9 +131,8 @@ def _trending_sync(limit: int) -> dict:
     if api.get_api_key():
         try:
             return api.get_trending(limit)
-        except RuntimeError as e:
-            if "QUOTA_EXCEEDED" not in str(e):
-                raise
+        except QuotaExceededError:
+            pass
 
     items, stderr = yt.run_ytdlp_multi([
         "https://www.youtube.com/results?search_query=trending&sp=CAMSBAgEEAE%253D",
@@ -156,14 +151,13 @@ def _trending_sync(limit: int) -> dict:
             "channel": data.get("channel") or data.get("uploader"),
         })
 
-    result = {
+    if stderr and not videos:
+        raise yt.ytdlp_failure("Could not fetch YouTube trending videos", stderr)
+    return {
         "source": "yt-dlp (trending page)",
         "total_results": len(videos),
         "videos": videos,
     }
-    if stderr and not videos:
-        result["_warning"] = stderr
-    return result
 
 
 # ---------------------------------------------------------------------------
@@ -204,15 +198,17 @@ def _channel_videos_sync(channel_url: str, limit: int) -> dict:
             "upload_date": data.get("upload_date"),
         })
 
+    if stderr and not videos:
+        raise yt.ytdlp_failure(
+            f"Could not fetch videos for channel {channel_url}", stderr
+        )
     result = {
         "channel": channel_name,
         "channel_url": channel_url,
         "total_videos": len(videos),
         "videos": videos,
     }
-    if stderr and not videos:
-        result["_warning"] = stderr
-    elif not videos and not stderr:
+    if not videos:
         result["_warning"] = "No videos found — channel may not exist or has no uploads"
     return result
 
@@ -247,15 +243,14 @@ def _playlist_sync(playlist_url: str, limit: int) -> dict:
             "channel": data.get("channel") or data.get("uploader"),
         })
 
-    result = {
+    if stderr and not videos:
+        raise yt.ytdlp_failure(f"Could not fetch playlist {playlist_url}", stderr)
+    return {
         "playlist_title": playlist_title,
         "playlist_url": playlist_url,
         "total_videos": len(videos),
         "videos": videos,
     }
-    if stderr and not videos:
-        result["_warning"] = stderr
-    return result
 
 
 # ---------------------------------------------------------------------------

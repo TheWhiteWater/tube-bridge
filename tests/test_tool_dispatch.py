@@ -13,6 +13,7 @@ All tests are offline — no live YouTube, embedding models, or Data API v3.
 import asyncio
 from unittest.mock import AsyncMock
 
+from mcp.types import CallToolResult
 import pytest
 
 
@@ -485,9 +486,12 @@ async def test_call_tool_returns_error_for_unknown_tool():
     from tube_bridge.server import call_tool
 
     result = await call_tool("unknown_tool_abc", {})
-    assert len(result) == 1
-    data = json.loads(result[0].text)
-    assert "error" in data
+    assert isinstance(result, CallToolResult)
+    assert result.isError is True
+    assert len(result.content) == 1
+    data = json.loads(result.content[0].text)
+    assert data["code"] == "invalid_argument"
+    assert data["source"] == "tube_bridge"
 
 
 @pytest.mark.asyncio
@@ -500,9 +504,13 @@ async def test_call_tool_returns_error_for_runtime_error(mocker):
                  side_effect=RuntimeError("simulated runtime failure"))
 
     result = await call_tool("corpus_list", {})
-    assert len(result) == 1
-    data = json.loads(result[0].text)
-    assert "error" in data
+    assert isinstance(result, CallToolResult)
+    assert result.isError is True
+    assert len(result.content) == 1
+    data = json.loads(result.content[0].text)
+    assert data["code"] == "upstream_unavailable"
+    assert data["source"] == "tube_bridge"
+    assert data["retryable"] is False
     assert "simulated runtime failure" in data["error"]
 
 
@@ -516,10 +524,16 @@ async def test_call_tool_returns_error_for_unexpected_exception(mocker):
                  side_effect=Exception("unexpected crash"))
 
     result = await call_tool("corpus_list", {})
-    assert len(result) == 1
-    data = json.loads(result[0].text)
-    assert "error" in data
-    assert "Unexpected error" in data["error"]
+    assert isinstance(result, CallToolResult)
+    assert result.isError is True
+    assert len(result.content) == 1
+    data = json.loads(result.content[0].text)
+    assert data == {
+        "error": "Unexpected error",
+        "code": "internal_error",
+        "source": "tube_bridge",
+        "retryable": False,
+    }
 
 
 # ---------------------------------------------------------------------------
