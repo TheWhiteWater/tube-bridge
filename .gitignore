@@ -9,6 +9,10 @@ dist/
 .venv/
 venv/
 
+# Node / Pi package development
+node_modules/
+.npm/
+
 # Runtime data
 *.db
 .cache/

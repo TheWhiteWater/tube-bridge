@@ -92,6 +92,26 @@ Create `.vscode/mcp.json`:
 codex mcp add tube-bridge -- uvx tube-bridge
 ```
 
+## Pi package
+
+Pi can load the package-relative adapter and the canonical `tube-bridge-research` skill from the same Git source:
+
+```bash
+python3 -m pip install tube-bridge
+pi install git:github.com/TheWhiteWater/tube-bridge
+pi list
+```
+
+This registers one status tool plus all 17 MCP tools with the `tube_bridge_` prefix. The adapter reads the existing `plugin.json` and `mcp.json`, launches only the local stdio runtime, preserves bounded text and image content, and forwards only an allowlisted child-process environment.
+
+The Pi package manager installs the Node adapter dependency but does not install Python or ffmpeg. Ensure the `python3` visible to Pi is Python 3.12+ with the tube-bridge dependencies installed; install `ffmpeg` separately to use `youtube_get_frame`. By default, Pi-managed state lives under the platform data directory; set `TUBE_BRIDGE_PI_DATA` to move that root. An explicit TUBE_BRIDGE_CACHE still takes precedence for the runtime databases. The optional live frame gate is `/tube-bridge-selftest frame`.
+
+Remove the package with:
+
+```bash
+pi remove git:github.com/TheWhiteWater/tube-bridge
+```
+
 If a desktop client cannot find `uvx`, replace `"uvx"` with the absolute path returned by `which uvx` on macOS/Linux or `where.exe uvx` on Windows.
 
 ## Try the complete research workflow
