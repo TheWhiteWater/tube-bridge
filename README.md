@@ -8,6 +8,7 @@ Search videos and channels, read transcripts and comments, extract timestamped f
 
 [![CI](https://github.com/TheWhiteWater/tube-bridge/actions/workflows/ci.yml/badge.svg)](https://github.com/TheWhiteWater/tube-bridge/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/tube-bridge.svg)](https://pypi.org/project/tube-bridge/)
+[![PyPI downloads](https://img.shields.io/pypi/dw/tube-bridge.svg)](https://pypistats.org/packages/tube-bridge)
 [![Python](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://python.org)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Glama](https://glama.ai/mcp/servers/TheWhiteWater/tube-bridge/badges/score.svg)](https://glama.ai/mcp/servers/TheWhiteWater/tube-bridge)

@@ -5,7 +5,7 @@ import json
 
 import jsonschema
 from mcp.server import Server
-from mcp.types import CallToolResult, ImageContent, Tool, TextContent
+from mcp.types import CallToolResult, ImageContent, Tool, ToolAnnotations, TextContent
 
 from .errors import (
     ErrorSource,
@@ -52,8 +52,58 @@ HELP_TEXT = {
 server = Server("tube-bridge", version=VERSION)
 
 
+def _annotations_for(name: str) -> ToolAnnotations:
+    if name.startswith("youtube_"):
+        return ToolAnnotations(
+            readOnlyHint=True,
+            destructiveHint=False,
+            idempotentHint=True,
+            openWorldHint=True,
+        )
+
+    profiles = {
+        "corpus_create": ToolAnnotations(
+            readOnlyHint=False,
+            destructiveHint=False,
+            idempotentHint=True,
+            openWorldHint=True,
+        ),
+        "corpus_add": ToolAnnotations(
+            readOnlyHint=False,
+            destructiveHint=True,
+            idempotentHint=False,
+            openWorldHint=True,
+        ),
+        "corpus_search": ToolAnnotations(
+            readOnlyHint=True,
+            destructiveHint=False,
+            idempotentHint=True,
+            openWorldHint=False,
+        ),
+        "corpus_list": ToolAnnotations(
+            readOnlyHint=True,
+            destructiveHint=False,
+            idempotentHint=True,
+            openWorldHint=False,
+        ),
+        "corpus_delete": ToolAnnotations(
+            readOnlyHint=False,
+            destructiveHint=True,
+            idempotentHint=True,
+            openWorldHint=False,
+        ),
+        "tube_bridge_help": ToolAnnotations(
+            readOnlyHint=True,
+            destructiveHint=False,
+            idempotentHint=True,
+            openWorldHint=False,
+        ),
+    }
+    return profiles[name]
+
+
 def _build_tools() -> list[Tool]:
-    return [
+    tools = [
         Tool(
             name="youtube_search",
             description="Search YouTube videos. Uses Data API v3 when YOUTUBE_API_KEY is set, falls back to yt-dlp. Filters: date range, channel, duration, order.",
@@ -108,7 +158,13 @@ def _build_tools() -> list[Tool]:
         ),
         Tool(
             name="youtube_get_trending",
-            description="Currently trending YouTube videos. Uses Data API v3 when key present, yt-dlp fallback.",
+            description=(
+                "List up to `limit` currently trending YouTube videos. Use this for "
+                "broad discovery, not keyword search. Read-only; uses Data API v3 when "
+                "`YOUTUBE_API_KEY` is set and otherwise a keyless yt-dlp fallback. "
+                "Returns source metadata and video records; results can change over time "
+                "and depend on upstream availability."
+            ),
             inputSchema={
                 "type": "object",
                 "properties": {"limit": {"type": "integer", "description": "Max results (default 10)", "default": 10}},
@@ -116,7 +172,13 @@ def _build_tools() -> list[Tool]:
         ),
         Tool(
             name="youtube_get_channel_videos",
-            description="Recent uploads from a YouTube channel.",
+            description=(
+                "List up to `limit` recent uploads from a known YouTube channel URL or "
+                "@handle. Use this for channel browsing, not keyword search or channel "
+                "metadata. Read-only and keyless; returns normalized channel metadata plus "
+                "video records. Empty results include a warning when the channel is missing "
+                "or has no uploads."
+            ),
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -128,7 +190,13 @@ def _build_tools() -> list[Tool]:
         ),
         Tool(
             name="youtube_get_playlist",
-            description="All videos in a YouTube playlist.",
+            description=(
+                "List up to `limit` videos from a known YouTube playlist URL in upstream "
+                "order. Use this for playlist contents, not channel uploads or keyword "
+                "search. Read-only and keyless; returns playlist metadata plus ordered video "
+                "records. Results are bounded and may fail when the playlist is private, "
+                "unavailable, or blocked upstream."
+            ),
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -186,7 +254,13 @@ def _build_tools() -> list[Tool]:
         ),
         Tool(
             name="youtube_get_comments",
-            description="Comments for a YouTube video. Requires YOUTUBE_API_KEY.",
+            description=(
+                "Retrieve up to `max_results` top-level comments for a known YouTube video. "
+                "Use this for audience reactions, not video metadata or transcripts. "
+                "Read-only and requires `YOUTUBE_API_KEY`; returns structured comment "
+                "records. Calls may fail when comments are disabled, the video is "
+                "unavailable, or Data API quota is exhausted."
+            ),
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -210,7 +284,14 @@ def _build_tools() -> list[Tool]:
         ),
         Tool(
             name="corpus_add",
-            description="Add a video transcript to a corpus. Auto-fetches transcript, chunks, and embeds. Idempotent: skip if already added.",
+            description=(
+                "Fetch a video's transcript, chunk it, and store local embeddings in an "
+                "existing corpus. Use this after `corpus_create`; it skips an "
+                "already-indexed video by default. `force_reembed=true` deletes and "
+                "replaces that video's existing local chunks and vectors. This modifies "
+                "local corpus data and may contact YouTube; returns indexing status and "
+                "chunk count."
+            ),
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -264,6 +345,10 @@ def _build_tools() -> list[Tool]:
                 "properties": {},
             },
         ),
+    ]
+    return [
+        tool.model_copy(update={"annotations": _annotations_for(tool.name)})
+        for tool in tools
     ]
 
 
