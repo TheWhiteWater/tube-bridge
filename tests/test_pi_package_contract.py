@@ -27,7 +27,7 @@ def test_pi_package_loads_the_canonical_extension_and_skill() -> None:
 
     assert package["name"] == "tube-bridge"
     assert package["private"] is True
-    assert package["version"] == plugin["version"] == project["project"]["version"] == "1.1.5"
+    assert package["version"] == plugin["version"] == project["project"]["version"] == "1.1.6"
     assert "pi-package" in package["keywords"]
     assert package["pi"] == {
         "extensions": ["./extensions/pi.ts"],
@@ -92,5 +92,5 @@ def test_pi_adapter_has_a_real_host_smoke() -> None:
     assert "tube_bridge_tube_bridge_help" in smoke
     assert "tube-bridge-reconnect" in smoke
     assert "tube-bridge-selftest" in smoke
-    assert "1.1.5" in smoke
+    assert "1.1.6" in smoke
     assert "session_shutdown" in smoke

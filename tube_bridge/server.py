@@ -24,7 +24,7 @@ from .tools import (
 from .youtube.client import extract_video_id
 from .youtube.frame import ExtractedFrame
 
-VERSION = "1.1.5"
+VERSION = "1.1.6"
 MAX_FRAME_IMAGE_DATA_CHARS = 2_000_000
 
 
