@@ -1,7 +1,7 @@
 {
   "name": "tube-bridge",
   "private": true,
-  "version": "1.1.5",
+  "version": "1.1.6",
   "description": "Public-only Pi package adapter for the self-hosted tube-bridge MCP and canonical research skill",
   "license": "MIT",
   "type": "module",

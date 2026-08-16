@@ -1,30 +1,15 @@
-"""Addendum contract for the immutable v1.1.5 metadata-quality patch."""
+"""Historical contract retained from the immutable v1.1.5 metadata patch."""
 
 from __future__ import annotations
 
 import json
 from pathlib import Path
-import tomllib
 
-from tube_bridge.server import HELP_TEXT, TOOL_CATALOG, VERSION, server
+from tube_bridge.server import TOOL_CATALOG
 
 
 ROOT = Path(__file__).resolve().parents[1]
-RELEASE_VERSION = "1.1.5"
 REGISTRY_NAME = "io.github.TheWhiteWater/tube-bridge"
-
-
-def test_v1_1_5_identity_is_consistent_across_public_metadata():
-    project = tomllib.loads((ROOT / "pyproject.toml").read_text())
-    plugin = json.loads((ROOT / "plugin.json").read_text())
-    registry = json.loads((ROOT / "server.json").read_text())
-
-    assert project["project"]["version"] == RELEASE_VERSION
-    assert plugin["version"] == RELEASE_VERSION
-    assert registry["version"] == RELEASE_VERSION
-    assert registry["packages"][0]["version"] == RELEASE_VERSION
-    assert VERSION == HELP_TEXT["version"] == RELEASE_VERSION
-    assert server.create_initialization_options().server_version == RELEASE_VERSION
 
 
 def test_v1_1_5_ships_the_public_tool_metadata_quality_contract():

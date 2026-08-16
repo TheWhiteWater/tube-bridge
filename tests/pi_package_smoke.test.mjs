@@ -18,7 +18,7 @@ test("portable config and package identity remain canonical", () => {
   const dataRoot = path.join(tmpdir(), "tube-bridge-pi-config");
   const server = loadPortableServerConfig(dataRoot);
 
-  assert.equal(loadPackageVersion(), "1.1.5");
+  assert.equal(loadPackageVersion(), "1.1.6");
   assert.equal(server.command, "python3");
   assert.deepEqual(server.args, ["-m", "tube_bridge.cli"]);
   assert.equal(server.cwd, fileURLToPath(new URL("..", import.meta.url)));
@@ -127,7 +127,7 @@ test("Pi host adapter discovers all MCP tools and preserves lifecycle commands",
       new AbortController().signal,
     );
     assert.equal(status.details.discoveredTools, 17);
-    assert.equal(status.details.version, "1.1.5");
+    assert.equal(status.details.version, "1.1.6");
 
     const help = await tools.get("tube_bridge_tube_bridge_help").execute(
       "help-call",
@@ -136,7 +136,7 @@ test("Pi host adapter discovers all MCP tools and preserves lifecycle commands",
     );
     const text = help.content.find((item) => item.type === "text")?.text;
     const payload = JSON.parse(text);
-    assert.equal(payload.version, "1.1.5");
+    assert.equal(payload.version, "1.1.6");
     assert.equal(payload.tools.length, 17);
   } finally {
     for (const handler of handlers.get("session_shutdown") ?? []) {
