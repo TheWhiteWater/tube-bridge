@@ -3,6 +3,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 
 import tubeBridgePiExtension, {
   buildSafeEnvironment,
@@ -20,7 +21,7 @@ test("portable config and package identity remain canonical", () => {
   assert.equal(loadPackageVersion(), "1.1.5");
   assert.equal(server.command, "python3");
   assert.deepEqual(server.args, ["-m", "tube_bridge.cli"]);
-  assert.match(server.cwd, /tube-bridge-pi-package\/?$/);
+  assert.equal(server.cwd, fileURLToPath(new URL("..", import.meta.url)));
   assert.equal(server.env.PLUGIN_ROOT, server.cwd);
   assert.equal(server.env.PLUGIN_DATA, dataRoot);
   assert.equal(server.env.TUBE_BRIDGE_CACHE, path.join(dataRoot, "cache"));
