@@ -1,0 +1,52 @@
+{
+  "name": "tube-bridge",
+  "private": true,
+  "version": "1.1.5",
+  "description": "Public-only Pi package adapter for the self-hosted tube-bridge MCP and canonical research skill",
+  "license": "MIT",
+  "type": "module",
+  "keywords": [
+    "pi-package",
+    "youtube",
+    "mcp",
+    "transcripts",
+    "research"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TheWhiteWater/tube-bridge.git"
+  },
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "scripts": {
+    "test:pi": "node --import tsx --test tests/pi_package_smoke.test.mjs"
+  },
+  "pi": {
+    "extensions": [
+      "./extensions/pi.ts"
+    ],
+    "skills": [
+      "./skills"
+    ]
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.30.0"
+  },
+  "devDependencies": {
+    "tsx": "4.23.12",
+    "typebox": "1.1.38"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "typebox": "*"
+  },
+  "peerDependenciesMeta": {
+    "@earendil-works/pi-coding-agent": {
+      "optional": true
+    },
+    "typebox": {
+      "optional": true
+    }
+  }
+}
