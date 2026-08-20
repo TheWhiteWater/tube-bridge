@@ -1,0 +1,155 @@
+{
+  "$schema": "https://raw.githubusercontent.com/modelcontextprotocol/mcpb/main/schemas/mcpb-manifest-v0.4.schema.json",
+  "manifest_version": "0.4",
+  "name": "tube-bridge",
+  "display_name": "tube-bridge",
+  "version": "1.1.6",
+  "description": "Self-hosted YouTube research MCP with 17 tools for discovery, transcripts, frames, comments, and local semantic corpora.",
+  "long_description": "tube-bridge runs as a self-hosted local stdio MCP server. It does not use a hosted tube-bridge service or managed corpus storage; transcripts, vectors, and indexes remain on the machine running the bundle.\n\nFourteen of 17 tools work without a YouTube Data API key. ffmpeg remains an external system dependency and is needed only for youtube_get_frame. The local embedding model may download on first use; later embedding inference runs locally after its assets are available.",
+  "author": {
+    "name": "TheWhiteWater",
+    "url": "https://github.com/TheWhiteWater"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TheWhiteWater/tube-bridge.git"
+  },
+  "homepage": "https://github.com/TheWhiteWater/tube-bridge",
+  "documentation": "https://github.com/TheWhiteWater/tube-bridge#readme",
+  "support": "https://github.com/TheWhiteWater/tube-bridge/issues",
+  "server": {
+    "type": "uv",
+    "entry_point": "server.py",
+    "mcp_config": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory",
+        "${__dirname}",
+        "server.py"
+      ],
+      "env": {
+        "YOUTUBE_API_KEY": "${user_config.YOUTUBE_API_KEY}",
+        "TUBE_BRIDGE_PROXY": "${user_config.TUBE_BRIDGE_PROXY}",
+        "TUBE_BRIDGE_CACHE": "${user_config.TUBE_BRIDGE_CACHE}"
+      }
+    }
+  },
+  "tools": [
+    {
+      "name": "youtube_search",
+      "description": "Search YouTube videos. Uses Data API v3 when YOUTUBE_API_KEY is set, falls back to yt-dlp. Filters: date range, channel, duration, order."
+    },
+    {
+      "name": "youtube_search_channels",
+      "description": "Search YouTube channels by name/topic. Returns subscriber counts, video counts, country. Requires YOUTUBE_API_KEY."
+    },
+    {
+      "name": "youtube_get_channel_info",
+      "description": "Detailed channel metadata: subscribers, views, videos, country, keywords. Requires YOUTUBE_API_KEY."
+    },
+    {
+      "name": "youtube_get_video_info",
+      "description": "Detailed metadata for a YouTube video: title, duration, views, channel, description, tags."
+    },
+    {
+      "name": "youtube_get_trending",
+      "description": "List up to `limit` currently trending YouTube videos. Use this for broad discovery, not keyword search. Read-only; uses Data API v3 when `YOUTUBE_API_KEY` is set and otherwise a keyless yt-dlp fallback. Returns source metadata and video records; results can change over time and depend on upstream availability."
+    },
+    {
+      "name": "youtube_get_channel_videos",
+      "description": "List up to `limit` recent uploads from a known YouTube channel URL or @handle. Use this for channel browsing, not keyword search or channel metadata. Read-only and keyless; returns normalized channel metadata plus video records. Empty results include a warning when the channel is missing or has no uploads."
+    },
+    {
+      "name": "youtube_get_playlist",
+      "description": "List up to `limit` videos from a known YouTube playlist URL in upstream order. Use this for playlist contents, not channel uploads or keyword search. Read-only and keyless; returns playlist metadata plus ordered video records. Results are bounded and may fail when the playlist is private, unavailable, or blocked upstream."
+    },
+    {
+      "name": "youtube_get_transcript",
+      "description": "Transcript/subtitles of a YouTube video. Uses the original/default language; manual > ASR within that language."
+    },
+    {
+      "name": "youtube_get_frame",
+      "description": "Extract one ephemeral JPEG near an integer-millisecond timestamp. Returns metadata plus MCP ImageContent; accuracy is best-effort at a decoded frame boundary."
+    },
+    {
+      "name": "youtube_get_available_languages",
+      "description": "Available subtitle languages for a video. Shows manual vs auto-generated."
+    },
+    {
+      "name": "youtube_get_comments",
+      "description": "Retrieve up to `max_results` top-level comments for a known YouTube video. Use this for audience reactions, not video metadata or transcripts. Read-only and requires `YOUTUBE_API_KEY`; returns structured comment records. Calls may fail when comments are disabled, the video is unavailable, or Data API quota is exhausted."
+    },
+    {
+      "name": "corpus_create",
+      "description": "Create a named corpus for semantic search over transcripts. Each corpus uses a fixed embedding model."
+    },
+    {
+      "name": "corpus_add",
+      "description": "Fetch a video's transcript, chunk it, and store local embeddings in an existing corpus. Use this after `corpus_create`; it skips an already-indexed video by default. `force_reembed=true` deletes and replaces that video's existing local chunks and vectors. This modifies local corpus data and may contact YouTube; returns indexing status and chunk count."
+    },
+    {
+      "name": "corpus_search",
+      "description": "Semantic search within a corpus. Deduplicates overlapping windows, limits source domination, and returns titles plus timestamp URLs."
+    },
+    {
+      "name": "corpus_list",
+      "description": "List all available corpora with chunk and video counts."
+    },
+    {
+      "name": "corpus_delete",
+      "description": "Delete a corpus and all its chunks/vectors permanently."
+    },
+    {
+      "name": "tube_bridge_help",
+      "description": "Get tube-bridge documentation: available tools, architecture, known limitations, API key setup."
+    }
+  ],
+  "keywords": [
+    "youtube",
+    "research",
+    "transcripts",
+    "video",
+    "semantic-search",
+    "corpus",
+    "local-first",
+    "mcp"
+  ],
+  "license": "MIT",
+  "privacy_policies": [
+    "https://policies.google.com/privacy"
+  ],
+  "compatibility": {
+    "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+    ],
+    "runtimes": {
+      "python": ">=3.12"
+    }
+  },
+  "user_config": {
+    "YOUTUBE_API_KEY": {
+      "type": "string",
+      "title": "YouTube Data API key (optional)",
+      "description": "Enables comments, channel search, channel details, and higher-quality Data API discovery.",
+      "sensitive": true,
+      "required": false
+    },
+    "TUBE_BRIDGE_PROXY": {
+      "type": "string",
+      "title": "Proxy URL (optional)",
+      "description": "HTTP(S) or SOCKS proxy URL for yt-dlp and transcript requests.",
+      "sensitive": true,
+      "required": false
+    },
+    "TUBE_BRIDGE_CACHE": {
+      "type": "directory",
+      "title": "Local data directory",
+      "description": "Directory for the local response cache, corpus databases, vectors, and indexes.",
+      "required": false,
+      "default": "${HOME}/.tube_bridge"
+    }
+  }
+}
