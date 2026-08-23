@@ -19,6 +19,8 @@ Search videos and channels, read transcripts and comments, extract timestamped f
 - **One tool for one frame:** return visual evidence near a transcript finding without keeping media files.
 - **Self-hosted and MIT:** no account, hosted intermediary, managed storage, or vendor lock-in.
 
+Thanks to everyone already using tube-bridge. If it saves you time, consider starring the repository — it helps others discover the project and signals that publishing more work like this is worthwhile.
+
 ## Connect in a minute
 
 The simplest setup uses [`uvx`](https://docs.astral.sh/uv/guides/tools/), which runs the published PyPI package in an isolated environment:
