@@ -31,3 +31,6 @@ tube-bridge = "tube_bridge.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["tube_bridge*"]
+
+[tool.setuptools.package-data]
+tube_bridge = ["research_templates/*.json"]

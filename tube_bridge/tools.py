@@ -1,10 +1,14 @@
 """tube-bridge — tool implementations (search, transcripts, discovery, comments)."""
 
 import asyncio
+from datetime import datetime, timezone
+from decimal import Decimal, ROUND_HALF_UP
 import functools
+import hashlib
+import json
 
 from . import cache
-from .errors import QuotaExceededError
+from .errors import QuotaExceededError, TubeBridgeError
 from .youtube import client as yt
 from .youtube import api, frame as frame_extractor, transcript as tr
 
@@ -396,3 +400,398 @@ async def corpus_list() -> dict:
 async def corpus_delete(corpus_id: str) -> dict:
     from . import corpus
     return await asyncio.to_thread(corpus.corpus_delete, corpus_id)
+
+
+# ---------------------------------------------------------------------------
+# User-filled research artifact preview
+# ---------------------------------------------------------------------------
+
+
+def _canonical_json_bytes(value: object) -> bytes:
+    return json.dumps(
+        value,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+
+
+def _source_ms(seconds: object) -> int:
+    value = Decimal(str(seconds or 0)) * Decimal(1000)
+    return int(value.quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+
+
+def _transcript_machine_fields(
+    video_id: str, requested_language: str | None, result: dict
+) -> tuple[dict, list[dict]]:
+    track_kind = "generated" if result["is_generated"] else "manual"
+    source_segments = []
+    envelope_segments = []
+    for ordinal, segment in enumerate(result["segments"]):
+        start_ms = _source_ms(segment.get("start", 0))
+        end_ms = _source_ms(
+            Decimal(str(segment.get("start", 0)))
+            + Decimal(str(segment.get("duration", 0)))
+        )
+        text = str(segment.get("text", ""))
+        envelope_segments.append(
+            {
+                "ordinal": ordinal,
+                "start_ms": start_ms,
+                "end_ms": end_ms,
+                "text": text,
+            }
+        )
+    envelope = {
+        "schema": "tube-bridge.transcript-source.v2",
+        "video_id": video_id,
+        "selected_language": result["language"],
+        "track_kind": track_kind,
+        "segments": envelope_segments,
+    }
+    source_sha256 = hashlib.sha256(_canonical_json_bytes(envelope)).hexdigest()
+    for segment in envelope_segments:
+        source_segments.append(
+            {
+                "segment_id": (
+                    f"seg_{source_sha256}_{segment['ordinal']:08d}"
+                ),
+                **segment,
+            }
+        )
+    transcript = {
+        "status": "ready",
+        "transcript_version_id": f"trv_{source_sha256}",
+        "source_sha256": source_sha256,
+        "source_envelope": envelope,
+        "requested_language": requested_language,
+        "selected_language": result["language"],
+        "track_kind": track_kind,
+        "provider": "youtube-transcript-api",
+        "segment_count": len(source_segments),
+        "first_segment_id": source_segments[0]["segment_id"] if source_segments else None,
+        "last_segment_id": source_segments[-1]["segment_id"] if source_segments else None,
+        "start_ms": source_segments[0]["start_ms"] if source_segments else None,
+        "end_ms": source_segments[-1]["end_ms"] if source_segments else None,
+        "error": None,
+    }
+    return transcript, source_segments
+
+
+def _safe_error_fields(error: TubeBridgeError) -> dict:
+    return {
+        "code": error.code.value,
+        "source": error.source.value,
+        "retryable": error.retryable,
+    }
+
+
+def _channel_context_sync(info: dict) -> dict:
+    observed_at = datetime.now(timezone.utc).isoformat()
+    channel_id = info.get("channel_id")
+    channel_name = info.get("channel")
+    channel_url = info.get("channel_url") or (
+        f"https://youtube.com/channel/{channel_id}" if channel_id else None
+    )
+    api_error: TubeBridgeError | None = None
+    if api.get_api_key() and channel_id:
+        try:
+            observed = api.channel_info(channel_id)
+            return {
+                "status": "ready",
+                "channel_id": observed.get("channel_id") or channel_id,
+                "title": observed.get("title") or channel_name,
+                "description": observed.get("description"),
+                "canonical_url": channel_url,
+                "country": observed.get("country") or None,
+                "provider": "youtube-data-api",
+                "retrieval_mode": "live",
+                "observed_at": observed_at,
+                "warning": None,
+            }
+        except TubeBridgeError as error:
+            api_error = error
+
+    if channel_id or channel_url:
+        try:
+            observed = yt.channel_metadata(channel_id, channel_url)
+            return {
+                "status": "ready",
+                "channel_id": observed.get("channel_id") or channel_id,
+                "title": observed.get("title") or channel_name,
+                "description": observed.get("description"),
+                "description_truncated": bool(
+                    observed.get("description_truncated", False)
+                ),
+                "canonical_url": observed.get("canonical_url") or channel_url,
+                "country": observed.get("country"),
+                "provider": "yt-dlp",
+                "retrieval_mode": "fallback" if api_error else "live",
+                "observed_at": observed_at,
+                "warning": _safe_error_fields(api_error) if api_error else None,
+            }
+        except TubeBridgeError as error:
+            final_error = error
+    elif api_error:
+        final_error = api_error
+    else:
+        final_error = None
+
+    return {
+        "status": "unavailable",
+        "channel_id": channel_id,
+        "title": channel_name,
+        "description": None,
+        "canonical_url": channel_url,
+        "country": None,
+        "provider": "video-metadata-fallback",
+        "retrieval_mode": "fallback",
+        "observed_at": observed_at,
+        "warning": _safe_error_fields(final_error) if final_error else None,
+    }
+
+
+def _video_machine_fields(video_id: str, info: dict) -> dict:
+    cached = bool(info.get("cached"))
+    return {
+        "video_id": video_id,
+        "canonical_url": info.get("url")
+        or f"https://youtube.com/watch?v={video_id}",
+        "title": info.get("title") or "",
+        "description": info.get("description"),
+        "duration_seconds": info.get("duration"),
+        "published_at": info.get("upload_date") or info.get("published_at"),
+        "language_hint": info.get("language"),
+        "channel_id": info.get("channel_id"),
+        "channel_name": info.get("channel"),
+        "channel_url": info.get("channel_url"),
+        "provider": info.get("source") or (
+            "unknown-cached-origin" if cached else "yt-dlp"
+        ),
+        "retrieval_mode": "cache" if cached else "live",
+    }
+
+
+async def research_templates() -> dict:
+    from . import research_artifacts
+
+    return await asyncio.to_thread(research_artifacts.list_templates)
+
+
+async def research_scaffold_create(template_id: str, target: dict) -> dict:
+    """Create a machine-prefilled scaffold; never fill research semantics."""
+    from . import corpus, research_artifacts
+
+    target_type = target.get("type") if isinstance(target, dict) else None
+    if template_id == "structured-source-v1" and target_type == "video":
+        video_id = yt.extract_video_id(target.get("video_id", ""))
+        requested_language = target.get("language")
+        info = await video_info(video_id)
+        channel = await asyncio.to_thread(_channel_context_sync, info)
+        try:
+            transcript_result = await asyncio.to_thread(
+                _get_transcript_with_meta, video_id, requested_language
+            )
+            transcript_fields, source_segments = _transcript_machine_fields(
+                video_id, requested_language, transcript_result
+            )
+        except TubeBridgeError as error:
+            transcript_fields = {
+                "status": "unavailable",
+                "transcript_version_id": None,
+                "source_sha256": None,
+                "source_envelope": None,
+                "requested_language": requested_language,
+                "selected_language": None,
+                "track_kind": None,
+                "provider": error.source.value,
+                "segment_count": 0,
+                "first_segment_id": None,
+                "last_segment_id": None,
+                "start_ms": None,
+                "end_ms": None,
+                "error": _safe_error_fields(error),
+            }
+            source_segments = []
+        machine_fields = {
+            "target": {"type": "video", "video_id": video_id},
+            "video_metadata": _video_machine_fields(video_id, info),
+            "channel_metadata": channel,
+            "transcript": transcript_fields,
+            "source_segments": source_segments,
+        }
+        return await asyncio.to_thread(
+            research_artifacts.create_artifact,
+            template_id,
+            "video",
+            video_id,
+            machine_fields,
+        )
+
+    if template_id == "corpus-study-v1" and target_type == "corpus":
+        corpus_id = target.get("corpus_id", "")
+        snapshot = await asyncio.to_thread(corpus.corpus_snapshot, corpus_id)
+        sources = []
+        for source in snapshot.get("sources", []):
+            video_id = source["video_id"]
+            cached_info = await asyncio.to_thread(cache.get_video_info, video_id)
+            cached_transcript = await asyncio.to_thread(
+                cache.get_transcript, video_id, None
+            )
+            info = cached_info if isinstance(cached_info, dict) else {}
+            attached = await asyncio.to_thread(
+                research_artifacts.list_artifacts,
+                "video",
+                video_id,
+                "structured-source-v1",
+            )
+            source_artifact = None
+            channel_context: dict = {}
+            source_reference = None
+            if attached["artifacts"]:
+                source_artifact = await asyncio.to_thread(
+                    research_artifacts.get_artifact,
+                    attached["artifacts"][-1]["artifact_id"],
+                    None,
+                )
+                source_machine = source_artifact["machine_fields"]
+                observed_channel = source_machine.get("channel_metadata")
+                if isinstance(observed_channel, dict):
+                    channel_context = observed_channel
+                observed_transcript = source_machine.get("transcript")
+                observed_segments = source_machine.get("source_segments")
+                if (
+                    isinstance(observed_transcript, dict)
+                    and observed_transcript.get("status") == "ready"
+                    and isinstance(observed_segments, list)
+                    and observed_segments
+                ):
+                    source_reference = {
+                        "transcript_version_id": observed_transcript.get(
+                            "transcript_version_id"
+                        ),
+                        "source_sha256": observed_transcript.get("source_sha256"),
+                        "segments": [
+                            {
+                                "segment_id": segment.get("segment_id"),
+                                "start_ms": segment.get("start_ms"),
+                                "end_ms": segment.get("end_ms"),
+                            }
+                            for segment in observed_segments
+                            if isinstance(segment, dict)
+                        ],
+                    }
+            sources.append(
+                {
+                    "video_id": video_id,
+                    "canonical_url": f"https://youtube.com/watch?v={video_id}",
+                    "title": info.get("title") or source.get("title"),
+                    "description": info.get("description"),
+                    "channel_id": channel_context.get("channel_id")
+                    or info.get("channel_id"),
+                    "channel_name": channel_context.get("title")
+                    or info.get("channel"),
+                    "channel_url": channel_context.get("canonical_url")
+                    or info.get("channel_url"),
+                    "channel_description": channel_context.get("description"),
+                    "channel_metadata_provider": channel_context.get("provider"),
+                    "channel_context_artifact_id": (
+                        source_artifact["artifact_id"] if source_artifact else None
+                    ),
+                    "structured_source_artifact_id": (
+                        source_artifact["artifact_id"] if source_artifact else None
+                    ),
+                    "source_reference": source_reference,
+                    "metadata_retrieval_mode": "cache" if cached_info else "unavailable",
+                    "transcript_status": "ready" if cached_transcript else "unknown",
+                    "selected_language": (
+                        cached_transcript.get("language") if cached_transcript else None
+                    ),
+                    "track_kind": (
+                        "generated"
+                        if cached_transcript and cached_transcript.get("is_generated")
+                        else "manual" if cached_transcript else None
+                    ),
+                    "added_at": source.get("added_at"),
+                }
+            )
+        snapshot_summary = {
+            key: value for key, value in snapshot.items() if key != "sources"
+        }
+        snapshot_summary["source_count"] = len(sources)
+        machine_fields = {
+            "target": {"type": "corpus", "corpus_id": corpus_id},
+            "corpus_snapshot": snapshot_summary,
+            "sources": sources,
+            "retrieval_summary": {
+                "metadata_unavailable_video_ids": [
+                    item["video_id"]
+                    for item in sources
+                    if item["metadata_retrieval_mode"] == "unavailable"
+                ],
+                "transcript_unknown_video_ids": [
+                    item["video_id"]
+                    for item in sources
+                    if item["transcript_status"] != "ready"
+                ],
+            },
+        }
+        return await asyncio.to_thread(
+            research_artifacts.create_artifact,
+            template_id,
+            "corpus",
+            corpus_id,
+            machine_fields,
+        )
+
+    raise ValueError(
+        f"Template {template_id!r} does not support target type {target_type!r}"
+    )
+
+
+async def research_artifact_get(
+    artifact_id: str, revision: int | None = None
+) -> dict:
+    from . import research_artifacts
+
+    return await asyncio.to_thread(
+        research_artifacts.get_artifact, artifact_id, revision
+    )
+
+
+async def research_artifact_save(
+    artifact_id: str,
+    expected_revision: int,
+    agent_fields: dict,
+    author: dict | None,
+) -> dict:
+    from . import research_artifacts
+
+    return await asyncio.to_thread(
+        research_artifacts.save_artifact,
+        artifact_id,
+        expected_revision,
+        agent_fields,
+        author,
+    )
+
+
+async def research_artifacts_list(
+    target_type: str, target_id: str, template_id: str | None = None
+) -> dict:
+    from . import research_artifacts
+
+    return await asyncio.to_thread(
+        research_artifacts.list_artifacts,
+        target_type,
+        target_id,
+        template_id,
+    )
+
+
+async def research_artifact_export(artifact_id: str, format: str) -> dict:
+    from . import research_artifacts
+
+    return await asyncio.to_thread(
+        research_artifacts.export_artifact, artifact_id, format
+    )

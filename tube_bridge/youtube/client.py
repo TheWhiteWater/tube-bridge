@@ -143,6 +143,7 @@ def parse_video_info(data: dict) -> VideoInfo:
         duration=data.get("duration"),
         view_count=data.get("view_count"),
         channel=data.get("channel") or data.get("uploader"),
+        channel_id=data.get("channel_id") or data.get("uploader_id"),
         channel_url=data.get("channel_url") or data.get("uploader_url"),
         upload_date=data.get("upload_date"),
         description=(data.get("description", "") or "")[:500],
@@ -150,3 +151,47 @@ def parse_video_info(data: dict) -> VideoInfo:
         categories=data.get("categories"),
         tags=data.get("tags", [])[:20] if data.get("tags") else None,
     )
+
+
+def channel_metadata(channel_id: str | None, channel_url: str | None) -> dict:
+    """Fetch bounded, observable channel-page metadata through keyless yt-dlp."""
+    target = channel_url or (
+        f"https://www.youtube.com/channel/{channel_id}" if channel_id else None
+    )
+    if not target:
+        raise InvalidArgumentError("Channel ID or URL is required")
+    items, stderr = run_ytdlp_multi(
+        [
+            target,
+            "--dump-single-json",
+            "--flat-playlist",
+            "--playlist-end",
+            "1",
+        ],
+        timeout=45,
+    )
+    if not items:
+        raise ytdlp_failure("Could not fetch observable channel metadata", stderr)
+    data = items[0]
+    raw_description = data.get("description")
+    description = raw_description if isinstance(raw_description, str) else None
+    if description is not None and len(description) > 5_000:
+        description = description[:5_000]
+        description_truncated = True
+    else:
+        description_truncated = False
+    observed_channel_id = data.get("channel_id") or data.get("id") or channel_id
+    canonical_url = data.get("channel_url") or (
+        f"https://www.youtube.com/channel/{observed_channel_id}"
+        if observed_channel_id
+        else target
+    )
+    return {
+        "channel_id": observed_channel_id,
+        "title": data.get("channel") or data.get("uploader") or data.get("title"),
+        "description": description,
+        "description_truncated": description_truncated,
+        "canonical_url": canonical_url,
+        "country": None,
+        "provider": "yt-dlp",
+    }

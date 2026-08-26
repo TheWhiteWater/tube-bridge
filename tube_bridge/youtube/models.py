@@ -11,6 +11,7 @@ class VideoInfo:
     duration: int | None = None  # seconds
     view_count: int | None = None
     channel: str | None = None
+    channel_id: str | None = None
     channel_url: str | None = None
     upload_date: str | None = None
     description: str | None = None
