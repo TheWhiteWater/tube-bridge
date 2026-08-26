@@ -105,6 +105,9 @@ agent_fields:
     source_role: null
     confidence: unknown
     evidence_refs: []
+    # Every evidence_refs item contains exactly:
+    # video_id, transcript_version_id, first_segment_id, last_segment_id,
+    # start_ms, and end_ms.
     custom_fields: {}
 
 agent_provenance:

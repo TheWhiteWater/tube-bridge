@@ -421,6 +421,11 @@ def _build_tools(include_research: bool | None = None) -> list[Tool]:
                                 "video_id": {"type": "string"},
                                 "language": {"type": "string"},
                                 "corpus_id": {"type": "string"},
+                                "source_artifact_ids": {
+                                    "type": "array",
+                                    "items": {"type": "string", "minLength": 1},
+                                    "uniqueItems": True,
+                                },
                             },
                             "required": ["type"],
                             "additionalProperties": False,

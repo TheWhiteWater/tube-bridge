@@ -57,10 +57,13 @@ Input for a corpus:
   "template_id": "corpus-study-v1",
   "target": {
     "type": "corpus",
-    "corpus_id": "nz_media"
+    "corpus_id": "nz_media",
+    "source_artifact_ids": ["rart_explicit_version_for_one_video"]
   }
 }
 ```
+
+`source_artifact_ids` is optional when each corpus video has zero or one attached structured-source artifact. If a video has multiple language/transcript artifacts, Tube Bridge lists every available version and marks the source `ambiguous`; it never selects the latest artifact implicitly. Pass at most one artifact ID per corpus video to bind that exact transcript version.
 
 Behavior:
 
@@ -87,7 +90,7 @@ Omit `revision` to read the latest revision; provide a positive integer to read 
 
 ## 4. `research_artifact_save`
 
-Stores user/agent-authored fields. Machine fields are not accepted as input.
+Stores user/agent-authored fields. Machine fields are not accepted as input. Supplied objects are deep-merged into the current `agent_fields`; arrays and scalar values replace their current values. The complete merged artifact is then schema-validated.
 
 ```json
 {
@@ -114,6 +117,7 @@ Validation checks:
 - optimistic revision match;
 - template schema;
 - template-defined field types, required keys, and string tag arrays;
+- one `source_ref` shape for every evidence/source link: `video_id`, `transcript_version_id`, `first_segment_id`, `last_segment_id`, `start_ms`, and `end_ms`;
 - valid transcript version and segment ranges when an artifact cites them;
 - complete section coverage only when the agent marks the content map `complete`;
 - no modification of machine-owned fields.
@@ -143,7 +147,7 @@ Read-only. Exports one artifact or an attached artifact set without changing its
 }
 ```
 
-Initial formats: `json`, plus `csv` when the selected template defines a tabular coding-row projection.
+Initial formats: `json`, plus `csv` when the selected template defines a tabular coding-row projection. CSV preserves the complete coding-row provenance: video and transcript version, first/last segment IDs, timestamps, codes, quotation, surrounding context, researcher note, and confidence.
 
 ## Typical source workflow
 
