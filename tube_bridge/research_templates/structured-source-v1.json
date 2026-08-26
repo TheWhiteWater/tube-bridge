@@ -1,0 +1,35 @@
+{
+  "template_id": "structured-source-v1",
+  "template_version": 1,
+  "description": "Machine-prefilled video and transcript source record with agent-filled metadata annotation and internal content structure.",
+  "target_types": ["video"],
+  "field_ownership": {
+    "machine_fields": "tube_bridge_read_only",
+    "agent_fields": "user_or_agent_editable"
+  },
+  "agent_fields": {
+    "metadata_annotation": {
+      "completion": "unfilled",
+      "summary": null,
+      "tags": [],
+      "custom_fields": {}
+    },
+    "content_structure": {
+      "completion": "unfilled",
+      "root_title": null,
+      "root_tags": [],
+      "sections": [],
+      "custom_fields": {}
+    },
+    "source_annotation": {
+      "completion": "unfilled",
+      "media_market": null,
+      "organization_type": null,
+      "video_format": null,
+      "source_role": null,
+      "confidence": "unknown",
+      "evidence_refs": [],
+      "custom_fields": {}
+    }
+  }
+}

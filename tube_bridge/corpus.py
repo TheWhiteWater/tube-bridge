@@ -618,6 +618,41 @@ def corpus_list() -> dict:
     return {"corpora": corpora, "total": len(corpora)}
 
 
+def corpus_snapshot(corpus_id: str) -> dict:
+    """Return a local-only corpus membership snapshot for research scaffolds."""
+    _validate_corpus_id(corpus_id)
+    with _connection() as conn:
+        corpus_row = conn.execute(
+            "SELECT corpus_id, label, embedding_model, created_at "
+            "FROM corpora WHERE corpus_id=?",
+            (corpus_id,),
+        ).fetchone()
+        if corpus_row is None:
+            raise NotFoundError(
+                f"Corpus '{corpus_id}' not found.",
+                source=ErrorSource.LOCAL_CORPUS,
+            )
+        sources = conn.execute(
+            "SELECT video_id, title, added_at FROM corpus_added_videos "
+            "WHERE corpus_id=? ORDER BY added_at, video_id",
+            (corpus_id,),
+        ).fetchall()
+        chunk_count = conn.execute(
+            "SELECT COUNT(*) FROM corpus_chunks WHERE corpus_id=?", (corpus_id,)
+        ).fetchone()[0]
+    return {
+        "corpus_id": corpus_row[0],
+        "label": corpus_row[1],
+        "embedding_model": corpus_row[2],
+        "created_at": corpus_row[3],
+        "chunk_count": chunk_count,
+        "sources": [
+            {"video_id": row[0], "title": row[1], "added_at": row[2]}
+            for row in sources
+        ],
+    }
+
+
 def corpus_delete(corpus_id: str) -> dict:
     """Delete a corpus and all its chunks/vectors."""
     _validate_corpus_id(corpus_id)

@@ -1,0 +1,144 @@
+schema: tube-bridge.research-artifact.v1
+artifact_id: <generated-by-tube-bridge>
+template_id: corpus-study-v1
+template_version: 1
+revision: 1
+status: draft
+
+field_ownership:
+  machine_fields: tube_bridge_read_only
+  agent_fields: user_or_agent_editable
+
+machine_fields:
+  target:
+    type: corpus
+    corpus_id: <auto-filled>
+
+  corpus_snapshot:
+    corpus_id: <auto-filled>
+    label: <auto-filled>
+    embedding_model: <auto-filled>
+    created_at: <auto-filled>
+    chunk_count: <auto-filled>
+    source_count: <auto-filled>
+
+  # One machine-filled row per corpus video. No research classification appears
+  # here.
+  sources:
+    - video_id: <auto-filled>
+      canonical_url: <auto-filled>
+      title: <auto-filled>
+      channel_id: <auto-filled-or-null>
+      channel_name: <auto-filled-from-cache-or-null>
+      channel_url: <auto-filled-from-cache-or-null>
+      description: <auto-filled-from-cache-or-null>
+      metadata_retrieval_mode: <cache|unavailable>
+      transcript_status: <ready|unknown>
+      selected_language: <auto-filled-from-cache-or-null>
+      track_kind: <manual|generated|null>
+      added_at: <auto-filled>
+
+  retrieval_summary:
+    metadata_unavailable_video_ids: []
+    transcript_unknown_video_ids: []
+
+agent_fields:
+  research_frame:
+    completion: unfilled
+    question: null
+    scope: null
+    inclusion_rule: null
+    exclusion_rule: null
+    time_boundary: null
+    language_boundary: null
+    stop_rule: null
+    custom_fields: {}
+
+  metadata_annotation:
+    completion: unfilled
+    corpus_summary: null
+    broad_tags: []
+    custom_fields: {}
+
+  channel_groups:
+    completion: unfilled
+    groups: []
+    group_shape:
+      group_id: <agent-local-id>
+      label: <agent-authored-label>
+      channel_ids: []
+      tags: []
+      rationale: null
+      confidence: unknown
+      evidence_refs: []
+
+  duplicate_and_lineage:
+    completion: unfilled
+    clusters: []
+    cluster_shape:
+      cluster_id: <agent-local-id>
+      relation_type: <near_duplicate|syndication|shared_origin|restatement|unknown>
+      source_refs: []
+      rationale: null
+      confidence: unknown
+      evidence_refs: []
+
+  codebook:
+    completion: unfilled
+    codes: []
+    code_shape:
+      code_id: <agent-local-id>
+      label: <agent-authored-label>
+      definition: null
+      parent_code_id: null
+      aliases: []
+
+  coding_rows:
+    completion: unfilled
+    rows: []
+    row_shape:
+      row_id: <agent-local-id>
+      video_id: <video-id>
+      transcript_version_id: <transcript-version-id>
+      first_segment_id: <segment-id>
+      last_segment_id: <segment-id>
+      start_ms: <integer>
+      end_ms: <integer>
+      code_ids: []
+      quotation: null
+      context_before: null
+      context_after: null
+      agent_note: null
+      confidence: unknown
+
+  evidence_ledger:
+    completion: unfilled
+    entries: []
+    entry_shape:
+      evidence_id: <agent-local-id>
+      source_refs: []
+      observation: null
+      interpretation: null
+      confidence: unknown
+
+  synthesis:
+    completion: unfilled
+    summary: null
+    limitations: []
+    unresolved_questions: []
+    custom_fields: {}
+
+agent_provenance:
+  author_type: null
+  author_name: null
+  model: null
+  method: null
+  created_at: null
+
+validation:
+  machine_fields_unchanged: true
+  agent_payload_schema_valid: false
+  all_source_refs_exist: false
+  all_segment_ranges_valid: false
+  exportable_coding_rows: false
+  validated_at: null

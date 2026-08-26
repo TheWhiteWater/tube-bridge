@@ -2,6 +2,7 @@
 
 import base64
 import json
+import os
 
 import jsonschema
 from mcp.server import Server
@@ -20,6 +21,8 @@ from .tools import (
     transcript, available_languages, video_frame,
     comments, channel_info,
     corpus_create, corpus_add, corpus_search, corpus_list, corpus_delete,
+    research_templates, research_scaffold_create, research_artifact_get,
+    research_artifact_save, research_artifacts_list, research_artifact_export,
 )
 from .youtube.client import extract_video_id
 from .youtube.frame import ExtractedFrame
@@ -50,6 +53,14 @@ HELP_TEXT = {
 
 
 server = Server("tube-bridge", version=VERSION)
+# Expose preview handlers on the Server object as an explicit injection seam for
+# clients/tests that import ``tube_bridge.server`` through the package re-export.
+server.research_templates = research_templates
+server.research_scaffold_create = research_scaffold_create
+server.research_artifact_get = research_artifact_get
+server.research_artifact_save = research_artifact_save
+server.research_artifacts_list = research_artifacts_list
+server.research_artifact_export = research_artifact_export
 
 
 def _annotations_for(name: str) -> ToolAnnotations:
@@ -98,11 +109,51 @@ def _annotations_for(name: str) -> ToolAnnotations:
             idempotentHint=True,
             openWorldHint=False,
         ),
+        "research_templates_list": ToolAnnotations(
+            readOnlyHint=True,
+            destructiveHint=False,
+            idempotentHint=True,
+            openWorldHint=False,
+        ),
+        "research_scaffold_create": ToolAnnotations(
+            readOnlyHint=False,
+            destructiveHint=False,
+            idempotentHint=False,
+            openWorldHint=True,
+        ),
+        "research_artifact_get": ToolAnnotations(
+            readOnlyHint=True,
+            destructiveHint=False,
+            idempotentHint=True,
+            openWorldHint=False,
+        ),
+        "research_artifact_save": ToolAnnotations(
+            readOnlyHint=False,
+            destructiveHint=False,
+            idempotentHint=False,
+            openWorldHint=False,
+        ),
+        "research_artifacts_list": ToolAnnotations(
+            readOnlyHint=True,
+            destructiveHint=False,
+            idempotentHint=True,
+            openWorldHint=False,
+        ),
+        "research_artifact_export": ToolAnnotations(
+            readOnlyHint=True,
+            destructiveHint=False,
+            idempotentHint=True,
+            openWorldHint=False,
+        ),
     }
     return profiles[name]
 
 
-def _build_tools() -> list[Tool]:
+def _build_tools(include_research: bool | None = None) -> list[Tool]:
+    if include_research is None:
+        include_research = os.environ.get(
+            "TUBE_BRIDGE_EXPERIMENTAL_RESEARCH_ARTIFACTS", ""
+        ).strip().lower() in {"1", "true", "yes", "on"}
     tools = [
         Tool(
             name="youtube_search",
@@ -346,6 +397,108 @@ def _build_tools() -> list[Tool]:
             },
         ),
     ]
+    if include_research:
+        tools.extend([
+            Tool(
+                name="research_templates_list",
+                description="List optional user-fillable research scaffold templates. Tube Bridge supplies schemas and source bindings but does not perform the research.",
+                inputSchema={"type": "object", "properties": {}, "additionalProperties": False},
+            ),
+            Tool(
+                name="research_scaffold_create",
+                description="Create a local scaffold for one video/transcript or corpus. Auto-fills only observable machine fields, including video and channel context; all semantic and research fields remain empty for the client agent.",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "template_id": {
+                            "type": "string",
+                            "enum": ["structured-source-v1", "corpus-study-v1"],
+                        },
+                        "target": {
+                            "type": "object",
+                            "properties": {
+                                "type": {"type": "string", "enum": ["video", "corpus"]},
+                                "video_id": {"type": "string"},
+                                "language": {"type": "string"},
+                                "corpus_id": {"type": "string"},
+                            },
+                            "required": ["type"],
+                            "additionalProperties": False,
+                            "oneOf": [
+                                {
+                                    "properties": {"type": {"const": "video"}},
+                                    "required": ["video_id"],
+                                },
+                                {
+                                    "properties": {"type": {"const": "corpus"}},
+                                    "required": ["corpus_id"],
+                                },
+                            ],
+                        },
+                    },
+                    "required": ["template_id", "target"],
+                    "additionalProperties": False,
+                },
+            ),
+            Tool(
+                name="research_artifact_get",
+                description="Read a locally stored user research artifact revision. Generated fields remain clearly separate from original source evidence.",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "artifact_id": {"type": "string"},
+                        "revision": {"type": "integer", "minimum": 1},
+                    },
+                    "required": ["artifact_id"],
+                    "additionalProperties": False,
+                },
+            ),
+            Tool(
+                name="research_artifact_save",
+                description="Append a new local revision containing only fields authored by the user or client agent. Requires an expected revision and validates source references without judging research correctness.",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "artifact_id": {"type": "string"},
+                        "expected_revision": {"type": "integer", "minimum": 1},
+                        "agent_fields": {"type": "object"},
+                        "author": {"type": "object"},
+                    },
+                    "required": ["artifact_id", "expected_revision", "agent_fields"],
+                    "additionalProperties": False,
+                },
+            ),
+            Tool(
+                name="research_artifacts_list",
+                description="List locally stored user research artifacts attached to one video or corpus target.",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "target_type": {"type": "string", "enum": ["video", "corpus"]},
+                        "target_id": {"type": "string"},
+                        "template_id": {
+                            "type": "string",
+                            "enum": ["structured-source-v1", "corpus-study-v1"],
+                        },
+                    },
+                    "required": ["target_type", "target_id"],
+                    "additionalProperties": False,
+                },
+            ),
+            Tool(
+                name="research_artifact_export",
+                description="Export a stored user research artifact as JSON or a corpus coding-row CSV without changing or interpreting it.",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "artifact_id": {"type": "string"},
+                        "format": {"type": "string", "enum": ["json", "csv"], "default": "json"},
+                    },
+                    "required": ["artifact_id"],
+                    "additionalProperties": False,
+                },
+            ),
+        ])
     return [
         tool.model_copy(update={"annotations": _annotations_for(tool.name)})
         for tool in tools
@@ -504,6 +657,32 @@ async def _handle_tool(name: str, args: dict):
             return await corpus_list()
         case "corpus_delete":
             return await corpus_delete(args["corpus_id"])
+
+        case "research_templates_list":
+            return await server.research_templates()
+        case "research_scaffold_create":
+            return await server.research_scaffold_create(
+                args["template_id"], args["target"]
+            )
+        case "research_artifact_get":
+            return await server.research_artifact_get(
+                args["artifact_id"], args.get("revision")
+            )
+        case "research_artifact_save":
+            return await server.research_artifact_save(
+                args["artifact_id"],
+                args["expected_revision"],
+                args["agent_fields"],
+                args.get("author"),
+            )
+        case "research_artifacts_list":
+            return await server.research_artifacts_list(
+                args["target_type"], args["target_id"], args.get("template_id")
+            )
+        case "research_artifact_export":
+            return await server.research_artifact_export(
+                args["artifact_id"], args.get("format", "json")
+            )
 
         case _:
             raise ValueError(f"Unknown tool: {name}")

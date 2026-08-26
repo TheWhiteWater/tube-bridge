@@ -1,0 +1,123 @@
+schema: tube-bridge.research-artifact.v1
+artifact_id: <generated-by-tube-bridge>
+template_id: structured-source-v1
+template_version: 1
+revision: 1
+status: draft
+
+field_ownership:
+  machine_fields: tube_bridge_read_only
+  agent_fields: user_or_agent_editable
+
+machine_fields:
+  target:
+    type: video
+    video_id: <auto-filled>
+
+  video_metadata:
+    video_id: <auto-filled>
+    canonical_url: <auto-filled>
+    title: <auto-filled-exact-observation>
+    description: <auto-filled-exact-observation-or-null>
+    duration_seconds: <auto-filled-or-null>
+    published_at: <auto-filled-or-null>
+    language_hint: <auto-filled-or-null>
+    channel_id: <auto-filled-or-null>
+    channel_name: <auto-filled-or-null>
+    channel_url: <auto-filled-or-null>
+    provider: <youtube-data-api|yt-dlp|unknown-cached-origin>
+    retrieval_mode: <live|cache>
+
+  channel_metadata:
+    status: <ready|unavailable>
+    channel_id: <auto-filled-or-null>
+    title: <auto-filled-or-null>
+    description: <auto-filled-exact-observation-or-null>
+    canonical_url: <auto-filled-or-null>
+    country: <auto-filled-or-null>
+    provider: <youtube-data-api|yt-dlp|video-metadata-fallback|unknown>
+    retrieval_mode: <live|cache|fallback>
+    observed_at: <auto-filled>
+    warning: <safe-machine-warning-or-null>
+
+  transcript:
+    status: <ready|unavailable|not_requested|failed>
+    transcript_version_id: <auto-filled-or-null>
+    source_sha256: <auto-filled-or-null>
+    selected_language: <auto-filled-or-null>
+    requested_language: <auto-filled-or-null>
+    track_kind: <manual|generated|local_asr|null>
+    provider: <auto-filled-or-null>
+    segment_count: <auto-filled-integer-or-null>
+    first_segment_id: <auto-filled-or-null>
+    last_segment_id: <auto-filled-or-null>
+    start_ms: <auto-filled-or-null>
+    end_ms: <auto-filled-or-null>
+    error:
+      code: <typed-code-or-null>
+      source: <typed-source-or-null>
+      retryable: <true|false|null>
+
+  # Present only when transcript.status=ready. These are exact source records,
+  # not agent-authored chunks.
+  source_segments:
+    - segment_id: <auto-filled-stable-id>
+      ordinal: <zero-based-integer>
+      start_ms: <integer>
+      end_ms: <integer>
+      text: <exact-selected-track-text>
+
+agent_fields:
+  # Stable user/agent-authored description based on the metadata card.
+  # Tube Bridge does not generate this text.
+  metadata_annotation:
+    completion: unfilled
+    summary: null
+    tags: []
+    custom_fields: {}
+
+  # Internal source structure derived by the user's agent from the transcript.
+  content_structure:
+    completion: unfilled
+    root_title: null
+    root_tags: []
+    sections: []
+    # Each completed section must use this shape:
+    section_shape:
+      section_id: <agent-generated-stable-local-id>
+      ordinal: <zero-based-integer>
+      title: <agent-authored-navigation-title>
+      first_segment_id: <source-segment-id>
+      last_segment_id: <source-segment-id>
+      start_ms: <integer>
+      end_ms: <integer>
+      tags: []
+      notes: null
+    custom_fields: {}
+
+  # Optional methodology-specific annotations. Tube Bridge neither requires nor
+  # fills their semantics.
+  source_annotation:
+    completion: unfilled
+    media_market: null
+    organization_type: null
+    video_format: null
+    source_role: null
+    confidence: unknown
+    evidence_refs: []
+    custom_fields: {}
+
+agent_provenance:
+  author_type: null
+  author_name: null
+  model: null
+  method: null
+  created_at: null
+
+validation:
+  machine_fields_unchanged: true
+  agent_payload_schema_valid: false
+  referenced_segments_exist: false
+  content_coverage_complete: false
+  content_ranges_ordered_non_overlapping: false
+  validated_at: null

@@ -1,0 +1,56 @@
+{
+  "template_id": "corpus-study-v1",
+  "template_version": 1,
+  "description": "Machine-prefilled local corpus inventory with agent-filled research frame, grouping, coding, evidence, lineage, and synthesis fields.",
+  "target_types": ["corpus"],
+  "field_ownership": {
+    "machine_fields": "tube_bridge_read_only",
+    "agent_fields": "user_or_agent_editable"
+  },
+  "agent_fields": {
+    "research_frame": {
+      "completion": "unfilled",
+      "question": null,
+      "scope": null,
+      "inclusion_rule": null,
+      "exclusion_rule": null,
+      "time_boundary": null,
+      "language_boundary": null,
+      "stop_rule": null,
+      "custom_fields": {}
+    },
+    "metadata_annotation": {
+      "completion": "unfilled",
+      "corpus_summary": null,
+      "broad_tags": [],
+      "custom_fields": {}
+    },
+    "channel_groups": {
+      "completion": "unfilled",
+      "groups": []
+    },
+    "duplicate_and_lineage": {
+      "completion": "unfilled",
+      "clusters": []
+    },
+    "codebook": {
+      "completion": "unfilled",
+      "codes": []
+    },
+    "coding_rows": {
+      "completion": "unfilled",
+      "rows": []
+    },
+    "evidence_ledger": {
+      "completion": "unfilled",
+      "entries": []
+    },
+    "synthesis": {
+      "completion": "unfilled",
+      "summary": null,
+      "limitations": [],
+      "unresolved_questions": [],
+      "custom_fields": {}
+    }
+  }
+}
