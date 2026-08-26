@@ -25,32 +25,130 @@
       "broad_tags": [],
       "custom_fields": {}
     },
-    "channel_groups": {
-      "completion": "unfilled",
-      "groups": []
-    },
-    "duplicate_and_lineage": {
-      "completion": "unfilled",
-      "clusters": []
-    },
-    "codebook": {
-      "completion": "unfilled",
-      "codes": []
-    },
-    "coding_rows": {
-      "completion": "unfilled",
-      "rows": []
-    },
-    "evidence_ledger": {
-      "completion": "unfilled",
-      "entries": []
-    },
+    "channel_groups": {"completion": "unfilled", "groups": []},
+    "duplicate_and_lineage": {"completion": "unfilled", "clusters": []},
+    "codebook": {"completion": "unfilled", "codes": []},
+    "coding_rows": {"completion": "unfilled", "rows": []},
+    "evidence_ledger": {"completion": "unfilled", "entries": []},
     "synthesis": {
       "completion": "unfilled",
       "summary": null,
       "limitations": [],
       "unresolved_questions": [],
       "custom_fields": {}
+    }
+  },
+  "agent_fields_schema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["research_frame", "metadata_annotation", "channel_groups", "duplicate_and_lineage", "codebook", "coding_rows", "evidence_ledger", "synthesis"],
+    "properties": {
+      "research_frame": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["completion", "question", "scope", "inclusion_rule", "exclusion_rule", "time_boundary", "language_boundary", "stop_rule", "custom_fields"],
+        "properties": {
+          "completion": {"enum": ["unfilled", "draft", "complete"]},
+          "question": {"type": ["string", "null"]},
+          "scope": {"type": ["string", "null"]},
+          "inclusion_rule": {"type": ["string", "null"]},
+          "exclusion_rule": {"type": ["string", "null"]},
+          "time_boundary": {"type": ["string", "null"]},
+          "language_boundary": {"type": ["string", "null"]},
+          "stop_rule": {"type": ["string", "null"]},
+          "custom_fields": {"type": "object"}
+        }
+      },
+      "metadata_annotation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["completion", "corpus_summary", "broad_tags", "custom_fields"],
+        "properties": {
+          "completion": {"enum": ["unfilled", "draft", "complete"]},
+          "corpus_summary": {"type": ["string", "null"]},
+          "broad_tags": {"type": "array", "items": {"type": "string"}},
+          "custom_fields": {"type": "object"}
+        }
+      },
+      "channel_groups": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["completion", "groups"],
+        "properties": {
+          "completion": {"enum": ["unfilled", "draft", "complete"]},
+          "groups": {"type": "array", "items": {"type": "object"}}
+        }
+      },
+      "duplicate_and_lineage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["completion", "clusters"],
+        "properties": {
+          "completion": {"enum": ["unfilled", "draft", "complete"]},
+          "clusters": {"type": "array", "items": {"type": "object"}}
+        }
+      },
+      "codebook": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["completion", "codes"],
+        "properties": {
+          "completion": {"enum": ["unfilled", "draft", "complete"]},
+          "codes": {"type": "array", "items": {"type": "object"}}
+        }
+      },
+      "coding_rows": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["completion", "rows"],
+        "properties": {
+          "completion": {"enum": ["unfilled", "draft", "complete"]},
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["row_id", "video_id", "start_ms", "end_ms", "code_ids", "quotation"],
+              "properties": {
+                "row_id": {"type": "string", "minLength": 1},
+                "video_id": {"type": "string", "minLength": 1},
+                "transcript_version_id": {"type": "string"},
+                "first_segment_id": {"type": "string"},
+                "last_segment_id": {"type": "string"},
+                "start_ms": {"type": "integer", "minimum": 0},
+                "end_ms": {"type": "integer", "minimum": 0},
+                "code_ids": {"type": "array", "items": {"type": "string"}},
+                "quotation": {"type": ["string", "null"]},
+                "context_before": {"type": ["string", "null"]},
+                "context_after": {"type": ["string", "null"]},
+                "agent_note": {"type": ["string", "null"]},
+                "confidence": {"enum": ["unknown", "low", "medium", "high"]}
+              }
+            }
+          }
+        }
+      },
+      "evidence_ledger": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["completion", "entries"],
+        "properties": {
+          "completion": {"enum": ["unfilled", "draft", "complete"]},
+          "entries": {"type": "array", "items": {"type": "object"}}
+        }
+      },
+      "synthesis": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["completion", "summary", "limitations", "unresolved_questions", "custom_fields"],
+        "properties": {
+          "completion": {"enum": ["unfilled", "draft", "complete"]},
+          "summary": {"type": ["string", "null"]},
+          "limitations": {"type": "array", "items": {"type": "string"}},
+          "unresolved_questions": {"type": "array", "items": {"type": "string"}},
+          "custom_fields": {"type": "object"}
+        }
+      }
     }
   }
 }

@@ -647,17 +647,40 @@ async def research_scaffold_create(template_id: str, target: dict) -> dict:
             )
             source_artifact = None
             channel_context: dict = {}
+            source_reference = None
             if attached["artifacts"]:
                 source_artifact = await asyncio.to_thread(
                     research_artifacts.get_artifact,
                     attached["artifacts"][-1]["artifact_id"],
                     None,
                 )
-                observed_channel = source_artifact["machine_fields"].get(
-                    "channel_metadata"
-                )
+                source_machine = source_artifact["machine_fields"]
+                observed_channel = source_machine.get("channel_metadata")
                 if isinstance(observed_channel, dict):
                     channel_context = observed_channel
+                observed_transcript = source_machine.get("transcript")
+                observed_segments = source_machine.get("source_segments")
+                if (
+                    isinstance(observed_transcript, dict)
+                    and observed_transcript.get("status") == "ready"
+                    and isinstance(observed_segments, list)
+                    and observed_segments
+                ):
+                    source_reference = {
+                        "transcript_version_id": observed_transcript.get(
+                            "transcript_version_id"
+                        ),
+                        "source_sha256": observed_transcript.get("source_sha256"),
+                        "segments": [
+                            {
+                                "segment_id": segment.get("segment_id"),
+                                "start_ms": segment.get("start_ms"),
+                                "end_ms": segment.get("end_ms"),
+                            }
+                            for segment in observed_segments
+                            if isinstance(segment, dict)
+                        ],
+                    }
             sources.append(
                 {
                     "video_id": video_id,
@@ -675,6 +698,10 @@ async def research_scaffold_create(template_id: str, target: dict) -> dict:
                     "channel_context_artifact_id": (
                         source_artifact["artifact_id"] if source_artifact else None
                     ),
+                    "structured_source_artifact_id": (
+                        source_artifact["artifact_id"] if source_artifact else None
+                    ),
+                    "source_reference": source_reference,
                     "metadata_retrieval_mode": "cache" if cached_info else "unavailable",
                     "transcript_status": "ready" if cached_transcript else "unknown",
                     "selected_language": (

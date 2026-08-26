@@ -37,7 +37,7 @@ Example result:
 
 Creates one artifact instance and auto-fills machine-owned fields.
 
-Input for a video/transcript:
+Input for a video target (its selected transcript is bundled into the scaffold):
 
 ```json
 {
@@ -79,10 +79,11 @@ Read-only. Retrieves a stored scaffold and its revision history.
 
 ```json
 {
-  "artifact_id": "rart_...",
-  "revision": "latest"
+  "artifact_id": "rart_..."
 }
 ```
+
+Omit `revision` to read the latest revision; provide a positive integer to read an immutable historical revision.
 
 ## 4. `research_artifact_save`
 
@@ -112,8 +113,8 @@ Validation checks:
 
 - optimistic revision match;
 - template schema;
-- valid tag IDs or explicit proposals;
-- valid transcript version and segment ranges;
+- template-defined field types, required keys, and string tag arrays;
+- valid transcript version and segment ranges when an artifact cites them;
 - complete section coverage only when the agent marks the content map `complete`;
 - no modification of machine-owned fields.
 
@@ -121,7 +122,7 @@ A successful save creates a new immutable revision.
 
 ## 5. `research_artifacts_list`
 
-Read-only. Lists artifacts attached to a video, transcript, corpus, or another artifact.
+Read-only. Lists artifacts attached to a video or corpus target.
 
 ```json
 {
@@ -142,14 +143,14 @@ Read-only. Exports one artifact or an attached artifact set without changing its
 }
 ```
 
-Initial formats: `json`, `yaml`, and `csv` when the selected template defines a tabular projection.
+Initial formats: `json`, plus `csv` when the selected template defines a tabular coding-row projection.
 
 ## Typical source workflow
 
 ```text
 research_templates_list
 → research_scaffold_create(structured-source-v1, video)
-→ youtube_get_transcript(..., with_timestamps=true)
+→ agent reads machine_fields.source_segments (or reopens the source transcript)
 → agent constructs sections and tags
 → research_artifact_save
 → research_artifact_get

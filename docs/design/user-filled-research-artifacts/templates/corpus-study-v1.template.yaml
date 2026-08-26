@@ -34,6 +34,14 @@ machine_fields:
       channel_description: <auto-filled-from-attached-source-artifact-or-null>
       channel_metadata_provider: <youtube-data-api|yt-dlp|video-metadata-fallback|null>
       channel_context_artifact_id: <structured-source-artifact-id-or-null>
+      structured_source_artifact_id: <structured-source-artifact-id-or-null>
+      source_reference:
+        transcript_version_id: <auto-filled-or-null>
+        source_sha256: <auto-filled-or-null>
+        segments:
+          - segment_id: <stable-source-segment-id>
+            start_ms: <integer>
+            end_ms: <integer>
       description: <auto-filled-video-description-from-cache-or-null>
       metadata_retrieval_mode: <cache|unavailable>
       transcript_status: <ready|unknown>

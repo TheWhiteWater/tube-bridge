@@ -25,7 +25,7 @@ A **scaffold instance** is created for one target:
 ```text
 research_scaffold_create
 ├── template_id: structured-source-v1
-└── target: transcript/video
+└── target: video (the selected transcript is bundled into its machine fields)
 ```
 
 or:
@@ -51,7 +51,7 @@ artifact
 May include only observed or deterministic values:
 
 - video/channel IDs and URLs;
-- exact video title and description, exact channel name and description, publication date, duration, and language hints;
+- exact video title, the bounded video description exposed by the existing metadata path, exact observed channel name and description (with explicit truncation status), publication date, duration, and language hints;
 - per-field metadata provider/retrieval provenance, including an explicit unavailable state when a channel description cannot be observed;
 - transcript version, selected track, manual/generated provenance, source hash;
 - source segment IDs and timestamp range;
@@ -116,7 +116,7 @@ No semantic model runs inside steps 2, 3, 6, or 7.
 
 ## Initial template set
 
-- `structured-source-v1` — one video/transcript: metadata annotation plus internal semantic hierarchy.
+- `structured-source-v1` — one video target with its selected transcript: metadata annotation plus internal semantic hierarchy.
 - `corpus-study-v1` — one corpus: research frame, grouping, coding, lineage, evidence, and unresolved items.
 
 Templates are optional. A user may ignore them, extend them through `custom_fields`, or later register a different template.

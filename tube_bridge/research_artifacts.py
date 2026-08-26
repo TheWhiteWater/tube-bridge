@@ -17,6 +17,8 @@ import time
 import uuid
 from pathlib import Path
 
+import jsonschema
+
 from .cache import CACHE_DIR
 from .errors import ErrorSource, InvalidArgumentError, NotFoundError
 
@@ -334,15 +336,18 @@ def _validate_corpus_refs(machine_fields: dict, agent_fields: dict) -> None:
     if not isinstance(rows_container, dict):
         return
     rows = rows_container.get("rows", [])
-    if not isinstance(rows, list):
-        raise InvalidArgumentError("coding_rows.rows must be an array")
-    source_ids = {
-        item.get("video_id")
+    sources = {
+        item.get("video_id"): item
         for item in machine_fields.get("sources", [])
-        if isinstance(item, dict)
+        if isinstance(item, dict) and item.get("video_id")
     }
+    reference_keys = (
+        "transcript_version_id",
+        "first_segment_id",
+        "last_segment_id",
+    )
     for row in rows:
-        if not isinstance(row, dict) or row.get("video_id") not in source_ids:
+        if not isinstance(row, dict) or row.get("video_id") not in sources:
             raise InvalidArgumentError("Coding row video_id must belong to the corpus snapshot")
         start_ms, end_ms = row.get("start_ms"), row.get("end_ms")
         if (
@@ -355,8 +360,63 @@ def _validate_corpus_refs(machine_fields: dict, agent_fields: dict) -> None:
         ):
             raise InvalidArgumentError("Coding row timestamp range is invalid")
 
+        supplied_refs = [row.get(key) for key in reference_keys]
+        if not any(value is not None for value in supplied_refs):
+            # A time-only coding row is retained for backward-compatible drafts.
+            continue
+        if not all(isinstance(value, str) and value for value in supplied_refs):
+            raise InvalidArgumentError(
+                "Coding row source reference requires transcript and both segment IDs"
+            )
+        source_reference = sources[row["video_id"]].get("source_reference")
+        if not isinstance(source_reference, dict):
+            raise InvalidArgumentError(
+                "Coding row source reference is unavailable; create a structured-source artifact first"
+            )
+        if row["transcript_version_id"] != source_reference.get(
+            "transcript_version_id"
+        ):
+            raise InvalidArgumentError(
+                "Coding row transcript_version_id does not match the source reference"
+            )
+        segments = source_reference.get("segments")
+        if not isinstance(segments, list) or not segments:
+            raise InvalidArgumentError("Coding row source reference has no segments")
+        index = {
+            segment.get("segment_id"): position
+            for position, segment in enumerate(segments)
+            if isinstance(segment, dict)
+        }
+        first = index.get(row["first_segment_id"])
+        last = index.get(row["last_segment_id"])
+        if first is None or last is None or first > last:
+            raise InvalidArgumentError("Coding row segment reference is invalid")
+        if row["start_ms"] != segments[first].get("start_ms"):
+            raise InvalidArgumentError(
+                "Coding row start_ms must match its first source segment"
+            )
+        if row["end_ms"] != segments[last].get("end_ms"):
+            raise InvalidArgumentError(
+                "Coding row end_ms must match its last source segment"
+            )
 
-def _validate_agent_fields(template_id: str, machine_fields: dict, agent_fields: dict) -> None:
+
+def _validate_agent_fields(
+    definition: dict, machine_fields: dict, agent_fields: dict
+) -> None:
+    schema = definition.get("agent_fields_schema")
+    if not isinstance(schema, dict):
+        raise RuntimeError(
+            f"Research template lacks agent_fields_schema: {definition['template_id']}"
+        )
+    try:
+        jsonschema.validate(instance=agent_fields, schema=schema)
+    except jsonschema.ValidationError as error:
+        raise InvalidArgumentError(
+            f"agent_fields schema validation error: {error.message}"
+        ) from error
+
+    template_id = definition["template_id"]
     if template_id == "structured-source-v1":
         _validate_complete_content(machine_fields, agent_fields)
     elif template_id == "corpus-study-v1":
@@ -396,7 +456,7 @@ def save_artifact(
         current_agent = json.loads(latest["agent_fields_json"])
         merged_agent = _merge_agent_fields(current_agent, agent_fields, definition)
         machine_fields = json.loads(latest["machine_fields_json"])
-        _validate_agent_fields(identity["template_id"], machine_fields, merged_agent)
+        _validate_agent_fields(definition, machine_fields, merged_agent)
         try:
             agent_json = _canonical_json(merged_agent)
             author_json = _canonical_json(author) if author is not None else None

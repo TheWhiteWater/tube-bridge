@@ -557,6 +557,10 @@ async def call_tool(
     name: str, arguments: dict
 ) -> list[TextContent | ImageContent] | CallToolResult:
     try:
+        if not any(tool.name == name for tool in TOOL_CATALOG):
+            raise InvalidArgumentError(
+                f"Tool is not active in this server process: {name}"
+            )
         _validate_arguments(name, arguments)
         result = await _handle_tool(name, arguments)
         if isinstance(result, ExtractedFrame):
