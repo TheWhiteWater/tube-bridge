@@ -1,8 +1,8 @@
 # Research artifact preview verification
 
-**Candidate head:** `6b72bc6` (base implementation `759e324`)
+**Candidate implementation:** `033de88` (base implementation `759e324`)
 
-**Acceptance status:** verification complete; independent audit blocked/pending; not accepted for release.
+**Acceptance status:** verification complete; fresh independent audit pending; not accepted for release.
 
 ## RED evidence
 
@@ -26,22 +26,25 @@ tests/test_research_artifact_contract.py: OK
 tests/test_research_artifact_store.py: OK
 tests/test_research_scaffold_tools.py: OK
 tests/test_research_preview_mcp.py: OK
+tests/test_research_scaffold_channel_context_addendum.py: OK
+tests/test_research_artifact_audit_addendum.py: OK
+tests/test_research_scaffold_source_reference_addendum.py: OK
 ```
 
 ## GREEN evidence
 
-Targeted contract plus channel-context addendum:
+Targeted contracts and addenda:
 
 ```text
-22 passed in 2.44s
+27 passed in 2.29s
 ```
 
-The addendum first failed because corpus scaffolds did not reuse an attached source artifact's channel context, then passed after the bounded local-only linkage was implemented. Its frozen hash is `tests/frozen/research-artifacts-channel-context-addendum.sha256`.
+The first addendum failed because corpus scaffolds did not reuse an attached source artifact's channel context, then passed after bounded local-only linkage. The audit addendum failed on missing agent-field schema validation, incomplete corpus transcript/segment validation, and disabled-preview direct-call access. The source-reference addendum separately failed until corpus scaffolds carried compact stable segment refs from attached structured-source artifacts. Each addendum was frozen before its corresponding fix.
 
 Full deterministic suite:
 
 ```text
-291 passed in 56.98s
+296 passed in 63.15s
 ```
 
 Additional checks:
@@ -97,5 +100,7 @@ The temporary research database/cache was deleted after the smoke. The result pr
 - Station executor/auditor delegation returned `delegation_policy_blocked` twice.
 - Claude Code executor was unavailable because the subscription limit was reached.
 - Codex CLI audit was unavailable because its OAuth refresh token was invalidated.
+- A separate DeepSeek/Hermes read-only audit produced a provisional PASS but identified incomplete schema validation, corpus source-reference validation, and preview call gating. The orchestrator explicitly **REJECTED** that PASS because those findings violated accepted scope.
+- Commit `033de88` closes those findings through frozen RED addenda; documentation mismatches found by the same audit were also corrected.
 
-Therefore no independent PASS exists. The implementation is a local source-preview candidate only. It must not be merged, released, published, or represented as accepted until a fresh independent audit completes and the orchestrator explicitly confirms that provisional verdict.
+The original audit receipt remains preserved locally. A fresh independent audit of `033de88` is required. The implementation remains a source-preview candidate and must not be merged, released, published, or represented as accepted until the new provisional verdict is explicitly confirmed by the orchestrator/L0.
