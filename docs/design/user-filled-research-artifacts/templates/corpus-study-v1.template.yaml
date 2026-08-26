@@ -29,9 +29,12 @@ machine_fields:
       canonical_url: <auto-filled>
       title: <auto-filled>
       channel_id: <auto-filled-or-null>
-      channel_name: <auto-filled-from-cache-or-null>
-      channel_url: <auto-filled-from-cache-or-null>
-      description: <auto-filled-from-cache-or-null>
+      channel_name: <auto-filled-from-source-artifact-or-cache-or-null>
+      channel_url: <auto-filled-from-source-artifact-or-cache-or-null>
+      channel_description: <auto-filled-from-attached-source-artifact-or-null>
+      channel_metadata_provider: <youtube-data-api|yt-dlp|video-metadata-fallback|null>
+      channel_context_artifact_id: <structured-source-artifact-id-or-null>
+      description: <auto-filled-video-description-from-cache-or-null>
       metadata_retrieval_mode: <cache|unavailable>
       transcript_status: <ready|unknown>
       selected_language: <auto-filled-from-cache-or-null>

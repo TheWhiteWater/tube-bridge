@@ -1,6 +1,5 @@
 # Research artifact preview verification
 
-**WorkItem:** `WI-RESEARCH-ARTIFACT-SCAFFOLDS-20260826`  
 **Candidate commit:** `759e324`  
 **Acceptance status:** verification complete; independent audit blocked/pending; not accepted for release.
 
@@ -30,16 +29,18 @@ tests/test_research_preview_mcp.py: OK
 
 ## GREEN evidence
 
-Targeted contract:
+Targeted contract plus channel-context addendum:
 
 ```text
-21 passed in 2.08s
+22 passed in 2.44s
 ```
+
+The addendum first failed because corpus scaffolds did not reuse an attached source artifact's channel context, then passed after the bounded local-only linkage was implemented. Its frozen hash is `tests/frozen/research-artifacts-channel-context-addendum.sha256`.
 
 Full deterministic suite:
 
 ```text
-290 passed in 131.98s
+291 passed in 56.98s
 ```
 
 Additional checks:

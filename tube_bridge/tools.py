@@ -639,15 +639,42 @@ async def research_scaffold_create(template_id: str, target: dict) -> dict:
                 cache.get_transcript, video_id, None
             )
             info = cached_info if isinstance(cached_info, dict) else {}
+            attached = await asyncio.to_thread(
+                research_artifacts.list_artifacts,
+                "video",
+                video_id,
+                "structured-source-v1",
+            )
+            source_artifact = None
+            channel_context: dict = {}
+            if attached["artifacts"]:
+                source_artifact = await asyncio.to_thread(
+                    research_artifacts.get_artifact,
+                    attached["artifacts"][-1]["artifact_id"],
+                    None,
+                )
+                observed_channel = source_artifact["machine_fields"].get(
+                    "channel_metadata"
+                )
+                if isinstance(observed_channel, dict):
+                    channel_context = observed_channel
             sources.append(
                 {
                     "video_id": video_id,
                     "canonical_url": f"https://youtube.com/watch?v={video_id}",
                     "title": info.get("title") or source.get("title"),
                     "description": info.get("description"),
-                    "channel_id": info.get("channel_id"),
-                    "channel_name": info.get("channel"),
-                    "channel_url": info.get("channel_url"),
+                    "channel_id": channel_context.get("channel_id")
+                    or info.get("channel_id"),
+                    "channel_name": channel_context.get("title")
+                    or info.get("channel"),
+                    "channel_url": channel_context.get("canonical_url")
+                    or info.get("channel_url"),
+                    "channel_description": channel_context.get("description"),
+                    "channel_metadata_provider": channel_context.get("provider"),
+                    "channel_context_artifact_id": (
+                        source_artifact["artifact_id"] if source_artifact else None
+                    ),
                     "metadata_retrieval_mode": "cache" if cached_info else "unavailable",
                     "transcript_status": "ready" if cached_transcript else "unknown",
                     "selected_language": (
