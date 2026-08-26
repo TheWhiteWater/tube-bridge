@@ -13,6 +13,7 @@ machine_fields:
   target:
     type: corpus
     corpus_id: <auto-filled>
+    requested_source_artifact_ids: []
 
   corpus_snapshot:
     corpus_id: <auto-filled>
@@ -33,6 +34,15 @@ machine_fields:
       channel_url: <auto-filled-from-source-artifact-or-cache-or-null>
       channel_description: <auto-filled-from-attached-source-artifact-or-null>
       channel_metadata_provider: <youtube-data-api|yt-dlp|video-metadata-fallback|null>
+      source_selection_status: <selected_explicit|selected_single|ambiguous|unavailable>
+      available_source_artifacts:
+        - artifact_id: <structured-source-artifact-id>
+          revision: <integer>
+          transcript_status: <ready|unavailable|unknown>
+          transcript_version_id: <transcript-version-id-or-null>
+          source_sha256: <hash-or-null>
+          selected_language: <language-or-null>
+          track_kind: <manual|generated|null>
       channel_context_artifact_id: <structured-source-artifact-id-or-null>
       structured_source_artifact_id: <structured-source-artifact-id-or-null>
       source_reference:
@@ -44,14 +54,16 @@ machine_fields:
             end_ms: <integer>
       description: <auto-filled-video-description-from-cache-or-null>
       metadata_retrieval_mode: <cache|unavailable>
-      transcript_status: <ready|unknown>
-      selected_language: <auto-filled-from-cache-or-null>
+      cached_transcript_available: <true|false>
+      transcript_status: <ready|unavailable|ambiguous|unknown>
+      selected_language: <auto-filled-from-selected-artifact-or-null>
       track_kind: <manual|generated|null>
       added_at: <auto-filled>
 
   retrieval_summary:
     metadata_unavailable_video_ids: []
     transcript_unknown_video_ids: []
+    ambiguous_source_video_ids: []
 
 agent_fields:
   research_frame:

@@ -277,6 +277,19 @@ def list_artifacts(
     }
 
 
+def _deep_merge(current: object, supplied: object) -> object:
+    """Apply JSON Merge Patch-like object recursion; arrays/scalars replace."""
+    if isinstance(current, dict) and isinstance(supplied, dict):
+        merged = copy.deepcopy(current)
+        for key, value in supplied.items():
+            if key in merged:
+                merged[key] = _deep_merge(merged[key], value)
+            else:
+                merged[key] = copy.deepcopy(value)
+        return merged
+    return copy.deepcopy(supplied)
+
+
 def _merge_agent_fields(current: dict, supplied: dict, definition: dict) -> dict:
     if not isinstance(supplied, dict):
         raise InvalidArgumentError("agent_fields must be an object")
@@ -286,10 +299,7 @@ def _merge_agent_fields(current: dict, supplied: dict, definition: dict) -> dict
         raise InvalidArgumentError(
             f"agent_fields contains unsupported fields: {sorted(unknown)}"
         )
-    merged = copy.deepcopy(current)
-    for key, value in supplied.items():
-        merged[key] = copy.deepcopy(value)
-    return merged
+    return _deep_merge(current, supplied)
 
 
 def _validate_complete_content(machine_fields: dict, agent_fields: dict) -> None:
@@ -331,23 +341,81 @@ def _validate_complete_content(machine_fields: dict, agent_fields: dict) -> None
         )
 
 
-def _validate_corpus_refs(machine_fields: dict, agent_fields: dict) -> None:
-    rows_container = agent_fields.get("coding_rows")
-    if not isinstance(rows_container, dict):
-        return
-    rows = rows_container.get("rows", [])
-    sources = {
-        item.get("video_id"): item
+def _machine_source_catalog(template_id: str, machine_fields: dict) -> dict[str, dict]:
+    if template_id == "structured-source-v1":
+        target = machine_fields.get("target")
+        transcript = machine_fields.get("transcript")
+        segments = machine_fields.get("source_segments")
+        video_id = target.get("video_id") if isinstance(target, dict) else None
+        if (
+            isinstance(video_id, str)
+            and isinstance(transcript, dict)
+            and transcript.get("status") == "ready"
+            and isinstance(segments, list)
+            and segments
+        ):
+            return {
+                video_id: {
+                    "transcript_version_id": transcript.get("transcript_version_id"),
+                    "segments": segments,
+                }
+            }
+        return {}
+    return {
+        item["video_id"]: item["source_reference"]
         for item in machine_fields.get("sources", [])
-        if isinstance(item, dict) and item.get("video_id")
+        if isinstance(item, dict)
+        and isinstance(item.get("video_id"), str)
+        and isinstance(item.get("source_reference"), dict)
     }
-    reference_keys = (
-        "transcript_version_id",
-        "first_segment_id",
-        "last_segment_id",
-    )
+
+
+def _validate_source_ref(
+    source_ref: dict, catalog: dict[str, dict], label: str
+) -> None:
+    video_id = source_ref.get("video_id")
+    source_reference = catalog.get(video_id)
+    if not isinstance(source_reference, dict):
+        raise InvalidArgumentError(
+            f"{label} source reference has no selected transcript for video_id {video_id!r}"
+        )
+    if source_ref.get("transcript_version_id") != source_reference.get(
+        "transcript_version_id"
+    ):
+        raise InvalidArgumentError(
+            f"{label} transcript_version_id does not match the selected source reference"
+        )
+    segments = source_reference.get("segments")
+    if not isinstance(segments, list) or not segments:
+        raise InvalidArgumentError(f"{label} source reference has no segments")
+    index = {
+        segment.get("segment_id"): position
+        for position, segment in enumerate(segments)
+        if isinstance(segment, dict)
+    }
+    first = index.get(source_ref.get("first_segment_id"))
+    last = index.get(source_ref.get("last_segment_id"))
+    if first is None or last is None or first > last:
+        raise InvalidArgumentError(f"{label} segment source reference is invalid")
+    if source_ref.get("start_ms") != segments[first].get("start_ms"):
+        raise InvalidArgumentError(
+            f"{label} start_ms must match its first source segment"
+        )
+    if source_ref.get("end_ms") != segments[last].get("end_ms"):
+        raise InvalidArgumentError(
+            f"{label} end_ms must match its last source segment"
+        )
+
+
+def _validate_corpus_rows(machine_fields: dict, agent_fields: dict) -> None:
+    rows = agent_fields.get("coding_rows", {}).get("rows", [])
+    source_ids = {
+        item.get("video_id")
+        for item in machine_fields.get("sources", [])
+        if isinstance(item, dict)
+    }
     for row in rows:
-        if not isinstance(row, dict) or row.get("video_id") not in sources:
+        if row.get("video_id") not in source_ids:
             raise InvalidArgumentError("Coding row video_id must belong to the corpus snapshot")
         start_ms, end_ms = row.get("start_ms"), row.get("end_ms")
         if (
@@ -360,45 +428,55 @@ def _validate_corpus_refs(machine_fields: dict, agent_fields: dict) -> None:
         ):
             raise InvalidArgumentError("Coding row timestamp range is invalid")
 
-        supplied_refs = [row.get(key) for key in reference_keys]
-        if not any(value is not None for value in supplied_refs):
-            # A time-only coding row is retained for backward-compatible drafts.
-            continue
-        if not all(isinstance(value, str) and value for value in supplied_refs):
-            raise InvalidArgumentError(
-                "Coding row source reference requires transcript and both segment IDs"
+
+def _validate_all_source_refs(
+    template_id: str, machine_fields: dict, agent_fields: dict
+) -> None:
+    catalog = _machine_source_catalog(template_id, machine_fields)
+    refs: list[tuple[str, dict]] = []
+    if template_id == "structured-source-v1":
+        refs.extend(
+            ("Source annotation evidence", ref)
+            for ref in agent_fields.get("source_annotation", {}).get(
+                "evidence_refs", []
             )
-        source_reference = sources[row["video_id"]].get("source_reference")
-        if not isinstance(source_reference, dict):
-            raise InvalidArgumentError(
-                "Coding row source reference is unavailable; create a structured-source artifact first"
+        )
+    elif template_id == "corpus-study-v1":
+        _validate_corpus_rows(machine_fields, agent_fields)
+        for row in agent_fields.get("coding_rows", {}).get("rows", []):
+            reference_keys = (
+                "transcript_version_id",
+                "first_segment_id",
+                "last_segment_id",
             )
-        if row["transcript_version_id"] != source_reference.get(
-            "transcript_version_id"
+            supplied = [row.get(key) for key in reference_keys]
+            if any(value is not None for value in supplied):
+                if not all(isinstance(value, str) and value for value in supplied):
+                    raise InvalidArgumentError(
+                        "Coding row source reference requires transcript and both segment IDs"
+                    )
+                refs.append(("Coding row", row))
+        for group in agent_fields.get("channel_groups", {}).get("groups", []):
+            refs.extend(
+                ("Channel group evidence", ref)
+                for ref in group.get("evidence_refs", [])
+            )
+        for cluster in agent_fields.get("duplicate_and_lineage", {}).get(
+            "clusters", []
         ):
-            raise InvalidArgumentError(
-                "Coding row transcript_version_id does not match the source reference"
+            refs.extend(
+                ("Lineage source", ref) for ref in cluster.get("source_refs", [])
             )
-        segments = source_reference.get("segments")
-        if not isinstance(segments, list) or not segments:
-            raise InvalidArgumentError("Coding row source reference has no segments")
-        index = {
-            segment.get("segment_id"): position
-            for position, segment in enumerate(segments)
-            if isinstance(segment, dict)
-        }
-        first = index.get(row["first_segment_id"])
-        last = index.get(row["last_segment_id"])
-        if first is None or last is None or first > last:
-            raise InvalidArgumentError("Coding row segment reference is invalid")
-        if row["start_ms"] != segments[first].get("start_ms"):
-            raise InvalidArgumentError(
-                "Coding row start_ms must match its first source segment"
+            refs.extend(
+                ("Lineage evidence", ref)
+                for ref in cluster.get("evidence_refs", [])
             )
-        if row["end_ms"] != segments[last].get("end_ms"):
-            raise InvalidArgumentError(
-                "Coding row end_ms must match its last source segment"
+        for entry in agent_fields.get("evidence_ledger", {}).get("entries", []):
+            refs.extend(
+                ("Evidence ledger", ref) for ref in entry.get("source_refs", [])
             )
+    for label, source_ref in refs:
+        _validate_source_ref(source_ref, catalog, label)
 
 
 def _validate_agent_fields(
@@ -419,8 +497,7 @@ def _validate_agent_fields(
     template_id = definition["template_id"]
     if template_id == "structured-source-v1":
         _validate_complete_content(machine_fields, agent_fields)
-    elif template_id == "corpus-study-v1":
-        _validate_corpus_refs(machine_fields, agent_fields)
+    _validate_all_source_refs(template_id, machine_fields, agent_fields)
 
 
 def save_artifact(
@@ -502,6 +579,13 @@ def export_artifact(artifact_id: str, format: str = "json") -> dict:
         "end_ms",
         "code_ids",
         "quotation",
+        "transcript_version_id",
+        "first_segment_id",
+        "last_segment_id",
+        "context_before",
+        "context_after",
+        "agent_note",
+        "confidence",
     ]
     output = io.StringIO(newline="")
     writer = csv.DictWriter(output, fieldnames=fieldnames, extrasaction="ignore")

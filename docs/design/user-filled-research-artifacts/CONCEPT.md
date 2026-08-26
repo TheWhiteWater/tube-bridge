@@ -53,7 +53,8 @@ May include only observed or deterministic values:
 - video/channel IDs and URLs;
 - exact video title, the bounded video description exposed by the existing metadata path, exact observed channel name and description (with explicit truncation status), publication date, duration, and language hints;
 - per-field metadata provider/retrieval provenance, including an explicit unavailable state when a channel description cannot be observed;
-- transcript version, selected track, manual/generated provenance, source hash;
+- transcript version, selected track/language, manual/generated provenance, source hash;
+- every available structured-source artifact for a corpus video plus an explicit selected artifact, or an honest `ambiguous` state when several language/transcript versions exist;
 - source segment IDs and timestamp range;
 - corpus membership;
 - exact duplicate IDs;
@@ -88,7 +89,7 @@ corpus
 research_artifact
 ```
 
-Tube Bridge validates only structural facts:
+Every evidence link uses one source-reference contract: `video_id`, `transcript_version_id`, `first_segment_id`, `last_segment_id`, `start_ms`, and `end_ms`. Tube Bridge validates only structural facts:
 
 - the referenced target exists;
 - transcript/source hashes match;
@@ -107,8 +108,8 @@ It does not validate whether a research classification or conclusion is correct.
 3. Tube Bridge fetches/reads source facts and returns a prefilled scaffold.
 4. Agent reads the transcript or corpus using existing Tube Bridge tools.
 5. Agent fills agent_fields locally.
-6. Agent calls research_artifact_save with expected_revision.
-7. Tube Bridge validates schema and source references, then stores a new revision.
+6. Agent calls research_artifact_save with expected_revision and either complete or partial agent-owned objects.
+7. Tube Bridge deep-merges partial objects, validates the complete schema and every source reference, then stores a new revision.
 8. Agent can retrieve, continue, search, or export the artifact later.
 ```
 

@@ -8,7 +8,7 @@ import hashlib
 import json
 
 from . import cache
-from .errors import QuotaExceededError, TubeBridgeError
+from .errors import InvalidArgumentError, QuotaExceededError, TubeBridgeError
 from .youtube import client as yt
 from .youtube import api, frame as frame_extractor, transcript as tr
 
@@ -631,8 +631,40 @@ async def research_scaffold_create(template_id: str, target: dict) -> dict:
     if template_id == "corpus-study-v1" and target_type == "corpus":
         corpus_id = target.get("corpus_id", "")
         snapshot = await asyncio.to_thread(corpus.corpus_snapshot, corpus_id)
+        snapshot_sources = snapshot.get("sources", [])
+        snapshot_video_ids = {
+            item.get("video_id") for item in snapshot_sources if isinstance(item, dict)
+        }
+        requested_artifact_ids = target.get("source_artifact_ids", [])
+        if not isinstance(requested_artifact_ids, list) or any(
+            not isinstance(value, str) or not value
+            for value in requested_artifact_ids
+        ):
+            raise InvalidArgumentError(
+                "source_artifact_ids must be an array of non-empty strings"
+            )
+        selected_by_video: dict[str, dict] = {}
+        for artifact_id in requested_artifact_ids:
+            artifact = await asyncio.to_thread(
+                research_artifacts.get_artifact, artifact_id, None
+            )
+            if artifact.get("template_id") != "structured-source-v1":
+                raise InvalidArgumentError(
+                    f"Selected artifact is not structured-source-v1: {artifact_id}"
+                )
+            artifact_video_id = artifact.get("target", {}).get("id")
+            if artifact_video_id not in snapshot_video_ids:
+                raise InvalidArgumentError(
+                    f"Selected source artifact video is not in corpus: {artifact_id}"
+                )
+            if artifact_video_id in selected_by_video:
+                raise InvalidArgumentError(
+                    f"Select at most one source artifact per video: {artifact_video_id}"
+                )
+            selected_by_video[artifact_video_id] = artifact
+
         sources = []
-        for source in snapshot.get("sources", []):
+        for source in snapshot_sources:
             video_id = source["video_id"]
             cached_info = await asyncio.to_thread(cache.get_video_info, video_id)
             cached_transcript = await asyncio.to_thread(
@@ -645,32 +677,64 @@ async def research_scaffold_create(template_id: str, target: dict) -> dict:
                 video_id,
                 "structured-source-v1",
             )
-            source_artifact = None
-            channel_context: dict = {}
-            source_reference = None
-            if attached["artifacts"]:
-                source_artifact = await asyncio.to_thread(
+            available_artifacts: list[dict] = []
+            available_options: list[dict] = []
+            for attached_item in attached["artifacts"]:
+                artifact = await asyncio.to_thread(
                     research_artifacts.get_artifact,
-                    attached["artifacts"][-1]["artifact_id"],
+                    attached_item["artifact_id"],
                     None,
                 )
+                transcript = artifact["machine_fields"].get("transcript")
+                transcript = transcript if isinstance(transcript, dict) else {}
+                available_artifacts.append(artifact)
+                available_options.append(
+                    {
+                        "artifact_id": artifact["artifact_id"],
+                        "revision": artifact["revision"],
+                        "transcript_status": transcript.get("status") or "unknown",
+                        "transcript_version_id": transcript.get(
+                            "transcript_version_id"
+                        ),
+                        "source_sha256": transcript.get("source_sha256"),
+                        "selected_language": transcript.get("selected_language"),
+                        "track_kind": transcript.get("track_kind"),
+                    }
+                )
+
+            source_artifact = selected_by_video.get(video_id)
+            if source_artifact is not None:
+                selection_status = "selected_explicit"
+            elif len(available_artifacts) == 1:
+                source_artifact = available_artifacts[0]
+                selection_status = "selected_single"
+            elif len(available_artifacts) > 1:
+                selection_status = "ambiguous"
+            else:
+                selection_status = "unavailable"
+
+            channel_context: dict = {}
+            source_reference = None
+            selected_transcript: dict = {}
+            if source_artifact is not None:
                 source_machine = source_artifact["machine_fields"]
                 observed_channel = source_machine.get("channel_metadata")
                 if isinstance(observed_channel, dict):
                     channel_context = observed_channel
                 observed_transcript = source_machine.get("transcript")
                 observed_segments = source_machine.get("source_segments")
+                if isinstance(observed_transcript, dict):
+                    selected_transcript = observed_transcript
                 if (
-                    isinstance(observed_transcript, dict)
-                    and observed_transcript.get("status") == "ready"
+                    selected_transcript.get("status") == "ready"
                     and isinstance(observed_segments, list)
                     and observed_segments
                 ):
                     source_reference = {
-                        "transcript_version_id": observed_transcript.get(
+                        "transcript_version_id": selected_transcript.get(
                             "transcript_version_id"
                         ),
-                        "source_sha256": observed_transcript.get("source_sha256"),
+                        "source_sha256": selected_transcript.get("source_sha256"),
                         "segments": [
                             {
                                 "segment_id": segment.get("segment_id"),
@@ -681,6 +745,11 @@ async def research_scaffold_create(template_id: str, target: dict) -> dict:
                             if isinstance(segment, dict)
                         ],
                     }
+            transcript_status = (
+                selected_transcript.get("status") or "unknown"
+                if source_artifact is not None
+                else "ambiguous" if selection_status == "ambiguous" else "unavailable"
+            )
             sources.append(
                 {
                     "video_id": video_id,
@@ -695,6 +764,8 @@ async def research_scaffold_create(template_id: str, target: dict) -> dict:
                     or info.get("channel_url"),
                     "channel_description": channel_context.get("description"),
                     "channel_metadata_provider": channel_context.get("provider"),
+                    "source_selection_status": selection_status,
+                    "available_source_artifacts": available_options,
                     "channel_context_artifact_id": (
                         source_artifact["artifact_id"] if source_artifact else None
                     ),
@@ -703,15 +774,12 @@ async def research_scaffold_create(template_id: str, target: dict) -> dict:
                     ),
                     "source_reference": source_reference,
                     "metadata_retrieval_mode": "cache" if cached_info else "unavailable",
-                    "transcript_status": "ready" if cached_transcript else "unknown",
-                    "selected_language": (
-                        cached_transcript.get("language") if cached_transcript else None
+                    "cached_transcript_available": bool(cached_transcript),
+                    "transcript_status": transcript_status,
+                    "selected_language": selected_transcript.get(
+                        "selected_language"
                     ),
-                    "track_kind": (
-                        "generated"
-                        if cached_transcript and cached_transcript.get("is_generated")
-                        else "manual" if cached_transcript else None
-                    ),
+                    "track_kind": selected_transcript.get("track_kind"),
                     "added_at": source.get("added_at"),
                 }
             )
@@ -720,7 +788,11 @@ async def research_scaffold_create(template_id: str, target: dict) -> dict:
         }
         snapshot_summary["source_count"] = len(sources)
         machine_fields = {
-            "target": {"type": "corpus", "corpus_id": corpus_id},
+            "target": {
+                "type": "corpus",
+                "corpus_id": corpus_id,
+                "requested_source_artifact_ids": requested_artifact_ids,
+            },
             "corpus_snapshot": snapshot_summary,
             "sources": sources,
             "retrieval_summary": {
@@ -733,6 +805,11 @@ async def research_scaffold_create(template_id: str, target: dict) -> dict:
                     item["video_id"]
                     for item in sources
                     if item["transcript_status"] != "ready"
+                ],
+                "ambiguous_source_video_ids": [
+                    item["video_id"]
+                    for item in sources
+                    if item["source_selection_status"] == "ambiguous"
                 ],
             },
         }
