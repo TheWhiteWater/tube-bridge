@@ -1,6 +1,6 @@
 # Research artifact preview verification
 
-**Candidate commit:** `759e324`  
+**Candidate head:** `6b72bc6` (base implementation `759e324`)  
 **Acceptance status:** verification complete; independent audit blocked/pending; not accepted for release.
 
 ## RED evidence
