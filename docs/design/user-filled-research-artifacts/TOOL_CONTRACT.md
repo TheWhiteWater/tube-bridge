@@ -1,10 +1,10 @@
 # Proposed MCP tool contract
 
-**Status:** design only; not present in the released 17-tool runtime.
+**Status:** experimental opt-in preview behind `TUBE_BRIDGE_EXPERIMENTAL_RESEARCH_ARTIFACTS=1`; not present in the immutable released v1.1.6 17-tool runtime.
 
 ## Why the creation tool creates a scaffold, not a template
 
-Template definitions are reusable schemas. Agents normally need an instance of an existing template for a specific transcript or corpus. Therefore the primary call is `research_scaffold_create`, not `research_template_create`.
+Template definitions are reusable schemas. Agents normally need an instance of an existing template for a specific video (with its selected transcript bundled) or corpus. Therefore the primary call is `research_scaffold_create`, not `research_template_create`.
 
 ## 1. `research_templates_list`
 
@@ -21,7 +21,7 @@ Example result:
   "templates": [
     {
       "template_id": "structured-source-v1",
-      "target_types": ["video", "transcript"],
+      "target_types": ["video"],
       "description": "Metadata scaffold and agent-filled internal content hierarchy"
     },
     {
