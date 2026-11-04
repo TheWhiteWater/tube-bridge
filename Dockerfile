@@ -1,4 +1,4 @@
-FROM python:3.12-slim
+FROM python:3.12-slim-trixie
 
 LABEL io.modelcontextprotocol.server.name="io.github.TheWhiteWater/tube-bridge"
 
@@ -9,7 +9,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements-release.txt /app/requirements-release.txt
-RUN pip install --no-cache-dir --require-hashes -r /app/requirements-release.txt
+RUN pip install --no-cache-dir --only-binary=:all: --require-hashes -r /app/requirements-release.txt
 
 COPY LICENSE README.md pyproject.toml /app/
 COPY tube_bridge /app/tube_bridge
