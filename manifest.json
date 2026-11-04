@@ -3,7 +3,7 @@
   "manifest_version": "0.4",
   "name": "tube-bridge",
   "display_name": "tube-bridge",
-  "version": "1.1.6",
+  "version": "1.1.7",
   "description": "Self-hosted YouTube research MCP with 17 tools for discovery, transcripts, frames, comments, and local semantic corpora.",
   "long_description": "tube-bridge runs as a self-hosted local stdio MCP server. It does not use a hosted tube-bridge service or managed corpus storage; transcripts, vectors, and indexes remain on the machine running the bundle.\n\nFourteen of 17 tools work without a YouTube Data API key. ffmpeg remains an external system dependency and is needed only for youtube_get_frame. The local embedding model may download on first use; later embedding inference runs locally after its assets are available.",
   "author": {

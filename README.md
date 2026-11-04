@@ -99,8 +99,8 @@ codex mcp add tube-bridge -- uvx tube-bridge
 Pi can load the package-relative adapter and the canonical `tube-bridge-research` skill from the same Git source:
 
 ```bash
-python3 -m pip install tube-bridge==1.1.6
-pi install git:github.com/TheWhiteWater/tube-bridge@v1.1.6
+python3 -m pip install tube-bridge==1.1.7
+pi install git:github.com/TheWhiteWater/tube-bridge@v1.1.7
 pi list
 ```
 
@@ -111,7 +111,7 @@ The Pi package manager installs the Node adapter dependency but does not install
 Remove the package with:
 
 ```bash
-pi remove git:github.com/TheWhiteWater/tube-bridge@v1.1.6
+pi remove git:github.com/TheWhiteWater/tube-bridge@v1.1.7
 ```
 
 If a desktop client cannot find `uvx`, replace `"uvx"` with the absolute path returned by `which uvx` on macOS/Linux or `where.exe uvx` on Windows.
