@@ -214,6 +214,8 @@ docker run --rm -p 8080:8080 ghcr.io/thewhitewater/tube-bridge:latest
 
 The health endpoint is `http://localhost:8080/health`; the Streamable HTTP endpoint is `http://localhost:8080/mcp`.
 
+The image is published for `linux/amd64` and `linux/arm64`; Docker pulls the right one automatically. On a Raspberry Pi, use a 64-bit OS: 32-bit Raspberry Pi OS is not supported. Every release runs the image on native arm64 CI runners, but it has not been tested on physical Raspberry Pi hardware yet.
+
 ### Official MCP Registry
 
 Registry name: [`io.github.TheWhiteWater/tube-bridge`](https://registry.modelcontextprotocol.io/)
