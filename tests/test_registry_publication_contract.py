@@ -12,7 +12,7 @@ from tube_bridge.server import HELP_TEXT, VERSION, server
 
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY_NAME = "io.github.TheWhiteWater/tube-bridge"
-RELEASE_VERSION = "1.1.6"
+RELEASE_VERSION = "1.1.7"
 PUBLISHER_VERSION = "1.8.1"
 PUBLISHER_SHA256 = "a06c9096dcb9727c13555b6be26c7effa707b01f06a4c561ba7a3635443cf2cc"
 
